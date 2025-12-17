@@ -1,96 +1,117 @@
+@import '@fontsource/playfair-display/400.css';
+@import '@fontsource/playfair-display/500.css';
+@import '@fontsource/playfair-display/600.css';
+@import '@fontsource/playfair-display/700.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Agent Hub Design System - "Premium Network" Theme
+   Deep Forest Green + Rose Gold + Champagne Ivory
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    /* Core Brand Colors */
+    --forest: 160 89% 16%;           /* #064E3B - Deep Forest Green */
+    --rose-gold: 356 50% 81%;        /* #E8B4B8 - Rose Gold Accent */
+    --burgundy: 263 67% 35%;         /* #4C1D95 - Deep Purple/Burgundy */
+    --champagne: 48 60% 97%;         /* #FDFCF0 - Champagne Ivory */
+    --cream: 45 50% 96%;             /* Cream for cards */
+    
+    /* Extended Palette */
+    --forest-light: 160 45% 25%;
+    --forest-dark: 160 89% 12%;
+    --rose-gold-light: 356 50% 90%;
+    --rose-gold-dark: 356 40% 65%;
+    --champagne-dark: 40 30% 90%;
+    
+    /* Semantic Tokens */
+    --background: var(--champagne);
+    --foreground: 160 30% 15%;
+    
+    --card: 45 45% 98%;
+    --card-foreground: 160 30% 15%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --popover-foreground: 160 30% 15%;
+    
+    --primary: var(--forest);
+    --primary-foreground: 45 50% 98%;
+    
+    --secondary: var(--burgundy);
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: var(--rose-gold);
+    --accent-foreground: 160 30% 15%;
+    
+    --muted: 45 20% 92%;
+    --muted-foreground: 160 15% 45%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 45 30% 88%;
+    --input: 45 30% 88%;
+    --ring: var(--forest);
+    
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Sidebar */
+    --sidebar-background: var(--forest);
+    --sidebar-foreground: 45 50% 95%;
+    --sidebar-primary: var(--rose-gold);
+    --sidebar-primary-foreground: 160 30% 15%;
+    --sidebar-accent: 160 60% 20%;
+    --sidebar-accent-foreground: 45 50% 95%;
+    --sidebar-border: 160 60% 22%;
+    --sidebar-ring: var(--rose-gold);
+    
+    /* Custom Shadows */
+    --shadow-elegant: 0 4px 12px rgba(6, 78, 59, 0.08);
+    --shadow-card: 0 2px 8px rgba(6, 78, 59, 0.06);
+    --shadow-hover: 0 8px 24px rgba(6, 78, 59, 0.12);
+    --shadow-glow: 0 0 20px rgba(232, 180, 184, 0.3);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 160 30% 8%;
+    --foreground: 45 50% 95%;
+    
+    --card: 160 25% 12%;
+    --card-foreground: 45 50% 95%;
+    
+    --popover: 160 25% 10%;
+    --popover-foreground: 45 50% 95%;
+    
+    --primary: var(--rose-gold);
+    --primary-foreground: 160 30% 10%;
+    
+    --secondary: 263 50% 50%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: var(--forest-light);
+    --accent-foreground: 45 50% 95%;
+    
+    --muted: 160 20% 18%;
+    --muted-foreground: 45 20% 65%;
+    
+    --border: 160 20% 20%;
+    --input: 160 20% 20%;
+    --ring: var(--rose-gold);
+    
+    --sidebar-background: 160 30% 6%;
+    --sidebar-foreground: 45 50% 95%;
+    --sidebar-primary: var(--rose-gold);
+    --sidebar-primary-foreground: 160 30% 10%;
+    --sidebar-accent: 160 40% 15%;
+    --sidebar-accent-foreground: 45 50% 95%;
+    --sidebar-border: 160 25% 15%;
+    --sidebar-ring: var(--rose-gold);
   }
 }
 
@@ -98,8 +119,79 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  /* Elegant Card Style */
+  .card-elegant {
+    @apply bg-card rounded-lg;
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .card-elegant:hover {
+    box-shadow: var(--shadow-hover);
+  }
+  
+  /* Power Tile Style */
+  .power-tile {
+    @apply relative overflow-hidden rounded-lg p-6 transition-all duration-300;
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .power-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  /* Stat Card */
+  .stat-card {
+    @apply bg-card rounded-lg p-5 transition-all duration-200;
+    box-shadow: var(--shadow-card);
+  }
+  
+  .stat-card:hover {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  /* Rose Gold Button Glow */
+  .btn-rose-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .btn-rose-glow:hover {
+    box-shadow: 0 0 30px rgba(232, 180, 184, 0.5);
+  }
+}
+
+@layer utilities {
+  /* Text Gradient */
+  .text-gradient-forest {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--forest)) 0%, hsl(var(--forest-light)) 100%);
+  }
+  
+  /* Background Patterns */
+  .bg-pattern-subtle {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+  
+  /* Smooth Transitions */
+  .transition-elegant {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  /* Animation Delays */
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
 }
