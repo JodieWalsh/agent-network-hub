@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { MapPin, X } from "lucide-react";
-import { mockAutocomplete, mockGeocode, Coordinates } from "@/lib/geocoder";
+import { autocomplete, geocode, Coordinates } from "@/lib/geocoder";
 
 interface LocationSearchFilterProps {
   onLocationChange: (location: Coordinates | null, radius: number) => void;
@@ -21,7 +21,7 @@ export function LocationSearchFilter({ onLocationChange, className = "" }: Locat
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (searchQuery.length >= 2 && !selectedLocation) {
-        const results = await mockAutocomplete(searchQuery);
+        const results = await autocomplete(searchQuery);
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
       } else {
@@ -30,7 +30,7 @@ export function LocationSearchFilter({ onLocationChange, className = "" }: Locat
       }
     };
 
-    const debounce = setTimeout(fetchSuggestions, 200);
+    const debounce = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(debounce);
   }, [searchQuery, selectedLocation]);
 
@@ -42,8 +42,8 @@ export function LocationSearchFilter({ onLocationChange, className = "" }: Locat
     setSearchQuery(suggestion);
     setSelectedLocation(suggestion);
     setShowSuggestions(false);
-    
-    const result = await mockGeocode(suggestion);
+
+    const result = await geocode(suggestion);
     if (result) {
       setCoordinates(result.coordinates);
     }

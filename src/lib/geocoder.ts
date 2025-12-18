@@ -1,4 +1,5 @@
-// Mock Geocoder - Structure ready for real API integration (Google Maps, Mapbox, etc.)
+// Real Geocoder using OpenStreetMap Nominatim API
+// Free, no API key required, supports global addresses
 
 export interface Coordinates {
   lat: number;
@@ -10,56 +11,19 @@ export interface GeocodeResult {
   coordinates: Coordinates;
   city?: string;
   state?: string;
+  country?: string;
+  displayName?: string;
 }
 
-// Australian city coordinates for mock geocoding
-const CITY_COORDINATES: Record<string, Coordinates> = {
-  // Major Cities
-  "sydney": { lat: -33.8688, lng: 151.2093 },
-  "melbourne": { lat: -37.8136, lng: 144.9631 },
-  "brisbane": { lat: -27.4698, lng: 153.0251 },
-  "perth": { lat: -31.9505, lng: 115.8605 },
-  "adelaide": { lat: -34.9285, lng: 138.6007 },
-  "hobart": { lat: -42.8821, lng: 147.3272 },
-  "darwin": { lat: -12.4634, lng: 130.8456 },
-  "canberra": { lat: -35.2809, lng: 149.1300 },
-  
-  // Sydney Suburbs
-  "sydney cbd": { lat: -33.8688, lng: 151.2093 },
-  "bondi": { lat: -33.8915, lng: 151.2767 },
-  "manly": { lat: -33.7963, lng: 151.2876 },
-  "parramatta": { lat: -33.8151, lng: 151.0011 },
-  "chatswood": { lat: -33.7969, lng: 151.1803 },
-  "north sydney": { lat: -33.8389, lng: 151.2070 },
-  "surry hills": { lat: -33.8830, lng: 151.2110 },
-  "newtown": { lat: -33.8976, lng: 151.1790 },
-  "randwick": { lat: -33.9133, lng: 151.2414 },
-  "eastern suburbs": { lat: -33.8900, lng: 151.2600 },
-  "north shore": { lat: -33.8200, lng: 151.2000 },
-  "inner west": { lat: -33.8800, lng: 151.1500 },
-  
-  // Melbourne Suburbs
-  "melbourne cbd": { lat: -37.8136, lng: 144.9631 },
-  "st kilda": { lat: -37.8576, lng: 144.9803 },
-  "south yarra": { lat: -37.8379, lng: 144.9920 },
-  "richmond": { lat: -37.8183, lng: 145.0011 },
-  "fitzroy": { lat: -37.7991, lng: 144.9785 },
-  "carlton": { lat: -37.7955, lng: 144.9672 },
-  "docklands": { lat: -37.8143, lng: 144.9467 },
-  
-  // Brisbane Suburbs
-  "brisbane cbd": { lat: -27.4698, lng: 153.0251 },
-  "south bank": { lat: -27.4810, lng: 153.0234 },
-  "fortitude valley": { lat: -27.4573, lng: 153.0356 },
-  "west end": { lat: -27.4827, lng: 153.0087 },
-  "paddington": { lat: -27.4597, lng: 152.9986 },
-  
-  // Perth Suburbs
-  "perth cbd": { lat: -31.9505, lng: 115.8605 },
-  "fremantle": { lat: -32.0569, lng: 115.7439 },
-  "subiaco": { lat: -31.9449, lng: 115.8272 },
-  "cottesloe": { lat: -31.9940, lng: 115.7580 },
-};
+// Nominatim API endpoint
+const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
+
+// User agent required by Nominatim usage policy
+const USER_AGENT = 'AgentHub/1.0';
+
+// Rate limiting: Cache recent searches to avoid repeated API calls
+const geocodeCache = new Map<string, GeocodeResult>();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 // Service regions for profile selection
 export const SERVICE_REGIONS = [
@@ -97,55 +61,109 @@ export interface GeocoderService {
 }
 
 /**
- * Mock geocode function - returns coordinates for known locations
- * Replace with real API call (Google Maps, Mapbox, etc.) when ready
+ * Real geocode function using Nominatim API
+ * Supports global addresses (Australia, US, UK, and worldwide)
  */
-export async function mockGeocode(address: string): Promise<GeocodeResult | null> {
-  const normalizedAddress = address.toLowerCase().trim();
-  
-  // Try exact match first
-  if (CITY_COORDINATES[normalizedAddress]) {
-    return {
-      address,
-      coordinates: CITY_COORDINATES[normalizedAddress],
-      city: address,
-    };
+export async function geocode(address: string): Promise<GeocodeResult | null> {
+  if (!address || address.trim().length < 3) {
+    return null;
   }
-  
-  // Try partial match
-  for (const [key, coords] of Object.entries(CITY_COORDINATES)) {
-    if (normalizedAddress.includes(key) || key.includes(normalizedAddress)) {
-      return {
-        address,
-        coordinates: coords,
-        city: key.charAt(0).toUpperCase() + key.slice(1),
-      };
+
+  const cacheKey = address.toLowerCase().trim();
+
+  // Check cache first
+  if (geocodeCache.has(cacheKey)) {
+    const cached = geocodeCache.get(cacheKey)!;
+    return cached;
+  }
+
+  try {
+    // Build Nominatim API URL
+    const params = new URLSearchParams({
+      q: address,
+      format: 'json',
+      addressdetails: '1',
+      limit: '1',
+    });
+
+    const response = await fetch(`${NOMINATIM_API}/search?${params}`, {
+      headers: {
+        'User-Agent': USER_AGENT,
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Nominatim API error:', response.statusText);
+      return null;
     }
+
+    const data = await response.json();
+
+    if (!data || data.length === 0) {
+      console.warn('No results found for address:', address);
+      return null;
+    }
+
+    const result = data[0];
+    const geocodeResult: GeocodeResult = {
+      address,
+      coordinates: {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
+      },
+      city: result.address?.city || result.address?.town || result.address?.suburb,
+      state: result.address?.state,
+      country: result.address?.country,
+      displayName: result.display_name,
+    };
+
+    // Cache the result
+    geocodeCache.set(cacheKey, geocodeResult);
+
+    // Clear cache after duration
+    setTimeout(() => {
+      geocodeCache.delete(cacheKey);
+    }, CACHE_DURATION);
+
+    return geocodeResult;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
   }
-  
-  // Default to Sydney if no match (for demo purposes)
-  return {
-    address,
-    coordinates: CITY_COORDINATES["sydney"],
-    city: "Sydney",
-  };
 }
 
 /**
- * Mock autocomplete - returns matching city names
+ * Real autocomplete using Nominatim search
+ * Returns suggested addresses as you type
  */
-export async function mockAutocomplete(query: string): Promise<string[]> {
-  if (!query || query.length < 2) return [];
-  
-  const normalizedQuery = query.toLowerCase();
-  const matches = Object.keys(CITY_COORDINATES)
-    .filter(city => city.includes(normalizedQuery))
-    .map(city => city.split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' '))
-    .slice(0, 5);
-  
-  return matches;
+export async function autocomplete(query: string): Promise<string[]> {
+  if (!query || query.length < 3) return [];
+
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      format: 'json',
+      addressdetails: '1',
+      limit: '5',
+    });
+
+    const response = await fetch(`${NOMINATIM_API}/search?${params}`, {
+      headers: {
+        'User-Agent': USER_AGENT,
+      },
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+
+    return data.map((result: any) => result.display_name);
+  } catch (error) {
+    console.error('Autocomplete error:', error);
+    return [];
+  }
 }
 
 /**
@@ -194,8 +212,8 @@ export function isWithinRadius(
   return distance <= radiusKm;
 }
 
-// Default geocoder service using mock functions
+// Default geocoder service using real Nominatim API
 export const geocoderService: GeocoderService = {
-  geocode: mockGeocode,
-  autocomplete: mockAutocomplete,
+  geocode,
+  autocomplete,
 };

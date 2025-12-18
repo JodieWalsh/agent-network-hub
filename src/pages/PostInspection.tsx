@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, MapPin, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { mockGeocode, mockAutocomplete } from "@/lib/geocoder";
+import { geocode, autocomplete } from "@/lib/geocoder";
 import { useAuth } from "@/contexts/AuthContext";
 import { CurrencyCode, CURRENCY_SYMBOLS } from "@/lib/currency";
 
@@ -47,8 +47,8 @@ export default function PostInspection() {
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (propertyAddress.length >= 2) {
-        const suggestions = await mockAutocomplete(propertyAddress);
+      if (propertyAddress.length >= 3) {
+        const suggestions = await autocomplete(propertyAddress);
         setAddressSuggestions(suggestions);
         setShowSuggestions(suggestions.length > 0);
       } else {
@@ -57,7 +57,7 @@ export default function PostInspection() {
       }
     };
 
-    const debounce = setTimeout(fetchSuggestions, 200);
+    const debounce = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(debounce);
   }, [propertyAddress]);
 
@@ -85,8 +85,14 @@ export default function PostInspection() {
 
     try {
       // Geocode the address
-      const geocodeResult = await mockGeocode(propertyAddress);
-      
+      const geocodeResult = await geocode(propertyAddress);
+
+      if (!geocodeResult) {
+        toast.error("Could not find the address. Please try a more specific location.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.from("inspection_requests").insert({
         requester_id: user.id,
         title,

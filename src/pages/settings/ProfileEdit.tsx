@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { MapPin, User, Briefcase, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockGeocode, mockAutocomplete, SERVICE_REGIONS } from "@/lib/geocoder";
+import { geocode, autocomplete, SERVICE_REGIONS } from "@/lib/geocoder";
 
 const userTypeLabels: Record<string, string> = {
   buyers_agent: "Buyer's Agent",
@@ -55,8 +55,8 @@ export default function ProfileEdit() {
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (homeBaseAddress.length >= 2) {
-        const suggestions = await mockAutocomplete(homeBaseAddress);
+      if (homeBaseAddress.length >= 3) {
+        const suggestions = await autocomplete(homeBaseAddress);
         setAddressSuggestions(suggestions);
         setShowSuggestions(suggestions.length > 0);
       } else {
@@ -65,7 +65,7 @@ export default function ProfileEdit() {
       }
     };
 
-    const debounce = setTimeout(fetchSuggestions, 200);
+    const debounce = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(debounce);
   }, [homeBaseAddress]);
 
@@ -119,9 +119,9 @@ export default function ProfileEdit() {
       // Geocode the home base address
       let latitude = null;
       let longitude = null;
-      
+
       if (homeBaseAddress) {
-        const geocodeResult = await mockGeocode(homeBaseAddress);
+        const geocodeResult = await geocode(homeBaseAddress);
         if (geocodeResult) {
           latitude = geocodeResult.coordinates.lat;
           longitude = geocodeResult.coordinates.lng;
