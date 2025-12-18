@@ -16,6 +16,7 @@ import { CalendarIcon, MapPin, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { mockGeocode, mockAutocomplete } from "@/lib/geocoder";
 import { useAuth } from "@/contexts/AuthContext";
+import { CurrencyCode, CURRENCY_SYMBOLS } from "@/lib/currency";
 
 const serviceTypes = [
   { value: "video_walkthrough", label: "Video Walkthrough" },
@@ -25,6 +26,8 @@ const serviceTypes = [
   { value: "property_assessment", label: "Property Assessment" },
   { value: "open_home_attendance", label: "Open Home Attendance" },
 ];
+
+const currencyOptions: CurrencyCode[] = ['AUD', 'USD', 'GBP', 'EUR', 'NZD', 'CAD'];
 
 export default function PostInspection() {
   const navigate = useNavigate();
@@ -39,6 +42,7 @@ export default function PostInspection() {
   const [serviceType, setServiceType] = useState("");
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
+  const [currency, setCurrency] = useState<CurrencyCode>("AUD");
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
@@ -92,6 +96,7 @@ export default function PostInspection() {
         service_type: serviceType as "video_walkthrough" | "photo_inspection" | "auction_bidding" | "contract_collection" | "property_assessment" | "open_home_attendance",
         description: description || null,
         budget: budgetCents,
+        currency_code: currency,
         deadline: deadline.toISOString().split("T")[0],
         status: "open" as const,
       });
@@ -213,13 +218,30 @@ export default function PostInspection() {
               </div>
 
               {/* Budget and Deadline Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Currency */}
+                <div className="space-y-2">
+                  <Label>Currency *</Label>
+                  <Select value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencyOptions.map((code) => (
+                        <SelectItem key={code} value={code}>
+                          {CURRENCY_SYMBOLS[code]} {code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Budget */}
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Budget (AUD) *</Label>
+                  <Label htmlFor="budget">Budget *</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      $
+                      {CURRENCY_SYMBOLS[currency]}
                     </span>
                     <Input
                       id="budget"

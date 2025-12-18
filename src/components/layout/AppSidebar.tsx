@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { UnitToggle } from "@/components/ui/unit-toggle";
 
 interface NavItem {
   label: string;
@@ -209,6 +210,11 @@ export function AppSidebar() {
             ))}
           </ul>
         </nav>
+
+        {/* Unit Toggle */}
+        <div className="px-3 py-2 border-t border-sidebar-border">
+          <UnitToggle />
+        </div>
 
         {/* User Section */}
         <div className="p-4 border-t border-sidebar-border">

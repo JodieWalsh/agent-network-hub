@@ -7,9 +7,23 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
-import { Plus, Search, MapPin, Calendar, DollarSign, Video, Camera, Gavel, FileText, ClipboardCheck, Home } from "lucide-react";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { TrustTipBanner } from "@/components/ui/trust-tip-banner";
+import { CurrencyBadge } from "@/components/ui/currency-badge";
+import { Plus, Search, MapPin, Calendar, DollarSign, Video, Camera, Gavel, FileText, ClipboardCheck, Home, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Coordinates, calculateDistance } from "@/lib/geocoder";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUnits } from "@/contexts/UnitsContext";
+import { formatDistance, CurrencyCode, CURRENCY_SYMBOLS } from "@/lib/currency";
+
+interface Profile {
+  id: string;
+  full_name: string | null;
+  is_verified: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
+}
 
 interface InspectionRequest {
   id: string;
@@ -24,6 +38,8 @@ interface InspectionRequest {
   status: string | null;
   created_at: string;
   requester_id: string;
+  currency_code: string | null;
+  profiles?: Profile;
 }
 
 const serviceTypeLabels: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -42,23 +58,61 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+const currencyOptions: CurrencyCode[] = ['AUD', 'USD', 'GBP', 'EUR', 'NZD', 'CAD'];
+
 export default function Inspections() {
+  const { user } = useAuth();
+  const { unitSystem, userCurrency } = useUnits();
+  
   const [requests, setRequests] = useState<InspectionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
+  const [currencyFilter, setCurrencyFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<Coordinates | null>(null);
   const [radiusFilter, setRadiusFilter] = useState(25);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [isUserVerified, setIsUserVerified] = useState(false);
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, is_verified, latitude, longitude")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) throw error;
+      setUserProfile(data);
+      setIsUserVerified(data?.is_verified || false);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
 
   const fetchRequests = async () => {
     try {
       const { data, error } = await supabase
         .from("inspection_requests")
-        .select("*")
+        .select(`
+          *,
+          profiles:requester_id (
+            id,
+            full_name,
+            is_verified,
+            latitude,
+            longitude
+          )
+        `)
         .eq("status", "open")
         .order("created_at", { ascending: false });
 
@@ -86,6 +140,10 @@ export default function Inspections() {
     const matchesServiceType = 
       serviceTypeFilter === "all" || request.service_type === serviceTypeFilter;
 
+    // Currency filter
+    const matchesCurrency = 
+      currencyFilter === "all" || request.currency_code === currencyFilter;
+
     // Location filter
     let matchesLocation = true;
     if (locationFilter && request.latitude && request.longitude) {
@@ -98,28 +156,32 @@ export default function Inspections() {
       matchesLocation = distance <= radiusFilter;
     }
 
-    return matchesSearch && matchesServiceType && matchesLocation;
+    return matchesSearch && matchesServiceType && matchesCurrency && matchesLocation;
   }).map((request) => {
-    // Add distance if location filter is active
-    let distance: number | null = null;
+    // Add distance from search location
+    let searchDistance: number | null = null;
     if (locationFilter && request.latitude && request.longitude) {
-      distance = calculateDistance(
+      searchDistance = calculateDistance(
         locationFilter.lat,
         locationFilter.lng,
         request.latitude,
         request.longitude
       );
     }
-    return { ...request, distance };
+    
+    // Add distance from user's home base
+    let homeBaseDistance: number | null = null;
+    if (userProfile?.latitude && userProfile?.longitude && request.latitude && request.longitude) {
+      homeBaseDistance = calculateDistance(
+        userProfile.latitude,
+        userProfile.longitude,
+        request.latitude,
+        request.longitude
+      );
+    }
+    
+    return { ...request, searchDistance, homeBaseDistance };
   });
-
-  const formatBudget = (cents: number) => {
-    return new Intl.NumberFormat("en-AU", {
-      style: "currency",
-      currency: "AUD",
-      minimumFractionDigits: 0,
-    }).format(cents / 100);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-AU", {
@@ -150,10 +212,15 @@ export default function Inspections() {
           </Link>
         </div>
 
+        {/* Trust Tip Banner for unverified users */}
+        {user && !isUserVerified && (
+          <TrustTipBanner />
+        )}
+
         {/* Filters */}
         <Card className="border-border/50">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -175,6 +242,21 @@ export default function Inspections() {
                   {Object.entries(serviceTypeLabels).map(([value, { label }]) => (
                     <SelectItem key={value} value={value}>
                       {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Currency Filter */}
+              <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Currencies</SelectItem>
+                  {currencyOptions.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {CURRENCY_SYMBOLS[code]} {code}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -231,6 +313,8 @@ export default function Inspections() {
                 label: request.service_type,
                 icon: <ClipboardCheck className="h-4 w-4" />,
               };
+              const posterIsVerified = request.profiles?.is_verified || false;
+              const currency = (request.currency_code as CurrencyCode) || 'AUD';
 
               return (
                 <Card
@@ -243,27 +327,51 @@ export default function Inspections() {
                         {serviceInfo.icon}
                         <span className="text-sm font-medium">{serviceInfo.label}</span>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={statusColors[request.status || "open"]}
-                      >
-                        {request.status || "Open"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <VerifiedBadge isVerified={posterIsVerified} size="sm" />
+                        <Badge
+                          variant="outline"
+                          className={statusColors[request.status || "open"]}
+                        >
+                          {request.status || "Open"}
+                        </Badge>
+                      </div>
                     </div>
                     <CardTitle className="text-lg font-semibold text-foreground line-clamp-2">
                       {request.title}
                     </CardTitle>
+                    {/* Poster info */}
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>Posted by</span>
+                      <span className="font-medium text-foreground">
+                        {request.profiles?.full_name || "Anonymous"}
+                      </span>
+                      {posterIsVerified && (
+                        <VerifiedBadge isVerified={true} size="sm" />
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {/* Location */}
                     <div className="flex items-start gap-2 text-sm">
                       <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <span className="text-muted-foreground line-clamp-2">
+                      <span className="text-muted-foreground line-clamp-2 flex-1">
                         {request.property_address}
                       </span>
-                      {request.distance !== undefined && request.distance !== null && (
-                        <Badge variant="secondary" className="ml-auto shrink-0">
-                          {request.distance} km
+                    </div>
+
+                    {/* Distance badges */}
+                    <div className="flex flex-wrap gap-2">
+                      {request.searchDistance !== undefined && request.searchDistance !== null && (
+                        <Badge variant="secondary" className="text-xs">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {formatDistance(request.searchDistance, unitSystem)}
+                        </Badge>
+                      )}
+                      {request.homeBaseDistance !== undefined && request.homeBaseDistance !== null && (
+                        <Badge variant="outline" className="text-xs bg-rose-gold/10 border-rose-gold/30 text-foreground">
+                          <Navigation className="h-3 w-3 mr-1" />
+                          {formatDistance(request.homeBaseDistance, unitSystem)} from base
                         </Badge>
                       )}
                     </div>
@@ -272,9 +380,11 @@ export default function Inspections() {
                     <div className="flex items-center justify-between pt-2 border-t border-border/50">
                       <div className="flex items-center gap-1.5 text-sm">
                         <DollarSign className="h-4 w-4 text-emerald-600" />
-                        <span className="font-semibold text-foreground">
-                          {formatBudget(request.budget)}
-                        </span>
+                        <CurrencyBadge 
+                          amountCents={request.budget} 
+                          currency={currency}
+                          showConversion={currency !== userCurrency}
+                        />
                       </div>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
