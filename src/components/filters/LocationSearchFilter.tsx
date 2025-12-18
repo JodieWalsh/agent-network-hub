@@ -28,11 +28,20 @@ export function LocationSearchFilter({ onLocationChange, className = "" }: Locat
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (searchQuery.length >= 2 && !selectedLocation) {
+      console.log('[LocationSearchFilter] fetchSuggestions triggered:', {
+        searchQuery,
+        length: searchQuery.length,
+        selectedLocation,
+      });
+
+      if (searchQuery.length >= 3 && !selectedLocation) {
+        console.log('[LocationSearchFilter] Calling autocomplete...');
         const results = await autocomplete(searchQuery);
+        console.log('[LocationSearchFilter] Autocomplete returned:', results.length, 'results');
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
       } else {
+        console.log('[LocationSearchFilter] Conditions not met, clearing suggestions');
         setSuggestions([]);
         setShowSuggestions(false);
       }

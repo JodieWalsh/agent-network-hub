@@ -137,7 +137,12 @@ export async function geocode(address: string): Promise<GeocodeResult | null> {
  * Returns suggested addresses as you type
  */
 export async function autocomplete(query: string): Promise<string[]> {
-  if (!query || query.length < 3) return [];
+  console.log('[Autocomplete] Called with query:', query);
+
+  if (!query || query.length < 3) {
+    console.log('[Autocomplete] Query too short, returning empty array');
+    return [];
+  }
 
   try {
     const params = new URLSearchParams({
@@ -147,21 +152,31 @@ export async function autocomplete(query: string): Promise<string[]> {
       limit: '5',
     });
 
-    const response = await fetch(`${NOMINATIM_API}/search?${params}`, {
+    const url = `${NOMINATIM_API}/search?${params}`;
+    console.log('[Autocomplete] Fetching:', url);
+
+    const response = await fetch(url, {
       headers: {
         'User-Agent': USER_AGENT,
       },
     });
 
+    console.log('[Autocomplete] Response status:', response.status, response.statusText);
+
     if (!response.ok) {
+      console.error('[Autocomplete] Bad response:', response.status);
       return [];
     }
 
     const data = await response.json();
+    console.log('[Autocomplete] Got results:', data.length, 'items');
 
-    return data.map((result: any) => result.display_name);
+    const suggestions = data.map((result: any) => result.display_name);
+    console.log('[Autocomplete] Returning suggestions:', suggestions);
+
+    return suggestions;
   } catch (error) {
-    console.error('Autocomplete error:', error);
+    console.error('[Autocomplete] Error:', error);
     return [];
   }
 }
