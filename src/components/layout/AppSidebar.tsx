@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -14,8 +14,12 @@ import {
   Bell,
   Menu,
   X,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface NavItem {
   label: string;
@@ -43,8 +47,18 @@ const navItems: NavItem[] = [
   },
 ];
 
+const userTypeLabels: Record<string, string> = {
+  buyers_agent: "Buyers Agent",
+  real_estate_agent: "Real Estate Agent",
+  conveyancer: "Conveyancer",
+  mortgage_broker: "Mortgage Broker",
+};
+
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [expandedItems, setExpandedItems] = useState<string[]>(["Settings"]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -56,9 +70,34 @@ export function AppSidebar() {
     );
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been successfully signed out.",
+    });
+    navigate("/auth");
+    setIsMobileOpen(false);
+  };
+
   const isActive = (path: string) => location.pathname === path;
   const isParentActive = (item: NavItem) =>
     item.children?.some((child) => location.pathname === child.path);
+
+  const getUserInitials = () => {
+    const name = user?.user_metadata?.full_name || user?.email || "U";
+    return name
+      .split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getUserType = () => {
+    const type = user?.user_metadata?.user_type;
+    return type ? userTypeLabels[type] || type : "Member";
+  };
 
   return (
     <>
@@ -173,17 +212,37 @@ export function AppSidebar() {
 
         {/* User Section */}
         <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-9 h-9 rounded-full bg-rose-gold flex items-center justify-center">
-              <span className="text-sm font-semibold text-forest">SM</span>
+          {user ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className="w-9 h-9 rounded-full bg-rose-gold flex items-center justify-center">
+                  <span className="text-sm font-semibold text-forest">{getUserInitials()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {user.user_metadata?.full_name || user.email}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/60">{getUserType()}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200"
+              >
+                <LogOut size={16} />
+                Sign Out
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                Sarah Mitchell
-              </p>
-              <p className="text-xs text-sidebar-foreground/60">Buyers Agent</p>
-            </div>
-          </div>
+          ) : (
+            <Link
+              to="/auth"
+              onClick={() => setIsMobileOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium bg-rose-gold text-forest hover:bg-rose-gold/90 transition-all duration-200"
+            >
+              <LogIn size={18} />
+              Sign In / Sign Up
+            </Link>
+          )}
         </div>
       </aside>
     </>
