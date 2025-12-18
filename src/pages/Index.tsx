@@ -1,15 +1,54 @@
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeHeader } from "@/components/dashboard/WelcomeHeader";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { PowerTiles } from "@/components/dashboard/PowerTiles";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const [userName, setUserName] = useState<string>("there");
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error fetching user name:", error);
+          return;
+        }
+
+        if (data?.full_name) {
+          // Use first name only
+          const firstName = data.full_name.split(" ")[0];
+          setUserName(firstName);
+        } else {
+          // Fallback to email username
+          const emailName = user.email?.split("@")[0];
+          setUserName(emailName || "there");
+        }
+      } catch (error) {
+        console.error("Error in fetchUserName:", error);
+      }
+    };
+
+    fetchUserName();
+  }, [user]);
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Welcome Header */}
-        <WelcomeHeader userName="Sarah" />
+        <WelcomeHeader userName={userName} />
 
         {/* Stats Grid */}
         <section>
