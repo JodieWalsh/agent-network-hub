@@ -18,6 +18,14 @@ export function LocationSearchFilter({ onLocationChange, className = "" }: Locat
   const [radius, setRadius] = useState(25);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Debug: Component is rendering
+  console.log('[LocationSearchFilter] Component rendered:', {
+    searchQuery,
+    selectedLocation,
+    coordinates,
+    radius,
+  });
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (searchQuery.length >= 2 && !selectedLocation) {
