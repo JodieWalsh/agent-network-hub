@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Star, Filter, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
+import { Coordinates, calculateDistance } from "@/lib/geocoder";
 
 interface Profile {
   id: string;
@@ -17,6 +19,8 @@ interface Profile {
   specialization: "investment" | "luxury" | "residential" | "commercial" | null;
   reputation_score: number;
   city: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 const userTypeLabels: Record<string, string> = {
@@ -41,6 +45,8 @@ export default function Directory() {
   const [specializationFilter, setSpecializationFilter] = useState<string>("all");
   const [minReputation, setMinReputation] = useState([0]);
   const [showFilters, setShowFilters] = useState(false);
+  const [locationFilter, setLocationFilter] = useState<Coordinates | null>(null);
+  const [radiusFilter, setRadiusFilter] = useState(25);
 
   useEffect(() => {
     fetchProfiles();
@@ -59,6 +65,11 @@ export default function Directory() {
     setLoading(false);
   };
 
+  const handleLocationChange = useCallback((location: Coordinates | null, radius: number) => {
+    setLocationFilter(location);
+    setRadiusFilter(radius);
+  }, []);
+
   const filteredProfiles = profiles.filter((profile) => {
     const matchesSearch =
       searchQuery === "" ||
@@ -73,7 +84,31 @@ export default function Directory() {
 
     const matchesReputation = profile.reputation_score >= minReputation[0];
 
-    return matchesSearch && matchesUserType && matchesSpecialization && matchesReputation;
+    // Location filter
+    let matchesLocation = true;
+    if (locationFilter && profile.latitude && profile.longitude) {
+      const distance = calculateDistance(
+        locationFilter.lat,
+        locationFilter.lng,
+        profile.latitude,
+        profile.longitude
+      );
+      matchesLocation = distance <= radiusFilter;
+    }
+
+    return matchesSearch && matchesUserType && matchesSpecialization && matchesReputation && matchesLocation;
+  }).map((profile) => {
+    // Add distance if location filter is active
+    let distance: number | null = null;
+    if (locationFilter && profile.latitude && profile.longitude) {
+      distance = calculateDistance(
+        locationFilter.lat,
+        locationFilter.lng,
+        profile.latitude,
+        profile.longitude
+      );
+    }
+    return { ...profile, distance };
   });
 
   const getStarRating = (score: number) => {
@@ -144,6 +179,14 @@ export default function Directory() {
                       Clear
                     </button>
                   )}
+                </div>
+
+                {/* Location Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Location
+                  </label>
+                  <LocationSearchFilter onLocationChange={handleLocationChange} />
                 </div>
 
                 <div className="space-y-2">
@@ -258,6 +301,13 @@ export default function Directory() {
                         <h3 className="font-serif text-lg font-semibold text-foreground">
                           {profile.full_name || "Anonymous Agent"}
                         </h3>
+
+                        {/* Distance Badge */}
+                        {profile.distance !== null && (
+                          <Badge variant="secondary" className="bg-accent/50">
+                            {profile.distance} km away
+                          </Badge>
+                        )}
 
                         {/* Badge */}
                         <Badge className="bg-burgundy text-white">
