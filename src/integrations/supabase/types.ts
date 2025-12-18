@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      inspection_requests: {
+        Row: {
+          budget: number
+          created_at: string | null
+          deadline: string
+          description: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          property_address: string
+          requester_id: string
+          service_type: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["inspection_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget: number
+          created_at?: string | null
+          deadline: string
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          property_address: string
+          requester_id: string
+          service_type: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["inspection_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget?: number
+          created_at?: string | null
+          deadline?: string
+          description?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          property_address?: string
+          requester_id?: string
+          service_type?: Database["public"]["Enums"]["service_type"]
+          status?: Database["public"]["Enums"]["inspection_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -21,9 +77,13 @@ export type Database = {
           city: string | null
           created_at: string | null
           full_name: string | null
+          home_base_address: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           points: number | null
           reputation_score: number | null
+          service_regions: string[] | null
           specialization:
             | Database["public"]["Enums"]["specialization_type"]
             | null
@@ -36,9 +96,13 @@ export type Database = {
           city?: string | null
           created_at?: string | null
           full_name?: string | null
+          home_base_address?: string | null
           id: string
+          latitude?: number | null
+          longitude?: number | null
           points?: number | null
           reputation_score?: number | null
+          service_regions?: string[] | null
           specialization?:
             | Database["public"]["Enums"]["specialization_type"]
             | null
@@ -51,9 +115,13 @@ export type Database = {
           city?: string | null
           created_at?: string | null
           full_name?: string | null
+          home_base_address?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           points?: number | null
           reputation_score?: number | null
+          service_regions?: string[] | null
           specialization?:
             | Database["public"]["Enums"]["specialization_type"]
             | null
@@ -70,8 +138,11 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           owner_id: string | null
           price: number
+          property_address: string | null
           state: string
           status: Database["public"]["Enums"]["property_status"] | null
           thumbnail_url: string | null
@@ -85,8 +156,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           owner_id?: string | null
           price: number
+          property_address?: string | null
           state: string
           status?: Database["public"]["Enums"]["property_status"] | null
           thumbnail_url?: string | null
@@ -100,8 +174,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           owner_id?: string | null
           price?: number
+          property_address?: string | null
           state?: string
           status?: Database["public"]["Enums"]["property_status"] | null
           thumbnail_url?: string | null
@@ -126,7 +203,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      inspection_status: "open" | "assigned" | "completed" | "cancelled"
       property_status: "off_market" | "under_offer" | "sold"
+      service_type:
+        | "video_walkthrough"
+        | "photo_inspection"
+        | "auction_bidding"
+        | "contract_collection"
+        | "property_assessment"
+        | "open_home_attendance"
       specialization_type:
         | "investment"
         | "luxury"
@@ -264,7 +349,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      inspection_status: ["open", "assigned", "completed", "cancelled"],
       property_status: ["off_market", "under_offer", "sold"],
+      service_type: [
+        "video_walkthrough",
+        "photo_inspection",
+        "auction_bidding",
+        "contract_collection",
+        "property_assessment",
+        "open_home_attendance",
+      ],
       specialization_type: [
         "investment",
         "luxury",

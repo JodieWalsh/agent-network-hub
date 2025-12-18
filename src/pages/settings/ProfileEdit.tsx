@@ -1,0 +1,363 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { MapPin, User, Briefcase, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { mockGeocode, mockAutocomplete, SERVICE_REGIONS } from "@/lib/geocoder";
+
+const userTypeLabels: Record<string, string> = {
+  buyers_agent: "Buyer's Agent",
+  real_estate_agent: "Real Estate Agent",
+  mortgage_broker: "Mortgage Broker",
+  conveyancer: "Conveyancer",
+};
+
+const specializationLabels: Record<string, string> = {
+  residential: "Residential",
+  commercial: "Commercial",
+  investment: "Investment",
+  luxury: "Luxury",
+};
+
+export default function ProfileEdit() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Profile state
+  const [fullName, setFullName] = useState("");
+  const [bio, setBio] = useState("");
+  const [city, setCity] = useState("");
+  const [userType, setUserType] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  
+  // Location state
+  const [homeBaseAddress, setHomeBaseAddress] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [serviceRegions, setServiceRegions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (homeBaseAddress.length >= 2) {
+        const suggestions = await mockAutocomplete(homeBaseAddress);
+        setAddressSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+      } else {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchSuggestions, 200);
+    return () => clearTimeout(debounce);
+  }, [homeBaseAddress]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setFullName(data.full_name || "");
+        setBio(data.bio || "");
+        setCity(data.city || "");
+        setUserType(data.user_type || "");
+        setSpecialization(data.specialization || "");
+        setHomeBaseAddress(data.home_base_address || "");
+        setServiceRegions(data.service_regions || []);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegionToggle = (region: string) => {
+    setServiceRegions((prev) =>
+      prev.includes(region)
+        ? prev.filter((r) => r !== region)
+        : [...prev, region]
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast.error("You must be logged in to update your profile");
+      navigate("/auth");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // Geocode the home base address
+      let latitude = null;
+      let longitude = null;
+      
+      if (homeBaseAddress) {
+        const geocodeResult = await mockGeocode(homeBaseAddress);
+        if (geocodeResult) {
+          latitude = geocodeResult.coordinates.lat;
+          longitude = geocodeResult.coordinates.lng;
+        }
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName || null,
+          bio: bio || null,
+          city: city || null,
+          specialization: (specialization || null) as "residential" | "commercial" | "investment" | "luxury" | null,
+          home_base_address: homeBaseAddress || null,
+          latitude,
+          longitude,
+          service_regions: serviceRegions.length > 0 ? serviceRegions : null,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto">
+          <Card className="animate-pulse">
+            <CardHeader>
+              <div className="h-8 bg-muted rounded w-1/3" />
+              <div className="h-4 bg-muted rounded w-2/3 mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/4" />
+                  <div className="h-10 bg-muted rounded" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-rose-gold" />
+                <CardTitle>Personal Information</CardTitle>
+              </div>
+              <CardDescription>
+                Your basic profile information visible to other users
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  placeholder="Tell others about yourself..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {bio.length}/500 characters
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  placeholder="e.g., Sydney"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location Settings */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-rose-gold" />
+                <CardTitle>Location Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Set your office location and service areas
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="homeBase">Home Base (Office Address)</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="homeBase"
+                    placeholder="Enter your office address"
+                    value={homeBaseAddress}
+                    onChange={(e) => setHomeBaseAddress(e.target.value)}
+                    onFocus={() => addressSuggestions.length > 0 && setShowSuggestions(true)}
+                    className="pl-10"
+                  />
+                  {showSuggestions && (
+                    <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-md shadow-elegant overflow-hidden">
+                      {addressSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setHomeBaseAddress(suggestion);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-accent/50 transition-colors flex items-center gap-2"
+                        >
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Service Regions</Label>
+                <p className="text-sm text-muted-foreground">
+                  Select the areas where you provide services
+                </p>
+                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto p-1">
+                  {SERVICE_REGIONS.map((region) => (
+                    <div
+                      key={region}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox
+                        id={region}
+                        checked={serviceRegions.includes(region)}
+                        onCheckedChange={() => handleRegionToggle(region)}
+                      />
+                      <label
+                        htmlFor={region}
+                        className="text-sm cursor-pointer"
+                      >
+                        {region}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Professional Information */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-rose-gold" />
+                <CardTitle>Professional Information</CardTitle>
+              </div>
+              <CardDescription>
+                Your professional details and specialization
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Professional Type</Label>
+                <Input
+                  value={userTypeLabels[userType] || userType}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Professional type cannot be changed after registration
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="specialization">Specialization</Label>
+                <Select value={specialization} onValueChange={setSpecialization}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select specialization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(specializationLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-rose-gold hover:bg-rose-gold/90 text-forest font-semibold gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </DashboardLayout>
+  );
+}

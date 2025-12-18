@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Bed, Bath, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
+import { Coordinates, calculateDistance } from "@/lib/geocoder";
 
 interface Property {
   id: string;
@@ -18,6 +20,9 @@ interface Property {
   bathrooms: number | null;
   thumbnail_url: string | null;
   status: "off_market" | "under_offer" | "sold";
+  latitude: number | null;
+  longitude: number | null;
+  property_address: string | null;
 }
 
 const statusLabels: Record<string, { label: string; className: string }> = {
@@ -30,6 +35,8 @@ export default function Marketplace() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationFilter, setLocationFilter] = useState<Coordinates | null>(null);
+  const [radiusFilter, setRadiusFilter] = useState(25);
 
   useEffect(() => {
     fetchProperties();
@@ -48,13 +55,43 @@ export default function Marketplace() {
     setLoading(false);
   };
 
+  const handleLocationChange = useCallback((location: Coordinates | null, radius: number) => {
+    setLocationFilter(location);
+    setRadiusFilter(radius);
+  }, []);
+
   const filteredProperties = properties.filter((property) => {
-    return (
+    const matchesSearch =
       searchQuery === "" ||
       property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.state.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+      property.state.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Location filter
+    let matchesLocation = true;
+    if (locationFilter && property.latitude && property.longitude) {
+      const distance = calculateDistance(
+        locationFilter.lat,
+        locationFilter.lng,
+        property.latitude,
+        property.longitude
+      );
+      matchesLocation = distance <= radiusFilter;
+    }
+
+    return matchesSearch && matchesLocation;
+  }).map((property) => {
+    // Add distance if location filter is active
+    let distance: number | null = null;
+    if (locationFilter && property.latitude && property.longitude) {
+      distance = calculateDistance(
+        locationFilter.lat,
+        locationFilter.lng,
+        property.latitude,
+        property.longitude
+      );
+    }
+    return { ...property, distance };
   });
 
   const formatPrice = (price: number) => {
@@ -76,15 +113,20 @@ export default function Marketplace() {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative max-w-xl">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-          <Input
-            placeholder="Search by property name, city, or state..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search & Location Filter */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1 max-w-xl">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <Input
+              placeholder="Search by property name, city, or state..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="w-full md:w-72">
+            <LocationSearchFilter onLocationChange={handleLocationChange} />
+          </div>
         </div>
 
         {/* Properties Grid */}
@@ -133,6 +175,15 @@ export default function Marketplace() {
                   >
                     {statusLabels[property.status].label}
                   </Badge>
+                  {/* Distance Badge */}
+                  {property.distance !== null && (
+                    <Badge
+                      variant="secondary"
+                      className="absolute top-3 left-3 bg-background/90"
+                    >
+                      {property.distance} km
+                    </Badge>
+                  )}
                 </div>
 
                 <CardContent className="p-5 space-y-4">
