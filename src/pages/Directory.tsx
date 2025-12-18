@@ -10,6 +10,9 @@ import { Search, Star, Filter, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
 import { Coordinates, calculateDistance } from "@/lib/geocoder";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { useUnits } from "@/contexts/UnitsContext";
+import { formatDistance } from "@/lib/currency";
 
 interface Profile {
   id: string;
@@ -21,6 +24,7 @@ interface Profile {
   city: string | null;
   latitude: number | null;
   longitude: number | null;
+  is_verified: boolean | null;
 }
 
 const userTypeLabels: Record<string, string> = {
@@ -38,6 +42,7 @@ const specializationLabels: Record<string, string> = {
 };
 
 export default function Directory() {
+  const { unitSystem } = useUnits();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -297,15 +302,18 @@ export default function Directory() {
                           )}
                         </div>
 
-                        {/* Name */}
-                        <h3 className="font-serif text-lg font-semibold text-foreground">
-                          {profile.full_name || "Anonymous Agent"}
-                        </h3>
+                        {/* Name & Verified Badge */}
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif text-lg font-semibold text-foreground">
+                            {profile.full_name || "Anonymous Agent"}
+                          </h3>
+                          <VerifiedBadge isVerified={profile.is_verified || false} size="md" />
+                        </div>
 
                         {/* Distance Badge */}
                         {profile.distance !== null && (
                           <Badge variant="secondary" className="bg-accent/50">
-                            {profile.distance} km away
+                            {formatDistance(profile.distance, unitSystem)}
                           </Badge>
                         )}
 

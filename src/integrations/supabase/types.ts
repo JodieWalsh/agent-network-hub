@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           budget: number
           created_at: string | null
+          currency_code: string | null
           deadline: string
           description: string | null
           id: string
@@ -33,6 +34,7 @@ export type Database = {
         Insert: {
           budget: number
           created_at?: string | null
+          currency_code?: string | null
           deadline: string
           description?: string | null
           id?: string
@@ -48,6 +50,7 @@ export type Database = {
         Update: {
           budget?: number
           created_at?: string | null
+          currency_code?: string | null
           deadline?: string
           description?: string | null
           id?: string
@@ -79,6 +82,7 @@ export type Database = {
           full_name: string | null
           home_base_address: string | null
           id: string
+          is_verified: boolean | null
           latitude: number | null
           longitude: number | null
           points: number | null
@@ -98,6 +102,7 @@ export type Database = {
           full_name?: string | null
           home_base_address?: string | null
           id: string
+          is_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
           points?: number | null
@@ -117,6 +122,7 @@ export type Database = {
           full_name?: string | null
           home_base_address?: string | null
           id?: string
+          is_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
           points?: number | null
