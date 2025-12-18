@@ -146,14 +146,30 @@ export default function Inspections() {
 
     // Location filter
     let matchesLocation = true;
-    if (locationFilter && request.latitude && request.longitude) {
-      const distance = calculateDistance(
-        locationFilter.lat,
-        locationFilter.lng,
-        request.latitude,
-        request.longitude
-      );
-      matchesLocation = distance <= radiusFilter;
+    if (locationFilter) {
+      // If location filter is active, only show jobs with valid coordinates
+      if (request.latitude && request.longitude) {
+        const distance = calculateDistance(
+          locationFilter.lat,
+          locationFilter.lng,
+          request.latitude,
+          request.longitude
+        );
+        matchesLocation = distance <= radiusFilter;
+
+        // Debug logging
+        console.log(`[Location Filter] Job "${request.title}" at ${request.property_address}:`, {
+          jobCoords: { lat: request.latitude, lng: request.longitude },
+          searchCoords: locationFilter,
+          distance: `${distance.toFixed(1)}km`,
+          radius: `${radiusFilter}km`,
+          matches: matchesLocation
+        });
+      } else {
+        // Job has no coordinates - exclude it when location filtering
+        matchesLocation = false;
+        console.log(`[Location Filter] Job "${request.title}" excluded: No coordinates`);
+      }
     }
 
     return matchesSearch && matchesServiceType && matchesCurrency && matchesLocation;
