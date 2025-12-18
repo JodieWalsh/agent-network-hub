@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          points: number | null
+          reputation_score: number | null
+          specialization:
+            | Database["public"]["Enums"]["specialization_type"]
+            | null
+          updated_at: string | null
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          points?: number | null
+          reputation_score?: number | null
+          specialization?:
+            | Database["public"]["Enums"]["specialization_type"]
+            | null
+          updated_at?: string | null
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          points?: number | null
+          reputation_score?: number | null
+          specialization?:
+            | Database["public"]["Enums"]["specialization_type"]
+            | null
+          updated_at?: string | null
+          user_type?: Database["public"]["Enums"]["user_type"]
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          city: string
+          created_at: string | null
+          description: string | null
+          id: string
+          owner_id: string | null
+          price: number
+          state: string
+          status: Database["public"]["Enums"]["property_status"] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          price: number
+          state: string
+          status?: Database["public"]["Enums"]["property_status"] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          city?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          owner_id?: string | null
+          price?: number
+          state?: string
+          status?: Database["public"]["Enums"]["property_status"] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +126,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      property_status: "off_market" | "under_offer" | "sold"
+      specialization_type:
+        | "investment"
+        | "luxury"
+        | "residential"
+        | "commercial"
+      user_type:
+        | "buyers_agent"
+        | "real_estate_agent"
+        | "conveyancer"
+        | "mortgage_broker"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +263,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      property_status: ["off_market", "under_offer", "sold"],
+      specialization_type: [
+        "investment",
+        "luxury",
+        "residential",
+        "commercial",
+      ],
+      user_type: [
+        "buyers_agent",
+        "real_estate_agent",
+        "conveyancer",
+        "mortgage_broker",
+      ],
+    },
   },
 } as const
