@@ -38,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string, userType: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({
+
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -51,21 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
 
-    if (!error && data.user) {
-      // Create profile
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        full_name: fullName,
-        user_type: userType as "buyers_agent" | "real_estate_agent" | "conveyancer" | "mortgage_broker",
-        reputation_score: 0,
-        points: 0,
-      });
-      
-      if (profileError) {
-        return { error: profileError as unknown as Error };
-      }
-    }
-
+    // Profile will be automatically created by database trigger
     return { error };
   };
 
