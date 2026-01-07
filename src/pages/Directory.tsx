@@ -134,8 +134,8 @@ export default function Directory() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-serif text-3xl font-semibold text-foreground">Agent Directory</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="font-sans text-2xl font-semibold text-foreground">Agent Directory</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Connect with verified professionals in your network
           </p>
         </div>
@@ -171,7 +171,7 @@ export default function Directory() {
           <aside
             className={`lg:w-64 space-y-6 ${showFilters ? "block" : "hidden lg:block"}`}
           >
-            <Card className="bg-card border-border shadow-elegant">
+            <Card className="bg-card border-border">
               <CardContent className="p-5 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-foreground">Filters</h3>
@@ -283,12 +283,12 @@ export default function Directory() {
                 {filteredProfiles.map((profile) => (
                   <Card
                     key={profile.id}
-                    className="bg-card border-border shadow-elegant hover:shadow-lg transition-shadow duration-300"
+                    className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150"
                   >
-                    <CardContent className="p-6">
-                      <div className="flex flex-col items-center text-center space-y-4">
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-4">
                         {/* Avatar */}
-                        <div className="w-20 h-20 rounded-full bg-rose-gold/30 flex items-center justify-center overflow-hidden border-2 border-rose-gold">
+                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                           {profile.avatar_url ? (
                             <img
                               src={profile.avatar_url}
@@ -296,66 +296,75 @@ export default function Directory() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-2xl font-semibold text-forest">
+                            <span className="text-lg font-medium text-muted-foreground">
                               {profile.full_name?.charAt(0) || "A"}
                             </span>
                           )}
                         </div>
 
-                        {/* Name & Verified Badge */}
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-serif text-lg font-semibold text-foreground">
-                            {profile.full_name || "Anonymous Agent"}
-                          </h3>
-                          <VerifiedBadge isVerified={profile.is_verified || false} size="md" />
+                        <div className="flex-1 min-w-0">
+                          {/* Name & Verified Badge */}
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-sans text-base font-semibold text-foreground truncate">
+                              {profile.full_name || "Anonymous Agent"}
+                            </h3>
+                            <VerifiedBadge isVerified={profile.is_verified || false} size="sm" />
+                          </div>
+
+                          {/* Type & Specialization */}
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {userTypeLabels[profile.user_type] || profile.user_type}
+                            </Badge>
+                            {profile.specialization && (
+                              <span className="text-xs text-muted-foreground">
+                                {specializationLabels[profile.specialization]}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Star Rating */}
+                          <div className="flex items-center gap-1 mt-2">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={14}
+                                className={
+                                  i < getStarRating(profile.reputation_score)
+                                    ? "text-yellow-500 fill-yellow-500"
+                                    : "text-muted"
+                                }
+                              />
+                            ))}
+                            <span className="text-xs text-muted-foreground ml-1">
+                              ({profile.reputation_score})
+                            </span>
+                          </div>
+
+                          {/* City & Distance */}
+                          <div className="flex items-center gap-2 mt-2">
+                            {profile.city && (
+                              <p className="text-xs text-muted-foreground">{profile.city}</p>
+                            )}
+                            {profile.distance !== null && (
+                              <>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <span className="text-xs text-forest">
+                                  {formatDistance(profile.distance, unitSystem)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* View Profile Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full mt-3 text-forest hover:bg-forest/5"
+                          >
+                            View Profile
+                          </Button>
                         </div>
-
-                        {/* Distance Badge */}
-                        {profile.distance !== null && (
-                          <Badge variant="secondary" className="bg-accent/50">
-                            {formatDistance(profile.distance, unitSystem)}
-                          </Badge>
-                        )}
-
-                        {/* Badge */}
-                        <Badge className="bg-burgundy text-white">
-                          {userTypeLabels[profile.user_type] || profile.user_type}
-                        </Badge>
-
-                        {/* Specialization */}
-                        {profile.specialization && (
-                          <span className="text-sm text-muted-foreground">
-                            {specializationLabels[profile.specialization]}
-                          </span>
-                        )}
-
-                        {/* Star Rating */}
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={16}
-                              className={
-                                i < getStarRating(profile.reputation_score)
-                                  ? "text-yellow-500 fill-yellow-500"
-                                  : "text-muted"
-                              }
-                            />
-                          ))}
-                          <span className="text-sm text-muted-foreground ml-1">
-                            ({profile.reputation_score})
-                          </span>
-                        </div>
-
-                        {/* City */}
-                        {profile.city && (
-                          <p className="text-sm text-muted-foreground">{profile.city}</p>
-                        )}
-
-                        {/* View Profile Button */}
-                        <Button className="w-full bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium mt-2">
-                          View Profile
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>

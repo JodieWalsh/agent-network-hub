@@ -26,9 +26,9 @@ interface Property {
 }
 
 const statusLabels: Record<string, { label: string; className: string }> = {
-  off_market: { label: "Off-Market", className: "bg-primary text-primary-foreground" },
-  under_offer: { label: "Under Offer", className: "bg-amber-500 text-white" },
-  sold: { label: "Sold", className: "bg-muted text-muted-foreground" },
+  off_market: { label: "Off-Market", className: "border-forest text-forest" },
+  under_offer: { label: "Under Offer", className: "border-amber-600 text-amber-600" },
+  sold: { label: "Sold", className: "border-muted-foreground text-muted-foreground" },
 };
 
 export default function Marketplace() {
@@ -107,8 +107,8 @@ export default function Marketplace() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-serif text-3xl font-semibold text-foreground">Property Marketplace</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="font-sans text-2xl font-semibold text-foreground">Property Marketplace</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Discover exclusive off-market properties for your clients
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function Marketplace() {
             {filteredProperties.map((property) => (
               <Card
                 key={property.id}
-                className="bg-card border-border shadow-elegant hover:shadow-lg transition-all duration-300 overflow-hidden group"
+                className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150 overflow-hidden"
               >
                 {/* Thumbnail */}
                 <div className="relative h-48 bg-muted overflow-hidden">
@@ -162,38 +162,39 @@ export default function Marketplace() {
                     <img
                       src={property.thumbnail_url}
                       alt={property.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-rose-gold/20 to-primary/10">
-                      <MapPin className="w-12 h-12 text-muted-foreground/50" />
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <MapPin className="w-12 h-12 text-muted-foreground/30" />
                     </div>
                   )}
                   {/* Status Badge */}
                   <Badge
-                    className={`absolute top-3 right-3 ${statusLabels[property.status].className}`}
+                    variant="outline"
+                    className={`absolute top-3 right-3 bg-white/95 ${statusLabels[property.status].className}`}
                   >
                     {statusLabels[property.status].label}
                   </Badge>
                   {/* Distance Badge */}
                   {property.distance !== null && (
                     <Badge
-                      variant="secondary"
-                      className="absolute top-3 left-3 bg-background/90"
+                      variant="outline"
+                      className="absolute top-3 left-3 bg-white/95 text-forest border-forest"
                     >
                       {property.distance} km
                     </Badge>
                   )}
                 </div>
 
-                <CardContent className="p-5 space-y-4">
+                <CardContent className="p-5 space-y-3">
                   {/* Title */}
-                  <h3 className="font-serif text-lg font-semibold text-foreground line-clamp-1">
+                  <h3 className="font-sans text-base font-semibold text-foreground line-clamp-1">
                     {property.title}
                   </h3>
 
                   {/* Location */}
-                  <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs">
                     <MapPin size={14} />
                     <span>
                       {property.city}, {property.state}
@@ -201,7 +202,7 @@ export default function Marketplace() {
                   </div>
 
                   {/* Features */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     {property.bedrooms && (
                       <div className="flex items-center gap-1">
                         <Bed size={14} />
@@ -217,13 +218,17 @@ export default function Marketplace() {
                   </div>
 
                   {/* Price */}
-                  <p className="font-serif text-xl font-semibold text-primary">
+                  <p className="font-sans text-lg font-semibold text-forest">
                     {formatPrice(property.price)}
                   </p>
 
                   {/* View Details Button */}
-                  <Button className="w-full bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium">
-                    <Eye size={16} className="mr-2" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-forest hover:bg-forest/5"
+                  >
+                    <Eye size={14} className="mr-2" />
                     View Details
                   </Button>
                 </CardContent>

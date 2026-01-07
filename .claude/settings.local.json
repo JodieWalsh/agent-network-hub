@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(node test-supabase.mjs:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRedesign: Minimal luxury aesthetic with warm champagne sidebar\n\nMajor visual overhaul transforming Agent Hub into a premium B2B platform:\n\nDESIGN FOUNDATION:\n- Shifted from warm backgrounds to cool near-white \\(#FAFAFA\\)\n- Reduced all shadows from heavy \\(12-24px\\) to minimal \\(1-3px\\)\n- Changed all headings from Playfair Display serif to clean Inter sans-serif\n- Faster animations \\(300-500ms → 150-200ms\\)\n- Softer border radius \\(8px → 6px\\)\n\nSIDEBAR TRANSFORMATION:\n- Changed from dark forest green to warm champagne \\(#F5F3EE\\)\n- Forest green now used only as subtle accent on active states\n- Clean, professional layout like Notion/Linear/Stripe\n- Light background with warm beige tones for premium feel\n\nDASHBOARD DECLUTTERING:\n- Removed entire Network Highlights section \\(reduced visual noise\\)\n- Smaller stats cards \\(reduced padding and font sizes\\)\n- Simplified PowerTiles with shorter text and descriptions\n- Minimized Recent Activity component \\(removed colorful backgrounds\\)\n- Increased whitespace throughout \\(space-y-8 → space-y-12\\)\n- Narrower max-width \\(max-w-7xl → max-w-5xl\\)\n\nLAYOUT REFINEMENTS:\n- Increased main content padding \\(50% more generous spacing\\)\n- Simplified TopBar \\(removed backdrop blur, reduced height\\)\n- Cleaner navigation with minimal hover states\n\nTECHNICAL CHANGES:\n- Updated CSS variables for new color scheme\n- Removed decorative CSS classes \\(card-elegant, power-tile, etc.\\)\n- Updated Tailwind config with minimal shadows and faster animations\n- Created PROJECT_CONTEXT.md for comprehensive project documentation\n- Fixed Supabase connection with correct project credentials\n\nResult: Clean, spacious, professional B2B platform aesthetic\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git config:*)",
+      "Bash(git push)",
+      "Bash(node seed-agents.mjs)",
+      "Bash(git commit:*)",
+      "Bash(npm run dev:*)"
+    ]
+  }
+}
