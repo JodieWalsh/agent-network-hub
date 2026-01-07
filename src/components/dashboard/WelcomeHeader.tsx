@@ -1,5 +1,3 @@
-import { Sparkles } from "lucide-react";
-
 interface WelcomeHeaderProps {
   userName: string;
 }
@@ -9,12 +7,11 @@ export function WelcomeHeader({ userName }: WelcomeHeaderProps) {
     <div className="animate-fade-in">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">
-            Welcome back, {userName}!
+          <h1 className="text-xl lg:text-2xl font-sans font-semibold text-foreground">
+            Welcome back, {userName}
           </h1>
-          <p className="mt-1 text-muted-foreground flex items-center gap-2">
-            <Sparkles size={16} className="text-rose-gold" />
-            Your network is growing.
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your network is growing
           </p>
         </div>
         

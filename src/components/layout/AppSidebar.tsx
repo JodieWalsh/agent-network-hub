@@ -105,10 +105,10 @@ export function AppSidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-primary text-primary-foreground shadow-elegant lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-primary text-primary-foreground shadow-card lg:hidden"
         aria-label="Toggle menu"
       >
-        {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
+        {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
       {/* Overlay */}
@@ -122,21 +122,21 @@ export function AppSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-sidebar z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="p-5 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-3" onClick={() => setIsMobileOpen(false)}>
-            <div className="w-10 h-10 rounded-lg bg-rose-gold flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-forest" />
+            <div className="w-8 h-8 rounded-md bg-forest/5 flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-forest" />
             </div>
             <div>
-              <h1 className="font-serif text-xl font-semibold text-sidebar-foreground">
+              <h1 className="text-base font-semibold text-foreground">
                 Agent Hub
               </h1>
-              <p className="text-xs text-sidebar-foreground/60">Professional Network</p>
+              <p className="text-xs text-muted-foreground">Professional Network</p>
             </div>
           </Link>
         </div>
@@ -151,14 +151,14 @@ export function AppSidebar() {
                     <button
                       onClick={() => toggleExpand(item.label)}
                       className={cn(
-                        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150",
                         isParentActive(item)
-                          ? "bg-sidebar-accent text-sidebar-primary"
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          ? "bg-forest/5 text-forest"
+                          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
                       )}
                     >
                       <span className="flex items-center gap-3">
-                        <item.icon size={18} />
+                        <item.icon size={16} />
                         {item.label}
                       </span>
                       <ChevronDown
@@ -177,13 +177,13 @@ export function AppSidebar() {
                               to={child.path}
                               onClick={() => setIsMobileOpen(false)}
                               className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150",
                                 isActive(child.path)
-                                  ? "bg-rose-gold text-forest font-medium"
-                                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                                  ? "bg-forest/5 text-forest font-medium"
+                                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
                               )}
                             >
-                              <child.icon size={16} />
+                              <child.icon size={14} />
                               {child.label}
                             </Link>
                           </li>
@@ -196,13 +196,13 @@ export function AppSidebar() {
                     to={item.path}
                     onClick={() => setIsMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150",
                       isActive(item.path)
-                        ? "bg-rose-gold text-forest"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        ? "bg-forest/5 text-forest"
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
                     )}
                   >
-                    <item.icon size={18} />
+                    <item.icon size={16} />
                     {item.label}
                   </Link>
                 )}
@@ -221,21 +221,21 @@ export function AppSidebar() {
           {user ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-9 h-9 rounded-full bg-rose-gold flex items-center justify-center">
-                  <span className="text-sm font-semibold text-forest">{getUserInitials()}</span>
+                <div className="w-8 h-8 rounded-md bg-forest/5 flex items-center justify-center">
+                  <span className="text-xs font-semibold text-forest">{getUserInitials()}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {user.user_metadata?.full_name || user.email}
                   </p>
-                  <p className="text-xs text-sidebar-foreground/60">{getUserType()}</p>
+                  <p className="text-xs text-muted-foreground">{getUserType()}</p>
                 </div>
               </div>
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all duration-200"
+                className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors duration-150"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
                 Sign Out
               </button>
             </div>
@@ -243,10 +243,10 @@ export function AppSidebar() {
             <Link
               to="/auth"
               onClick={() => setIsMobileOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium bg-rose-gold text-forest hover:bg-rose-gold/90 transition-all duration-200"
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm font-medium bg-forest text-white hover:bg-forest/90 transition-colors duration-150"
             >
-              <LogIn size={18} />
-              Sign In / Sign Up
+              <LogIn size={16} />
+              Sign In
             </Link>
           )}
         </div>

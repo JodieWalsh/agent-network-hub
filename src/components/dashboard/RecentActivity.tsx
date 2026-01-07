@@ -64,65 +64,43 @@ const iconMap = {
   brief: FileText,
 };
 
-const colorMap = {
-  message: "bg-blue-100 text-blue-600",
-  property: "bg-emerald-100 text-emerald-600",
-  connection: "bg-purple-100 text-purple-600",
-  review: "bg-amber-100 text-amber-600",
-  brief: "bg-rose-100 text-rose-600",
-};
-
 export function RecentActivity() {
   return (
-    <div className="card-elegant p-6 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-serif font-semibold text-foreground">
+    <div className="p-6 rounded-md border border-border bg-white">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-sm font-semibold text-foreground">
           Recent Activity
         </h2>
-        <button className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+        <button className="text-xs text-forest hover:text-forest/80 font-medium transition-colors">
           View All
         </button>
       </div>
 
-      <div className="space-y-4">
-        {activityData.map((item, index) => {
+      <div className="space-y-3">
+        {activityData.map((item) => {
           const Icon = iconMap[item.type];
           return (
             <div
               key={item.id}
               className={cn(
-                "flex items-start gap-4 p-3 rounded-lg transition-all duration-200 cursor-pointer",
-                "hover:bg-muted/50",
-                item.unread && "bg-rose-gold/5"
+                "flex items-start gap-3 p-2.5 rounded-md transition-colors duration-150 cursor-pointer",
+                "hover:bg-muted/30"
               )}
-              style={{ animationDelay: `${500 + index * 50}ms` }}
             >
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                  colorMap[item.type]
-                )}
-              >
-                <Icon size={18} />
-              </div>
+              <Icon size={14} className="text-muted-foreground mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <p
-                    className={cn(
-                      "text-sm font-medium text-foreground truncate",
-                      item.unread && "font-semibold"
-                    )}
-                  >
+                  <p className="text-xs font-medium text-foreground truncate">
                     {item.title}
                   </p>
                   {item.unread && (
-                    <span className="w-2 h-2 rounded-full bg-rose-gold flex-shrink-0 mt-1.5" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-forest flex-shrink-0 mt-1" />
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground truncate mt-0.5">
+                <p className="text-xs text-muted-foreground truncate">
                   {item.description}
                 </p>
-                <p className="text-xs text-muted-foreground/70 mt-1">
+                <p className="text-xs text-muted-foreground/60 mt-0.5">
                   {item.time}
                 </p>
               </div>

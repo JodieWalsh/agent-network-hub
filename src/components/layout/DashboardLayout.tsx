@@ -17,7 +17,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <TopBar />
         
         {/* Page Content */}
-        <main className="p-4 lg:p-8 pb-24 lg:pb-8">
+        <main className="p-6 lg:p-12 pb-28 lg:pb-12 max-w-screen-2xl mx-auto">
           {children}
         </main>
       </div>
