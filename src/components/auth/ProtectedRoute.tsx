@@ -23,8 +23,8 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, profile, loading } = useAuth();
 
-  // Show loading state while checking authentication
-  if (loading) {
+  // Show loading state while checking authentication or loading profile
+  if (loading || (user && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
@@ -39,6 +39,7 @@ export function ProtectedRoute({
 
   // Check role-based access
   if (requiredRole && profile?.role !== requiredRole) {
+    console.log('Role check failed:', { requiredRole, actualRole: profile?.role, profile });
     if (showForbidden) {
       return <ForbiddenPage />;
     }

@@ -22,10 +22,14 @@ export function TopBar() {
   };
 
   const getUserRoleDisplay = () => {
-    if (profile?.role) {
+    if (!profile || !profile.role) return "Member";
+
+    try {
       return getRoleLabel(profile.role);
+    } catch (error) {
+      console.error("Error getting role label:", error);
+      return "Member";
     }
-    return "Member";
   };
 
   return (

@@ -190,7 +190,10 @@ export default function ProfileEdit() {
         password: newPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Password update error:", error);
+        throw error;
+      }
 
       // Clear password fields
       setCurrentPassword("");
@@ -200,7 +203,8 @@ export default function ProfileEdit() {
       toast.success("Password updated successfully!");
     } catch (error: any) {
       console.error("Error changing password:", error);
-      toast.error(error.message || "Failed to change password. Please try again.");
+      const errorMessage = error?.message || "Failed to change password. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setChangingPassword(false);
     }
