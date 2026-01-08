@@ -13,18 +13,23 @@ import { Coordinates, calculateDistance } from "@/lib/geocoder";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { useUnits } from "@/contexts/UnitsContext";
 import { formatDistance } from "@/lib/currency";
+import { ProfileDetailModal } from "@/components/directory/ProfileDetailModal";
 
 interface Profile {
   id: string;
   full_name: string;
   avatar_url: string | null;
   user_type: "buyers_agent" | "real_estate_agent" | "conveyancer" | "mortgage_broker";
-  specialization: "investment" | "luxury" | "residential" | "commercial" | null;
+  specializations: string[] | null;
   reputation_score: number;
   city: string | null;
   latitude: number | null;
   longitude: number | null;
   is_verified: boolean | null;
+  bio: string | null;
+  service_regions: string[] | null;
+  home_base_address: string | null;
+  points: number | null;
 }
 
 const userTypeLabels: Record<string, string> = {
@@ -52,6 +57,8 @@ export default function Directory() {
   const [showFilters, setShowFilters] = useState(false);
   const [locationFilter, setLocationFilter] = useState<Coordinates | null>(null);
   const [radiusFilter, setRadiusFilter] = useState(25);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   useEffect(() => {
     fetchProfiles();
@@ -85,7 +92,8 @@ export default function Directory() {
       userTypeFilter === "all" || profile.user_type === userTypeFilter;
 
     const matchesSpecialization =
-      specializationFilter === "all" || profile.specialization === specializationFilter;
+      specializationFilter === "all" ||
+      (profile.specializations && profile.specializations.includes(specializationFilter));
 
     const matchesReputation = profile.reputation_score >= minReputation[0];
 
@@ -311,17 +319,27 @@ export default function Directory() {
                             <VerifiedBadge isVerified={profile.is_verified || false} size="sm" />
                           </div>
 
-                          {/* Type & Specialization */}
-                          <div className="flex items-center gap-2 mt-1">
+                          {/* Type */}
+                          <div className="mt-1">
                             <Badge variant="outline" className="text-xs">
                               {userTypeLabels[profile.user_type] || profile.user_type}
                             </Badge>
-                            {profile.specialization && (
-                              <span className="text-xs text-muted-foreground">
-                                {specializationLabels[profile.specialization]}
-                              </span>
-                            )}
                           </div>
+
+                          {/* Specializations */}
+                          {profile.specializations && profile.specializations.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {profile.specializations.map((spec) => (
+                                <Badge
+                                  key={spec}
+                                  variant="secondary"
+                                  className="text-xs bg-forest/5 text-forest border-forest/20"
+                                >
+                                  {specializationLabels[spec] || spec}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
 
                           {/* Star Rating */}
                           <div className="flex items-center gap-1 mt-2">
@@ -361,6 +379,10 @@ export default function Directory() {
                             variant="ghost"
                             size="sm"
                             className="w-full mt-3 text-forest hover:bg-forest/5"
+                            onClick={() => {
+                              setSelectedProfile(profile);
+                              setProfileModalOpen(true);
+                            }}
                           >
                             View Profile
                           </Button>
@@ -374,6 +396,15 @@ export default function Directory() {
           </div>
         </div>
       </div>
+
+      {/* Profile Detail Modal */}
+      <ProfileDetailModal
+        profile={selectedProfile}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+        userTypeLabels={userTypeLabels}
+        specializationLabels={specializationLabels}
+      />
     </DashboardLayout>
   );
 }

@@ -9,7 +9,19 @@
       "Bash(git push)",
       "Bash(node seed-agents.mjs)",
       "Bash(git commit:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(node apply-migration.mjs:*)",
+      "Bash(node clear-profiles.mjs:*)",
+      "Bash(node check-schema.mjs:*)",
+      "Bash(curl:*)",
+      "Bash(scoop --version:*)",
+      "Bash(npx supabase --version)",
+      "Bash(npx supabase:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase db push:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase db remote commit:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase migration repair:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase migration repair --status applied 20251218082115)"
     ]
   }
 }
