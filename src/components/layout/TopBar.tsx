@@ -1,7 +1,33 @@
 import { Search, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { getRoleLabel } from "@/lib/permissions";
 
 export function TopBar() {
+  const { user, profile } = useAuth();
+
+  const getUserInitials = () => {
+    if (!profile?.full_name && !user?.email) return "U";
+    const name = profile?.full_name || user?.email || "User";
+    return name
+      .split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getUserName = () => {
+    return profile?.full_name || user?.email || "User";
+  };
+
+  const getUserRoleDisplay = () => {
+    if (profile?.role) {
+      return getRoleLabel(profile.role);
+    }
+    return "Member";
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-background border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 lg:px-8">
@@ -46,15 +72,17 @@ export function TopBar() {
           </button>
 
           {/* User Avatar - Desktop Only */}
-          <div className="hidden lg:flex items-center gap-3 ml-2 pl-4 border-l border-border">
-            <div className="w-8 h-8 rounded-md border border-border bg-white flex items-center justify-center">
-              <span className="text-xs font-semibold text-foreground">SM</span>
+          {user && (
+            <div className="hidden lg:flex items-center gap-3 ml-2 pl-4 border-l border-border">
+              <div className="w-8 h-8 rounded-md border border-border bg-white flex items-center justify-center">
+                <span className="text-xs font-semibold text-foreground">{getUserInitials()}</span>
+              </div>
+              <div className="hidden xl:block">
+                <p className="text-sm font-medium">{getUserName()}</p>
+                <p className="text-xs text-muted-foreground">{getUserRoleDisplay()}</p>
+              </div>
             </div>
-            <div className="hidden xl:block">
-              <p className="text-sm font-medium">Sarah Mitchell</p>
-              <p className="text-xs text-muted-foreground">Buyers Agent</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </header>

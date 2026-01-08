@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { MapPin, User, Briefcase, Save } from "lucide-react";
+import { MapPin, User, Briefcase, Save, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockGeocode, mockAutocomplete, SERVICE_REGIONS } from "@/lib/geocoder";
@@ -40,12 +40,18 @@ export default function ProfileEdit() {
   const [city, setCity] = useState("");
   const [userType, setUserType] = useState("");
   const [specialization, setSpecialization] = useState("");
-  
+
   // Location state
   const [homeBaseAddress, setHomeBaseAddress] = useState("");
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [serviceRegions, setServiceRegions] = useState<string[]>([]);
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -150,6 +156,53 @@ export default function ProfileEdit() {
       toast.error("Failed to update profile. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast.error("You must be logged in to change your password");
+      return;
+    }
+
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Please fill in all password fields");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long");
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      // Clear password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      toast.success("Password updated successfully!");
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      toast.error(error.message || "Failed to change password. Please try again.");
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -345,7 +398,7 @@ export default function ProfileEdit() {
             </CardContent>
           </Card>
 
-          {/* Save Button */}
+          {/* Save Button for Profile */}
           <div className="flex justify-end">
             <Button
               type="submit"
@@ -356,6 +409,73 @@ export default function ProfileEdit() {
               {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
+        </form>
+
+        {/* Password Change Section */}
+        <form onSubmit={handlePasswordChange}>
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-rose-gold" />
+                <CardTitle>Change Password</CardTitle>
+              </div>
+              <CardDescription>
+                Update your account password for security
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  placeholder="Enter your current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="Enter your new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 6 characters long
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="submit"
+                  disabled={changingPassword}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Lock className="h-4 w-4" />
+                  {changingPassword ? "Changing Password..." : "Change Password"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </form>
       </div>
     </DashboardLayout>
