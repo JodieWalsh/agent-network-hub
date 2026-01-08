@@ -30,6 +30,17 @@ interface PendingUser {
   city: string | null;
 }
 
+interface AllUser {
+  id: string;
+  full_name: string | null;
+  user_type: string;
+  role: string;
+  approval_status: string;
+  city: string | null;
+  created_at: string;
+  is_verified: boolean;
+}
+
 interface PendingProperty {
   id: string;
   title: string;
@@ -57,6 +68,7 @@ export default function Admin() {
   const { user } = useAuth();
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [pendingProperties, setPendingProperties] = useState<PendingProperty[]>([]);
+  const [allUsers, setAllUsers] = useState<AllUser[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalProperties: 0,
@@ -72,13 +84,18 @@ export default function Admin() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  // Role change dialog state
+  const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
+  const [roleChangeUserId, setRoleChangeUserId] = useState<string | null>(null);
+  const [roleChangeUserName, setRoleChangeUserName] = useState<string>('');
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
-    await Promise.all([fetchPendingUsers(), fetchPendingProperties(), fetchStats()]);
+    await Promise.all([fetchPendingUsers(), fetchPendingProperties(), fetchAllUsers(), fetchStats()]);
     setLoading(false);
   };
 
@@ -115,6 +132,17 @@ export default function Admin() {
 
     if (!error && data) {
       setPendingProperties(data as any);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, user_type, role, approval_status, city, created_at, is_verified')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setAllUsers(data);
     }
   };
 
@@ -240,6 +268,37 @@ export default function Admin() {
     } else {
       toast.success('Property approved successfully');
       fetchData();
+    }
+  };
+
+  const openMakeAdminDialog = (userId: string, userName: string) => {
+    setRoleChangeUserId(userId);
+    setRoleChangeUserName(userName);
+    setRoleChangeDialogOpen(true);
+  };
+
+  const handleMakeAdmin = async () => {
+    if (!user || !roleChangeUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          role: 'admin',
+          approval_status: 'approved',
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', roleChangeUserId);
+
+      if (error) throw error;
+
+      toast.success(`${roleChangeUserName} is now an administrator`);
+      setRoleChangeDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error making user admin:', error);
+      toast.error('Failed to promote user to admin');
     }
   };
 
@@ -528,7 +587,53 @@ export default function Admin() {
                 <CardTitle>All Users</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Coming soon: Comprehensive user management table</p>
+                {loading ? (
+                  <p className="text-muted-foreground">Loading...</p>
+                ) : allUsers.length === 0 ? (
+                  <p className="text-muted-foreground">No users found</p>
+                ) : (
+                  <div className="space-y-4">
+                    {allUsers.map((userItem) => (
+                      <div
+                        key={userItem.id}
+                        className="flex items-center justify-between p-4 border border-border rounded-md"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold">
+                              {userItem.full_name || 'Unnamed User'}
+                            </h3>
+                            <RoleBadge role={userItem.role as any} showIcon={false} />
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p>User Type: {getUserTypeLabel(userItem.user_type)}</p>
+                            <p>Location: {userItem.city || 'Not specified'}</p>
+                            <p>Joined: {formatDate(userItem.created_at)}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {userItem.role !== 'admin' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                              onClick={() => openMakeAdminDialog(userItem.id, userItem.full_name || 'User')}
+                            >
+                              <Shield size={16} className="mr-1" />
+                              Make Admin
+                            </Button>
+                          )}
+                          {userItem.role === 'admin' && (
+                            <Badge variant="outline" className="border-purple-600 text-purple-600">
+                              <Shield size={12} className="mr-1" />
+                              Administrator
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -578,6 +683,45 @@ export default function Admin() {
               onClick={handleReject}
             >
               Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Make Admin Confirmation Dialog */}
+      <Dialog open={roleChangeDialogOpen} onOpenChange={setRoleChangeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Make User Administrator</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to make <strong>{roleChangeUserName}</strong> an administrator?
+              This will give them full access to manage users, approve content, and all admin features.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-4 my-4">
+            <div className="flex gap-2">
+              <ShieldAlert className="text-amber-600 flex-shrink-0" size={20} />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold mb-1">Warning</p>
+                <p>Administrator privileges cannot be easily revoked. Only promote trusted users.</p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRoleChangeDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-purple-600 hover:bg-purple-700"
+              onClick={handleMakeAdmin}
+            >
+              <Shield size={16} className="mr-2" />
+              Confirm - Make Admin
             </Button>
           </DialogFooter>
         </DialogContent>

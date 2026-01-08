@@ -25,7 +25,9 @@
       "Bash(node seed-properties.mjs:*)",
       "Bash(node:*)",
       "Bash(cat:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

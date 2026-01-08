@@ -39,7 +39,7 @@ export default function ProfileEdit() {
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
   const [userType, setUserType] = useState("");
-  const [specialization, setSpecialization] = useState("");
+  const [specializations, setSpecializations] = useState<string[]>([]);
 
   // Location state
   const [homeBaseAddress, setHomeBaseAddress] = useState("");
@@ -90,7 +90,7 @@ export default function ProfileEdit() {
         setBio(data.bio || "");
         setCity(data.city || "");
         setUserType(data.user_type || "");
-        setSpecialization(data.specialization || "");
+        setSpecializations(data.specializations || []);
         setHomeBaseAddress(data.home_base_address || "");
         setServiceRegions(data.service_regions || []);
       }
@@ -107,6 +107,14 @@ export default function ProfileEdit() {
       prev.includes(region)
         ? prev.filter((r) => r !== region)
         : [...prev, region]
+    );
+  };
+
+  const handleSpecializationToggle = (spec: string) => {
+    setSpecializations((prev) =>
+      prev.includes(spec)
+        ? prev.filter((s) => s !== spec)
+        : [...prev, spec]
     );
   };
 
@@ -140,7 +148,7 @@ export default function ProfileEdit() {
           full_name: fullName || null,
           bio: bio || null,
           city: city || null,
-          specialization: (specialization || null) as "residential" | "commercial" | "investment" | "luxury" | null,
+          specializations: specializations.length > 0 ? specializations : null,
           home_base_address: homeBaseAddress || null,
           latitude,
           longitude,
@@ -385,19 +393,29 @@ export default function ProfileEdit() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="specialization">Specialization</Label>
-                <Select value={specialization} onValueChange={setSpecialization}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select specialization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(specializationLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
+                <Label>Specializations (Select all that apply)</Label>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  {Object.entries(specializationLabels).map(([value, label]) => (
+                    <div key={value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`spec-${value}`}
+                        checked={specializations.includes(value)}
+                        onCheckedChange={() => handleSpecializationToggle(value)}
+                      />
+                      <Label
+                        htmlFor={`spec-${value}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
                         {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {specializations.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {specializations.length} specialization{specializations.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
