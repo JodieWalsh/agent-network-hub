@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Bed, Bath, Eye } from "lucide-react";
+import { Search, MapPin, Bed, Bath, Eye, Car, Waves, Droplet, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
 import { Coordinates, calculateDistance } from "@/lib/geocoder";
+import { PropertyDetailModal } from "@/components/marketplace/PropertyDetailModal";
 
 interface Property {
   id: string;
@@ -23,6 +24,18 @@ interface Property {
   latitude: number | null;
   longitude: number | null;
   property_address: string | null;
+
+  // Key attributes for display
+  parking_spaces?: number | null;
+  has_pool?: boolean | null;
+  has_water_views?: boolean | null;
+  land_size_sqm?: number | null;
+  building_size_sqm?: number | null;
+  architectural_style?: string | null;
+  walkability_score?: number | null;
+  solar_panels?: boolean | null;
+  energy_efficiency_rating?: number | null;
+  [key: string]: any; // Allow other properties for detail modal
 }
 
 const statusLabels: Record<string, { label: string; className: string }> = {
@@ -37,6 +50,8 @@ export default function Marketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState<Coordinates | null>(null);
   const [radiusFilter, setRadiusFilter] = useState(25);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchProperties();
@@ -202,7 +217,7 @@ export default function Marketplace() {
                   </div>
 
                   {/* Features */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     {property.bedrooms && (
                       <div className="flex items-center gap-1">
                         <Bed size={14} />
@@ -214,6 +229,34 @@ export default function Marketplace() {
                         <Bath size={14} />
                         <span>{property.bathrooms} Baths</span>
                       </div>
+                    )}
+                    {property.parking_spaces && (
+                      <div className="flex items-center gap-1">
+                        <Car size={14} />
+                        <span>{property.parking_spaces} Cars</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Highlights */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {property.has_pool && (
+                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        <Droplet size={12} className="mr-1" />
+                        Pool
+                      </Badge>
+                    )}
+                    {property.has_water_views && (
+                      <Badge variant="secondary" className="text-xs bg-sky-50 text-sky-700 border-sky-200">
+                        <Waves size={12} className="mr-1" />
+                        Water Views
+                      </Badge>
+                    )}
+                    {property.solar_panels && (
+                      <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                        <Sun size={12} className="mr-1" />
+                        Solar
+                      </Badge>
                     )}
                   </div>
 
@@ -227,6 +270,10 @@ export default function Marketplace() {
                     variant="ghost"
                     size="sm"
                     className="w-full text-forest hover:bg-forest/5"
+                    onClick={() => {
+                      setSelectedProperty(property);
+                      setDetailModalOpen(true);
+                    }}
                   >
                     <Eye size={14} className="mr-2" />
                     View Details
@@ -237,6 +284,13 @@ export default function Marketplace() {
           </div>
         )}
       </div>
+
+      {/* Property Detail Modal */}
+      <PropertyDetailModal
+        property={selectedProperty}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
     </DashboardLayout>
   );
 }

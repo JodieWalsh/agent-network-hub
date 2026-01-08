@@ -21,7 +21,8 @@
       "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase db push:*)",
       "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase db remote commit:*)",
       "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase migration repair:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase migration repair --status applied 20251218082115)"
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase migration repair --status applied 20251218082115)",
+      "Bash(node seed-properties.mjs:*)"
     ]
   }
 }
