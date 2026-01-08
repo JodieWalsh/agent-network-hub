@@ -22,7 +22,9 @@ export function TopBar() {
   };
 
   const getUserRoleDisplay = () => {
-    if (!profile || !profile.role) return "Member";
+    if (!profile || !profile.role) {
+      return "Member";
+    }
 
     try {
       return getRoleLabel(profile.role);
@@ -78,9 +80,17 @@ export function TopBar() {
           {/* User Avatar - Desktop Only */}
           {user && (
             <div className="hidden lg:flex items-center gap-3 ml-2 pl-4 border-l border-border">
-              <div className="w-8 h-8 rounded-md border border-border bg-white flex items-center justify-center">
-                <span className="text-xs font-semibold text-foreground">{getUserInitials()}</span>
-              </div>
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={getUserName()}
+                  className="w-8 h-8 rounded-md border border-border object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-md border border-border bg-white flex items-center justify-center">
+                  <span className="text-xs font-semibold text-foreground">{getUserInitials()}</span>
+                </div>
+              )}
               <div className="hidden xl:block">
                 <p className="text-sm font-medium">{getUserName()}</p>
                 <p className="text-xs text-muted-foreground">{getUserRoleDisplay()}</p>

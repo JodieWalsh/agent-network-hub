@@ -30,7 +30,7 @@ const specializationLabels: Record<string, string> = {
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -56,8 +56,11 @@ export default function ProfileEdit() {
   useEffect(() => {
     if (user) {
       fetchProfile();
+    } else if (!authLoading && !user) {
+      // Not logged in - redirect to auth
+      navigate('/auth');
     }
-  }, [user]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -76,11 +79,16 @@ export default function ProfileEdit() {
   }, [homeBaseAddress]);
 
   const fetchProfile = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user?.id)
+        .eq("id", user.id)
         .maybeSingle();
 
       if (error) throw error;
@@ -90,9 +98,9 @@ export default function ProfileEdit() {
         setBio(data.bio || "");
         setCity(data.city || "");
         setUserType(data.user_type || "");
-        setSpecializations(data.specializations || []);
+        setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
         setHomeBaseAddress(data.home_base_address || "");
-        setServiceRegions(data.service_regions || []);
+        setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -218,7 +226,7 @@ export default function ProfileEdit() {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto">

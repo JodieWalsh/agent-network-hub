@@ -540,6 +540,32 @@ See `.claude/plans/drifting-whistling-matsumoto.md` for complete implementation 
 
 ### Phase 1 Features (Current Development)
 
+#### 0. Authentication & OAuth Improvements
+
+- **Fix Google OAuth Branding in Google Cloud Console**
+  - Issue: OAuth consent screen shows long code instead of "Agent Hub"
+  - Solution: Update OAuth consent screen branding in Google Cloud Console
+  - Add app logo and proper application name
+  - Update app name and descriptions
+
+- **Custom Domain Setup**
+  - Issue: Google Sign-In shows "yrjtdunljzxasyohjdnw.supabase.co" instead of proper domain
+  - Action: When we get a real domain (like agenthub.com.au):
+    - Configure custom domain with Supabase
+    - Update Google Cloud Console authorized origins
+    - Update OAuth redirect URIs
+    - Update Supabase project settings
+  - Result: Professional domain name in OAuth flows
+
+- **Update Admin Email**
+  - Current: support@the-empowered-patient.org
+  - Future: Update to proper Agent Hub domain email (e.g., admin@agenthub.com.au)
+  - Update locations:
+    - Seed scripts (seed-admin.mjs)
+    - Google OAuth consent screen
+    - Supabase project settings
+    - Any hardcoded references in code
+
 #### 1. Enhanced Property Search
 - Advanced filter system (price range, bedrooms, location radius, property type)
 - Save search preferences

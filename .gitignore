@@ -25,3 +25,10 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary test files
+nul
+check-*.mjs
+test-*.mjs
+verify-*.mjs
+fix-*.sql

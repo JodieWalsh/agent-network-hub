@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Users, Home, BarChart3, Settings, Check, X, Clock, Shield, UserCheck } from 'lucide-react';
+import { Users, Home, BarChart3, Settings, Check, X, Clock, Shield, UserCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -100,79 +100,110 @@ export default function Admin() {
   };
 
   const fetchPendingUsers = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, user_type, role, approval_status, application_date, city')
-      .eq('role', 'pending_professional')
-      .eq('approval_status', 'pending')
-      .order('application_date', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, user_type, role, approval_status, application_date, city')
+        .eq('role', 'pending_professional')
+        .eq('approval_status', 'pending')
+        .order('application_date', { ascending: false });
 
-    if (!error && data) {
-      setPendingUsers(data);
+      if (error) {
+        console.error('Error fetching pending users:', error);
+        return;
+      }
+
+      if (data) {
+        setPendingUsers(data);
+      }
+    } catch (err) {
+      console.error('Exception fetching pending users:', err);
     }
   };
 
   const fetchPendingProperties = async () => {
-    const { data, error } = await supabase
-      .from('properties')
-      .select(`
-        id,
-        title,
-        city,
-        state,
-        price,
-        bedrooms,
-        bathrooms,
-        submitted_at,
-        owner_id,
-        owner:profiles!owner_id(full_name)
-      `)
-      .eq('approval_status', 'pending')
-      .order('submitted_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          city,
+          state,
+          price,
+          bedrooms,
+          bathrooms,
+          submitted_at,
+          owner_id,
+          owner:profiles!owner_id(full_name)
+        `)
+        .eq('approval_status', 'pending')
+        .order('submitted_at', { ascending: false });
 
-    if (!error && data) {
-      setPendingProperties(data as any);
+      if (error) {
+        console.error('Error fetching pending properties:', error);
+        return;
+      }
+
+      if (data) {
+        setPendingProperties(data as any);
+      }
+    } catch (err) {
+      console.error('Exception fetching pending properties:', err);
     }
   };
 
   const fetchAllUsers = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, user_type, role, approval_status, city, created_at, is_verified')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, user_type, role, approval_status, city, created_at, is_verified')
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setAllUsers(data);
+      if (error) {
+        console.error('Error fetching all users:', error);
+        return;
+      }
+
+      if (data) {
+        setAllUsers(data);
+      }
+    } catch (err) {
+      console.error('Exception fetching all users:', err);
     }
   };
 
   const fetchStats = async () => {
-    const [usersResult, propertiesResult, pendingUsersResult, pendingPropsResult, verifiedResult] =
-      await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('properties').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('role', 'pending_professional')
-          .eq('approval_status', 'pending'),
-        supabase
-          .from('properties')
-          .select('id', { count: 'exact', head: true })
-          .eq('approval_status', 'pending'),
-        supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('role', 'verified_professional'),
-      ]);
+    try {
+      const [usersResult, propertiesResult, pendingUsersResult, pendingPropsResult, verifiedResult] =
+        await Promise.all([
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('properties').select('id', { count: 'exact', head: true }),
+          supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('role', 'pending_professional')
+            .eq('approval_status', 'pending'),
+          supabase
+            .from('properties')
+            .select('id', { count: 'exact', head: true })
+            .eq('approval_status', 'pending'),
+          supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('role', 'verified_professional'),
+        ]);
 
-    setStats({
-      totalUsers: usersResult.count || 0,
-      totalProperties: propertiesResult.count || 0,
-      pendingUsers: pendingUsersResult.count || 0,
-      pendingProperties: pendingPropsResult.count || 0,
-      verifiedProfessionals: verifiedResult.count || 0,
-    });
+      setStats({
+        totalUsers: usersResult.count || 0,
+        totalProperties: propertiesResult.count || 0,
+        pendingUsers: pendingUsersResult.count || 0,
+        pendingProperties: pendingPropsResult.count || 0,
+        verifiedProfessionals: verifiedResult.count || 0,
+      });
+    } catch (err) {
+      console.error('Exception fetching stats:', err);
+    }
   };
 
   const approveUser = async (userId: string) => {
@@ -332,6 +363,31 @@ export default function Admin() {
     };
     return labels[userType] || userType;
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader className="pb-2">
+                  <div className="h-4 bg-muted rounded w-24" />
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-muted rounded w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

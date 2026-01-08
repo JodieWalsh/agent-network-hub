@@ -97,13 +97,26 @@ export function AppSidebar() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been successfully signed out.",
-    });
-    navigate("/auth");
-    setIsMobileOpen(false);
+    console.log('🔴 Sign Out button clicked');
+    try {
+      console.log('🔴 Calling signOut()...');
+      await signOut();
+      console.log('🔴 signOut() completed successfully');
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+      setIsMobileOpen(false);
+      console.log('🔴 Navigating to /auth...');
+      navigate("/auth");
+    } catch (error) {
+      console.error('🔴 Sign out failed with error:', error);
+      toast({
+        variant: "destructive",
+        title: "Sign Out Failed",
+        description: "Could not sign out. Please try again.",
+      });
+    }
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -246,12 +259,20 @@ export function AppSidebar() {
           {user ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-8 h-8 rounded-md bg-forest/5 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-forest">{getUserInitials()}</span>
-                </div>
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.full_name || user.email || 'User'}
+                    className="w-8 h-8 rounded-md object-cover border border-border"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-md bg-forest/5 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-forest">{getUserInitials()}</span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
-                    {user.user_metadata?.full_name || user.email}
+                    {profile?.full_name || user.user_metadata?.full_name || user.email}
                   </p>
                   <p className="text-xs text-muted-foreground">{getUserType()}</p>
                 </div>
