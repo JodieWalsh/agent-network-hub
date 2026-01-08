@@ -16,6 +16,7 @@ import {
   X,
   LogOut,
   LogIn,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,10 +59,34 @@ const userTypeLabels: Record<string, string> = {
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
   const [expandedItems, setExpandedItems] = useState<string[]>(["Settings"]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Build dynamic nav items based on user role
+  const dynamicNavItems = [
+    { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+    // Admin-only navigation
+    ...(profile?.role === 'admin' ? [
+      { label: "Admin Dashboard", icon: Shield, path: "/admin" },
+    ] : []),
+    { label: "Agent Directory", icon: Users, path: "/directory" },
+    { label: "Property Marketplace", icon: Building2, path: "/marketplace" },
+    { label: "Inspection Requests", icon: ClipboardCheck, path: "/inspections" },
+    { label: "Forums", icon: MessagesSquare, path: "/forums" },
+    { label: "Messaging", icon: MessageSquare, path: "/messages" },
+    {
+      label: "Settings",
+      icon: Settings,
+      path: "/settings",
+      children: [
+        { label: "Profile Edit", icon: User, path: "/settings/profile" },
+        { label: "Billing", icon: CreditCard, path: "/settings/billing" },
+        { label: "Notifications", icon: Bell, path: "/settings/notifications" },
+      ],
+    },
+  ];
 
   const toggleExpand = (label: string) => {
     setExpandedItems((prev) =>
@@ -144,7 +169,7 @@ export function AppSidebar() {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <ul className="space-y-1">
-            {navItems.map((item) => (
+            {dynamicNavItems.map((item) => (
               <li key={item.label}>
                 {item.children ? (
                   <div>

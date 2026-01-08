@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Bed, Bath, Eye, Car, Waves, Droplet, Sun } from "lucide-react";
+import { Search, MapPin, Bed, Bath, Eye, Car, Waves, Droplet, Sun, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
 import { Coordinates, calculateDistance } from "@/lib/geocoder";
 import { PropertyDetailModal } from "@/components/marketplace/PropertyDetailModal";
+import { usePermissions } from "@/contexts/AuthContext";
+import { canSubmitProperty } from "@/lib/permissions";
 
 interface Property {
   id: string;
@@ -45,6 +48,10 @@ const statusLabels: Record<string, { label: string; className: string }> = {
 };
 
 export default function Marketplace() {
+  const navigate = useNavigate();
+  const permissions = usePermissions();
+  const canAddProperty = canSubmitProperty(permissions);
+
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,11 +128,19 @@ export default function Marketplace() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="font-sans text-2xl font-semibold text-foreground">Property Marketplace</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Discover exclusive off-market properties for your clients
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="font-sans text-2xl font-semibold text-foreground">Property Marketplace</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Discover exclusive off-market properties for your clients
+            </p>
+          </div>
+          {canAddProperty && (
+            <Button onClick={() => navigate('/marketplace/add')} className="flex items-center gap-2">
+              <Plus size={16} />
+              Add Property
+            </Button>
+          )}
         </div>
 
         {/* Search & Location Filter */}
