@@ -1,57 +1,123 @@
-// Permission System - Feature Flags Approach
-// Default: All authenticated users have basic permissions
+// Role-Based Permission System
+// ROLES = Permission levels (admin, verified_professional, pending_professional, guest)
+// USER TYPES = Professions (buyers_agent, selling_agent, conveyancer, etc.)
+// All professional types can have any role
 
-export type Permission = 
-  | 'CAN_POST_REQUESTS'
-  | 'CAN_SUBMIT_BIDS'
-  | 'CAN_SEND_MESSAGES'
-  | 'CAN_ACCESS_PREMIUM_FEATURES';
+export type UserRole = 'admin' | 'verified_professional' | 'pending_professional' | 'guest';
+export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
 
-interface UserPermissionContext {
+export type Permission =
+  | 'CAN_VIEW_ADMIN_DASHBOARD'
+  | 'CAN_APPROVE_USERS'
+  | 'CAN_APPROVE_PROPERTIES'
+  | 'CAN_SUBMIT_PROPERTY'
+  | 'CAN_EDIT_OWN_PROPERTY'
+  | 'CAN_DELETE_ANY_PROPERTY'
+  | 'CAN_APPLY_FOR_PROFESSIONAL'
+  | 'CAN_VIEW_MARKETPLACE'
+  | 'CAN_VIEW_DIRECTORY'
+  | 'CAN_POST_INSPECTIONS'
+  | 'CAN_SEND_MESSAGES';
+
+export interface UserPermissionContext {
   isAuthenticated: boolean;
-  isVerified: boolean;
+  role: UserRole | null;
+  approvalStatus: ApprovalStatus | null;
+  userId: string | null;
 }
 
-// Default permissions for all authenticated users
-const DEFAULT_PERMISSIONS: Permission[] = [
-  'CAN_POST_REQUESTS',
-  'CAN_SUBMIT_BIDS',
-  'CAN_SEND_MESSAGES',
-];
-
-// Additional permissions for verified users
-const VERIFIED_PERMISSIONS: Permission[] = [
-  ...DEFAULT_PERMISSIONS,
-  'CAN_ACCESS_PREMIUM_FEATURES',
-];
+// Role-based permission matrix
+const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  admin: [
+    'CAN_VIEW_ADMIN_DASHBOARD',
+    'CAN_APPROVE_USERS',
+    'CAN_APPROVE_PROPERTIES',
+    'CAN_SUBMIT_PROPERTY',
+    'CAN_EDIT_OWN_PROPERTY',
+    'CAN_DELETE_ANY_PROPERTY',
+    'CAN_VIEW_MARKETPLACE',
+    'CAN_VIEW_DIRECTORY',
+    'CAN_POST_INSPECTIONS',
+    'CAN_SEND_MESSAGES',
+  ],
+  verified_professional: [
+    'CAN_SUBMIT_PROPERTY',
+    'CAN_EDIT_OWN_PROPERTY',
+    'CAN_VIEW_MARKETPLACE',
+    'CAN_VIEW_DIRECTORY',
+    'CAN_POST_INSPECTIONS',
+    'CAN_SEND_MESSAGES',
+  ],
+  pending_professional: [
+    'CAN_VIEW_MARKETPLACE',
+    'CAN_VIEW_DIRECTORY',
+  ],
+  guest: [
+    'CAN_APPLY_FOR_PROFESSIONAL',
+    'CAN_VIEW_MARKETPLACE',
+    'CAN_VIEW_DIRECTORY',
+  ],
+};
 
 export function getPermissions(context: UserPermissionContext): Permission[] {
-  if (!context.isAuthenticated) {
+  if (!context.isAuthenticated || !context.role) {
     return [];
   }
-  
-  if (context.isVerified) {
-    return VERIFIED_PERMISSIONS;
-  }
-  
-  return DEFAULT_PERMISSIONS;
+
+  return ROLE_PERMISSIONS[context.role] || [];
 }
 
 export function hasPermission(
-  context: UserPermissionContext, 
+  context: UserPermissionContext,
   permission: Permission
 ): boolean {
   return getPermissions(context).includes(permission);
 }
 
-export function canPost(context: UserPermissionContext): boolean {
-  return hasPermission(context, 'CAN_POST_REQUESTS');
+// Convenience functions for common permission checks
+export function canAccessAdminDashboard(context: UserPermissionContext): boolean {
+  return hasPermission(context, 'CAN_VIEW_ADMIN_DASHBOARD');
 }
 
-export function canBid(context: UserPermissionContext): boolean {
-  return hasPermission(context, 'CAN_SUBMIT_BIDS');
+export function canSubmitProperty(context: UserPermissionContext): boolean {
+  return hasPermission(context, 'CAN_SUBMIT_PROPERTY');
 }
 
-export function canMessage(context: UserPermissionContext): boolean {
-  return hasPermission(context, 'CAN_SEND_MESSAGES');
+export function canApproveUsers(context: UserPermissionContext): boolean {
+  return hasPermission(context, 'CAN_APPROVE_USERS');
+}
+
+export function canApproveProperties(context: UserPermissionContext): boolean {
+  return hasPermission(context, 'CAN_APPROVE_PROPERTIES');
+}
+
+export function canApplyForProfessional(context: UserPermissionContext): boolean {
+  return hasPermission(context, 'CAN_APPLY_FOR_PROFESSIONAL');
+}
+
+export function isAdmin(context: UserPermissionContext): boolean {
+  return context.role === 'admin';
+}
+
+export function isVerifiedProfessional(context: UserPermissionContext): boolean {
+  return context.role === 'verified_professional';
+}
+
+export function getRoleLabel(role: UserRole): string {
+  const labels: Record<UserRole, string> = {
+    admin: 'Administrator',
+    verified_professional: 'Verified Professional',
+    pending_professional: 'Pending Professional',
+    guest: 'Guest',
+  };
+  return labels[role];
+}
+
+export function getApprovalStatusLabel(status: ApprovalStatus): string {
+  const labels: Record<ApprovalStatus, string> = {
+    approved: 'Approved',
+    pending: 'Pending Review',
+    rejected: 'Rejected',
+  };
+  return labels[status];
 }
