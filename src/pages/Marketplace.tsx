@@ -169,7 +169,11 @@ export default function Marketplace() {
             {filteredProperties.map((property) => (
               <Card
                 key={property.id}
-                className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150 overflow-hidden"
+                className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150 overflow-hidden cursor-pointer"
+                onClick={() => {
+                  setSelectedProperty(property);
+                  setDetailModalOpen(true);
+                }}
               >
                 {/* Thumbnail */}
                 <div className="relative h-48 bg-muted overflow-hidden">
@@ -270,7 +274,8 @@ export default function Marketplace() {
                     variant="ghost"
                     size="sm"
                     className="w-full text-forest hover:bg-forest/5"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent double-trigger from card click
                       setSelectedProperty(property);
                       setDetailModalOpen(true);
                     }}

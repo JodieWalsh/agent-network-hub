@@ -291,7 +291,11 @@ export default function Directory() {
                 {filteredProfiles.map((profile) => (
                   <Card
                     key={profile.id}
-                    className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150"
+                    className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150 cursor-pointer"
+                    onClick={() => {
+                      setSelectedProfile(profile);
+                      setProfileModalOpen(true);
+                    }}
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4">
@@ -379,7 +383,8 @@ export default function Directory() {
                             variant="ghost"
                             size="sm"
                             className="w-full mt-3 text-forest hover:bg-forest/5"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent double-trigger from card click
                               setSelectedProfile(profile);
                               setProfileModalOpen(true);
                             }}
