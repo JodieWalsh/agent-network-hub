@@ -1,11 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin, Bed, Bath, Maximize, Home, Droplet, Trees, Sun, Eye, Car,
   Shield, Zap, Thermometer, Waves, Building2, Ruler, Calendar, Award,
-  Heart, TrendingUp, DollarSign, AlertCircle
+  Heart, TrendingUp, DollarSign, AlertCircle, Images, FileText, Map
 } from "lucide-react";
+import { PropertyGallery } from "./PropertyGallery";
+import { PropertyMap } from "./PropertyMap";
 
 interface Property {
   id: string;
@@ -94,6 +97,11 @@ interface Property {
   noise_level?: string | null;
   street_traffic?: string | null;
   privacy_level?: string | null;
+
+  // Gallery and floor plan
+  photo_urls?: string[] | null;
+  floor_plan_url?: string | null;
+  property_address?: string | null;
 }
 
 interface PropertyDetailModalProps {
@@ -132,40 +140,74 @@ export function PropertyDetailModal({ property, open, onOpenChange }: PropertyDe
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Price and Key Details */}
-          <div className="p-6 bg-forest/5 rounded-lg border border-forest/20">
-            <div className="text-3xl font-sans font-bold text-forest mb-4">
+        {/* Price Bar - Always Visible */}
+        <div className="p-4 bg-forest/5 rounded-lg border border-forest/20">
+          <div className="flex items-center justify-between">
+            <div className="text-2xl font-sans font-bold text-forest">
               {formatPrice(property.price)}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-4 text-sm">
               {property.bedrooms && (
-                <div className="flex items-center gap-2">
-                  <Bed size={18} className="text-muted-foreground" />
-                  <span className="text-sm">{property.bedrooms} Beds</span>
+                <div className="flex items-center gap-1">
+                  <Bed size={16} className="text-muted-foreground" />
+                  <span>{property.bedrooms} Beds</span>
                 </div>
               )}
               {property.bathrooms && (
-                <div className="flex items-center gap-2">
-                  <Bath size={18} className="text-muted-foreground" />
-                  <span className="text-sm">{property.bathrooms} Baths</span>
+                <div className="flex items-center gap-1">
+                  <Bath size={16} className="text-muted-foreground" />
+                  <span>{property.bathrooms} Baths</span>
                 </div>
               )}
               {property.parking_spaces && (
-                <div className="flex items-center gap-2">
-                  <Car size={18} className="text-muted-foreground" />
-                  <span className="text-sm">{property.parking_spaces} Cars</span>
-                </div>
-              )}
-              {property.land_size_sqm && (
-                <div className="flex items-center gap-2">
-                  <Maximize size={18} className="text-muted-foreground" />
-                  <span className="text-sm">{property.land_size_sqm}m² Land</span>
+                <div className="flex items-center gap-1">
+                  <Car size={16} className="text-muted-foreground" />
+                  <span>{property.parking_spaces} Cars</span>
                 </div>
               )}
             </div>
           </div>
+        </div>
 
+        {/* Tabs */}
+        <Tabs defaultValue="photos" className="w-full">
+          <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0">
+            <TabsTrigger value="photos" className="gap-2">
+              <Images size={16} />
+              Photos
+              {property.photo_urls && property.photo_urls.length > 0 && (
+                <span className="text-xs">({property.photo_urls.length})</span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="details" className="gap-2">
+              <FileText size={16} />
+              Details
+            </TabsTrigger>
+            {property.floor_plan_url && (
+              <TabsTrigger value="floorplan" className="gap-2">
+                <Ruler size={16} />
+                Floor Plan
+              </TabsTrigger>
+            )}
+            {property.latitude && property.longitude && (
+              <TabsTrigger value="location" className="gap-2">
+                <Map size={16} />
+                Location
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Photos Tab */}
+          <TabsContent value="photos" className="mt-6">
+            <PropertyGallery
+              photos={property.photo_urls || []}
+              propertyTitle={property.title}
+            />
+          </TabsContent>
+
+          {/* Details Tab */}
+          <TabsContent value="details" className="mt-6">
+            <div className="space-y-6">
           {/* Description */}
           {property.description && (
             <div>
@@ -189,6 +231,12 @@ export function PropertyDetailModal({ property, open, onOpenChange }: PropertyDe
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Building Size</span>
                     <span className="font-medium">{property.building_size_sqm}m²</span>
+                  </div>
+                )}
+                {property.land_size_sqm && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Land Size</span>
+                    <span className="font-medium">{property.land_size_sqm}m²</span>
                   </div>
                 )}
                 {property.year_built && (
@@ -476,17 +524,51 @@ export function PropertyDetailModal({ property, open, onOpenChange }: PropertyDe
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-border">
-            <Button className="flex-1 bg-forest hover:bg-forest/90 text-white">
-              <Heart size={16} className="mr-2" />
-              Save to Client Brief
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <DollarSign size={16} className="mr-2" />
-              Request Inspection
-            </Button>
-          </div>
+            </div>
+          </TabsContent>
+
+          {/* Floor Plan Tab */}
+          {property.floor_plan_url && (
+            <TabsContent value="floorplan" className="mt-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold">Floor Plan</h3>
+                <div className="bg-muted rounded-lg overflow-hidden">
+                  <img
+                    src={property.floor_plan_url}
+                    alt={`Floor plan for ${property.title}`}
+                    className="w-full h-auto"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Click on the image to view in full size
+                </p>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* Location Tab */}
+          {property.latitude && property.longitude && (
+            <TabsContent value="location" className="mt-6">
+              <PropertyMap
+                latitude={property.latitude}
+                longitude={property.longitude}
+                propertyTitle={property.title}
+                address={property.property_address}
+              />
+            </TabsContent>
+          )}
+        </Tabs>
+
+        {/* Action Buttons - Always Visible */}
+        <div className="flex gap-3 pt-4 border-t border-border">
+          <Button className="flex-1 bg-forest hover:bg-forest/90 text-white">
+            <Heart size={16} className="mr-2" />
+            Save to Client Brief
+          </Button>
+          <Button variant="outline" className="flex-1">
+            <DollarSign size={16} className="mr-2" />
+            Request Inspection
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

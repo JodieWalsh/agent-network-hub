@@ -22,6 +22,27 @@ const properties = [
     status: "off_market",
     latitude: -33.8570,
     longitude: 151.2774,
+    property_address: "25 Wentworth Street, Vaucluse NSW 2030",
+
+    // Photo gallery (15 luxury property photos)
+    photo_urls: [
+      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600563438938-a9a27216b4f5?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600489000022-c2086d79f9d4?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600210492493-0946911123ea?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1615529328331-f8917597711f?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1615874959474-d609969a20ed?w=1200&h=800&fit=crop"
+    ],
+    floor_plan_url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1200&h=900&fit=crop",
 
     // Size and basics
     land_size_sqm: 1250,
@@ -122,6 +143,22 @@ const properties = [
     status: "off_market",
     latitude: -37.8400,
     longitude: 145.0100,
+    property_address: "42 Alexandra Avenue, Toorak VIC 3142",
+
+    // Photo gallery
+    photo_urls: [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566753151-384129cf4e3e?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600563440091-c5bf1f53caf3?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&h=800&fit=crop"
+    ],
+    floor_plan_url: "https://images.unsplash.com/photo-1600721391776-b5cd0e0048a9?w=1200&h=900&fit=crop",
 
     land_size_sqm: 850,
     building_size_sqm: 420,
@@ -209,6 +246,20 @@ const properties = [
     status: "off_market",
     latitude: -28.0939,
     longitude: 153.4508,
+    property_address: "15 Goodwin Terrace, Burleigh Heads QLD 4220",
+
+    // Photo gallery
+    photo_urls: [
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600047509782-20d39509f26d?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600573472592-401b5b4e4aa5?w=1200&h=800&fit=crop"
+    ],
+    floor_plan_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=900&fit=crop",
 
     land_size_sqm: 620,
     building_size_sqm: 320,
@@ -295,6 +346,22 @@ const properties = [
     status: "off_market",
     latitude: -33.8886,
     longitude: 151.2094,
+    property_address: "Penthouse 12, 88 Crown Street, Surry Hills NSW 2010",
+
+    // Photo gallery
+    photo_urls: [
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600563438938-a9a27216b4f5?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600489000022-c2086d79f9d4?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=1200&h=800&fit=crop"
+    ],
+    floor_plan_url: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&h=900&fit=crop",
 
     land_size_sqm: null, // Apartment
     building_size_sqm: 185,
@@ -379,6 +446,18 @@ const properties = [
     status: "off_market",
     latitude: -27.4654,
     longitude: 153.0438,
+    property_address: "Unit 7, 250 Brunswick Street, New Farm QLD 4005",
+
+    // Photo gallery
+    photo_urls: [
+      "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1200&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&h=800&fit=crop"
+    ],
+    floor_plan_url: "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=1200&h=900&fit=crop",
 
     land_size_sqm: null,
     building_size_sqm: 95,
