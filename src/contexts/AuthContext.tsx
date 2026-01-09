@@ -36,35 +36,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch profile data for the current user
+  // Fetch profile data for the current user with timeout
   const fetchProfile = async (userId: string) => {
+    console.log('🔵 [AuthContext] Fetching profile for user:', userId);
+
     try {
-      // Add timeout wrapper (10 seconds for cold starts)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-      );
+      // Wrap the entire operation in a timeout
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          console.error('⏰ [AuthContext] Profile fetch timed out after 5 seconds');
+          reject(new Error('Profile fetch timeout'));
+        }, 5000);
+      });
 
-      const fetchPromise = supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+      const fetchPromise = (async () => {
+        console.log('🔵 [AuthContext] Starting direct query...');
+        const startTime = Date.now();
 
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      if (error) {
-        console.error("Failed to fetch profile:", error);
-        setProfile(null);
-        return;
+        const duration = Date.now() - startTime;
+        console.log(`🔵 [AuthContext] Query completed in ${duration}ms`);
+
+        if (error) {
+          console.error("🔴 [AuthContext] Failed to fetch profile:", error);
+          throw error;
+        }
+
+        if (!data) {
+          console.warn('⚠️ [AuthContext] No profile data returned');
+          throw new Error('No profile data');
+        }
+
+        console.log('✅ [AuthContext] Profile fetched successfully:', {
+          id: data.id,
+          full_name: data.full_name,
+          role: data.role,
+          user_type: data.user_type,
+        });
+
+        return data;
+      })();
+
+      const data = await Promise.race([fetchPromise, timeoutPromise]);
+      setProfile(data as Profile);
+
+      // Cache profile to localStorage for offline/fallback access
+      try {
+        localStorage.setItem('cached_profile', JSON.stringify(data));
+        console.log('💾 [AuthContext] Profile cached to localStorage');
+      } catch (cacheErr) {
+        console.error('🔴 [AuthContext] Failed to cache profile:', cacheErr);
       }
 
-      if (data) {
-        setProfile(data as Profile);
-      } else {
-        setProfile(null);
-      }
     } catch (err) {
-      console.error("Profile fetch error:", err);
+      console.error("🔴 [AuthContext] Profile fetch failed:", err instanceof Error ? err.message : String(err));
+
+      // On timeout or error, try to load from localStorage as fallback
+      try {
+        const cachedProfile = localStorage.getItem('cached_profile');
+        if (cachedProfile) {
+          const parsed = JSON.parse(cachedProfile);
+          console.log('📦 [AuthContext] Using cached profile from localStorage');
+          setProfile(parsed);
+          return;
+        }
+      } catch (cacheErr) {
+        console.error('🔴 [AuthContext] Failed to load cached profile:', cacheErr);
+      }
+
       setProfile(null);
     }
   };
@@ -131,22 +175,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log('🟡 [AuthContext] Setting up auth state listener');
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🟡 [AuthContext] Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
 
         // Fetch profile when user logs in
         if (session?.user) {
+          console.log('🟡 [AuthContext] User session active, fetching profile...');
           // Check if this is a new OAuth sign-in (SIGNED_IN event with OAuth provider)
           const isOAuthSignIn = event === 'SIGNED_IN' && session.user.app_metadata.provider === 'google';
           await fetchProfile(session.user.id);
 
           // If OAuth sign-in, ensure profile exists with Google data
           if (isOAuthSignIn) {
+            console.log('🟡 [AuthContext] OAuth sign-in detected, ensuring profile...');
             await ensureOAuthProfile(session.user);
           }
         } else {
+          console.log('🟡 [AuthContext] No user session, clearing profile');
           setProfile(null);
         }
 
@@ -154,23 +204,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    console.log('🟡 [AuthContext] Fetching initial session...');
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('🟡 [AuthContext] Initial session retrieved:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        console.log('🟡 [AuthContext] Fetching profile for initial session...');
         await fetchProfile(session.user.id);
 
         // Ensure OAuth profile exists if this is an OAuth user
         if (session.user.app_metadata.provider === 'google') {
+          console.log('🟡 [AuthContext] OAuth user, ensuring profile...');
           await ensureOAuthProfile(session.user);
         }
+      } else {
+        console.log('🟡 [AuthContext] No initial session found');
       }
 
+      console.log('🟡 [AuthContext] Setting loading to false');
+      setLoading(false);
+    }).catch((err) => {
+      console.error('🔴 [AuthContext] getSession error:', err);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🟡 [AuthContext] Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, userType: string) => {

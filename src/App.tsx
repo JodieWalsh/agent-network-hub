@@ -15,6 +15,9 @@ import PostInspection from "./pages/PostInspection";
 import ProfileEdit from "./pages/settings/ProfileEdit";
 import Admin from "./pages/Admin";
 import AddProperty from "./pages/AddProperty";
+import ClientBriefs from "./pages/ClientBriefs";
+import ClientBriefForm from "./pages/ClientBriefForm";
+import ClientBriefDetail from "./pages/ClientBriefDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +59,30 @@ const App = () => (
               element={
                 <ProtectedRoute requiredPermission="CAN_SUBMIT_PROPERTY" showForbidden>
                   <AddProperty />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/briefs"
+              element={
+                <ProtectedRoute requiredRole="verified_professional" showForbidden>
+                  <ClientBriefs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/briefs/new"
+              element={
+                <ProtectedRoute requiredRole="verified_professional" showForbidden>
+                  <ClientBriefForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/briefs/:id"
+              element={
+                <ProtectedRoute requiredRole="verified_professional" showForbidden>
+                  <ClientBriefDetail />
                 </ProtectedRoute>
               }
             />

@@ -714,5 +714,124 @@ node test-supabase.mjs
 
 ---
 
-**Last Updated:** January 7, 2026
-**Project Status:** Active Development - Minimal Aesthetic Redesign
+## 🔮 FUTURE TASKS & ENHANCEMENTS
+
+### Authentication & Sign-In
+- **Custom Domain Setup**
+  - Configure real domain (e.g., agenthub.com.au) with Supabase
+  - Update Google OAuth authorized origins and redirect URIs
+  - Result: Google Sign-In shows proper domain instead of "yrjtdunljzxasyohjdnw.supabase.co"
+
+- **Additional OAuth Providers**
+  - **Apple Sign-In** - For future iOS app, seamless mobile experience
+  - **LinkedIn Sign-In** - Perfect for professional network, import work history
+  - **Microsoft Account** - Good for enterprise/business users
+
+- **Update Admin Email**
+  - Current: support@the-empowered-patient.org (temporary)
+  - Future: admin@agenthub.com.au or support@agenthub.com.au
+  - Update locations: seed scripts, Google OAuth consent, Supabase settings
+
+- **Fix Google OAuth Branding**
+  - Update OAuth consent screen in Google Cloud Console
+  - Add professional app logo
+  - Improve app name and descriptions
+  - Publish OAuth app (remove "Testing" status)
+
+### Notifications & Communication
+- **SMS Notifications (Twilio Integration)**
+  - Property alerts when matching listings arrive
+  - Inspection confirmations and reminders
+  - Important system notifications
+  - Two-factor authentication via SMS
+
+- **Email Notifications**
+  - Welcome emails for new users
+  - Weekly digest of new properties
+  - Inspection request notifications
+  - Connection requests and messages
+
+- **Push Notifications**
+  - Browser push for real-time updates
+  - Mobile app notifications (future)
+
+### AI & Automation
+- **AI Property Descriptions**
+  - Generate compelling property descriptions from photos and basic info
+  - Market analysis and comparable properties
+  - Highlight key features and selling points
+  - Multiple tone options (professional, casual, luxury)
+
+- **AI Client Brief Matching**
+  - Automatically match properties to client briefs
+  - Score properties based on client requirements
+  - Smart recommendations for agents
+
+- **Chatbot Support**
+  - Answer common questions
+  - Guide users through platform features
+  - 24/7 availability
+
+### Integrations & Business Tools
+- **DocuSign Integration**
+  - Digital contract signing for property transactions
+  - Agent agreements and NDAs
+  - Automatic document storage and tracking
+  - Compliance and audit trails
+
+- **Stripe Subscriptions**
+  - Membership tiers (Free, Professional, Enterprise)
+  - Monthly/annual billing
+  - Feature gating based on subscription
+  - Payment history and invoicing
+
+- **CRM Integration**
+  - Export contacts to popular CRMs
+  - Sync client data
+  - Lead tracking
+
+- **Calendar Integration**
+  - Google Calendar, Outlook sync
+  - Inspection scheduling
+  - Meeting coordination
+
+### Platform Enhancements
+- **Advanced Property Search**
+  - Map-based search with drawing tools
+  - Save searches and get alerts
+  - Property comparison tool
+  - Price history and market trends
+
+- **Video Tours**
+  - Upload and stream property videos
+  - Virtual open homes
+  - Agent introduction videos
+
+- **Document Management**
+  - Upload and organize property documents
+  - Contract templates
+  - Shared document library
+
+- **Analytics Dashboard**
+  - Property view statistics
+  - Conversion tracking
+  - Performance metrics for agents
+  - Market insights
+
+### Mobile Experience
+- **Native Mobile Apps**
+  - iOS and Android apps
+  - Push notifications
+  - Camera integration for property photos
+  - Offline mode for property viewing
+
+- **Progressive Web App (PWA)**
+  - Install on home screen
+  - Offline capability
+  - Fast loading
+  - App-like experience
+
+---
+
+**Last Updated:** January 8, 2026
+**Project Status:** Active Development - Core Features Complete, OAuth Implemented

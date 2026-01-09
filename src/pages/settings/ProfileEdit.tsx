@@ -85,15 +85,29 @@ export default function ProfileEdit() {
     }
 
     try {
-      const { data, error } = await supabase
+      console.log('🟢 [ProfileEdit] Fetching profile with timeout...');
+
+      // Add timeout wrapper (5 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          console.log('⏰ [ProfileEdit] Profile fetch timed out');
+          reject(new Error('Profile fetch timeout'));
+        }, 5000);
+      });
+
+      const fetchPromise = supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      const { data, error } = result as any;
+
       if (error) throw error;
 
       if (data) {
+        console.log('✅ [ProfileEdit] Profile loaded successfully');
         setFullName(data.full_name || "");
         setBio(data.bio || "");
         setCity(data.city || "");
@@ -103,8 +117,28 @@ export default function ProfileEdit() {
         setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
-      toast.error("Failed to load profile");
+      console.error("🔴 [ProfileEdit] Error fetching profile:", error);
+
+      // Try to load from cached profile in localStorage
+      try {
+        const cachedProfile = localStorage.getItem('cached_profile');
+        if (cachedProfile) {
+          console.log('📦 [ProfileEdit] Using cached profile');
+          const data = JSON.parse(cachedProfile);
+          setFullName(data.full_name || "");
+          setBio(data.bio || "");
+          setCity(data.city || "");
+          setUserType(data.user_type || "");
+          setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
+          setHomeBaseAddress(data.home_base_address || "");
+          setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
+        } else {
+          toast.error("Failed to load profile");
+        }
+      } catch (cacheError) {
+        console.error("🔴 [ProfileEdit] Failed to load cached profile:", cacheError);
+        toast.error("Failed to load profile");
+      }
     } finally {
       setLoading(false);
     }

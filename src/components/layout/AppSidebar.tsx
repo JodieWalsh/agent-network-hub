@@ -17,6 +17,7 @@ import {
   LogOut,
   LogIn,
   Shield,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,6 +75,10 @@ export function AppSidebar() {
     { label: "Agent Directory", icon: Users, path: "/directory" },
     { label: "Property Marketplace", icon: Building2, path: "/marketplace" },
     { label: "Inspection Requests", icon: ClipboardCheck, path: "/inspections" },
+    // Verified professionals and admins can create briefs
+    ...(profile?.role === 'verified_professional' || profile?.role === 'admin' ? [
+      { label: "Client Briefs", icon: FileText, path: "/briefs" },
+    ] : []),
     { label: "Forums", icon: MessagesSquare, path: "/forums" },
     { label: "Messaging", icon: MessageSquare, path: "/messages" },
     {

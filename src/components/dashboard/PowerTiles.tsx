@@ -1,14 +1,21 @@
 import { Building2, ClipboardCheck, FileText, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface PowerTileProps {
   icon: React.ElementType;
   title: string;
   description: string;
+  path: string;
 }
 
-function PowerTile({ icon: Icon, title, description }: PowerTileProps) {
+function PowerTile({ icon: Icon, title, description, path }: PowerTileProps) {
+  const navigate = useNavigate();
+
   return (
-    <button className="group p-5 rounded-md border border-border bg-white hover:border-forest/30 transition-colors duration-150 text-left w-full">
+    <button
+      onClick={() => navigate(path)}
+      className="group p-5 rounded-md border border-border bg-white hover:border-forest/30 transition-colors duration-150 text-left w-full"
+    >
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-md bg-forest/5 flex items-center justify-center flex-shrink-0">
           <Icon size={16} className="text-forest" />
@@ -31,16 +38,19 @@ const tiles = [
     icon: Building2,
     title: "Browse Properties",
     description: "Exclusive off-market listings",
+    path: "/marketplace",
   },
   {
     icon: ClipboardCheck,
     title: "Request Inspection",
     description: "Coordinate property inspections",
+    path: "/inspections",
   },
   {
     icon: FileText,
     title: "Create Brief",
     description: "Build client requirements",
+    path: "/briefs/new",
   },
 ];
 
