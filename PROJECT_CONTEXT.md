@@ -831,7 +831,58 @@ node test-supabase.mjs
   - Fast loading
   - App-like experience
 
+### Branding & Logo Design
+- **Main Logo Assets**
+  - Full color logo (horizontal version for headers/banners)
+  - Full color logo (stacked/vertical version for square spaces)
+  - Design in vector format (SVG) for scalability
+
+- **Favicon Package**
+  - 16x16px - Browser tab icon (small)
+  - 32x32px - Browser tab icon (standard)
+  - 48x48px - Browser tab icon (high-res displays)
+  - ICO format for cross-browser compatibility
+
+- **Apple Device Icons**
+  - 180x180px - Apple Touch Icon for iPhone/iPad home screen
+  - Rounded corners applied automatically by iOS
+
+- **Social Media Profile Pictures**
+  - **Instagram:** 320x320px (display), 110x110px (profile thumbnail)
+  - **Facebook:** 180x180px (profile), 820x312px (cover photo)
+  - **LinkedIn:** 400x400px (profile/company logo), 1128x191px (company banner)
+  - **Twitter/X:** 400x400px (profile), 1500x500px (header/banner)
+  - All should be high-quality JPG or PNG format
+
+- **Logo Variations for Different Contexts**
+  - Full color on white background (primary version)
+  - Full color on dark background (inverted/adjusted for visibility)
+  - White/monochrome version (for dark backgrounds, overlays)
+  - Black/monochrome version (for light backgrounds, print)
+  - Icon only (no text) - for favicons, small spaces, app icons
+  - Text only (no icon) - for narrow horizontal spaces
+
+- **Open Graph (OG) Image**
+  - 1200x630px - For link previews when sharing on social media
+  - Shows when Agent Hub URLs are shared on Facebook, LinkedIn, Twitter, Slack, etc.
+  - Should include logo, tagline, and attractive background
+  - High-quality JPG format
+
+- **Future App Icons (Mobile)**
+  - iOS App Store icon: 1024x1024px
+  - Android Play Store icon: 512x512px
+  - Various app icon sizes for different devices (handled by build tools)
+  - Adaptive icons for Android (separate foreground/background layers)
+
+**Design Requirements:**
+- Consistent brand identity across all formats
+- Professional, minimal aesthetic matching our Notion/Linear design direction
+- Use brand colors: Forest Green (#064E3B) and Rose Gold (#E8B4B8)
+- Clean, modern typography (Inter font family preferred)
+- Scalable vector graphics (SVG) for logos
+- High-resolution exports for all raster formats (2x, 3x for retina displays)
+
 ---
 
-**Last Updated:** January 8, 2026
+**Last Updated:** January 9, 2026
 **Project Status:** Active Development - Core Features Complete, OAuth Implemented
