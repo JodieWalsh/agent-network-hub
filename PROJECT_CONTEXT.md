@@ -882,6 +882,78 @@ node test-supabase.mjs
 - Scalable vector graphics (SVG) for logos
 - High-resolution exports for all raster formats (2x, 3x for retina displays)
 
+### Logo Implementation on Website
+Once logo assets are created, implement them across the platform:
+
+- **Sidebar Branding**
+  - Replace "Agent Hub" text with actual logo
+  - Use horizontal version if space allows, or icon-only version for collapsed sidebar
+  - Ensure logo is clickable and navigates to dashboard
+
+- **Browser Favicon**
+  - Add favicon.ico to public folder
+  - Add favicon link tags to index.html
+  - Include multiple sizes (16x16, 32x32, 48x48) for different browsers
+  - Add Apple Touch Icon for iOS devices
+  - Result: Our icon shows in browser tabs instead of generic icon
+
+- **Authentication Pages**
+  - Add logo to Sign In page (centered above form)
+  - Add logo to Sign Up page (centered above form)
+  - Add logo to password reset page
+  - Add logo to email verification page
+  - Use full color horizontal logo version
+
+- **Email Templates**
+  - Add logo to email header
+  - Use in welcome emails for new users
+  - Include in notification emails (property alerts, inspection confirmations)
+  - Add to password reset emails
+  - Add to system announcement emails
+  - Host logo image on CDN or use base64 encoding
+
+- **Top Bar (Navigation)**
+  - Consider adding small logo or icon to top bar (if appropriate for design)
+  - Alternative: Keep top bar minimal, logo only in sidebar
+
+- **Open Graph Meta Tags**
+  - Add OG meta tags to index.html and relevant pages
+  - `<meta property="og:image" content="[og-image-url]" />`
+  - `<meta property="og:title" content="Agent Hub - Professional Network for Buyers Agents" />`
+  - `<meta property="og:description" content="..." />`
+  - Result: When someone shares Agent Hub links on social media, it shows our logo and branding
+
+- **PDF Exports and Documents**
+  - Add logo to client brief PDFs
+  - Include in property presentation exports
+  - Add to inspection reports
+  - Use in any system-generated documents
+  - Position in header or footer with proper branding
+
+- **Mobile App Splash Screen (Future)**
+  - Full-screen logo on app launch
+  - Animated fade-in for professional feel
+  - Loading indicator below logo
+  - Use stacked/vertical logo version for better fit
+
+- **Error Pages**
+  - Add logo to 404 Not Found page
+  - Include on 500 Server Error page
+  - Use on maintenance page
+
+- **Marketing Pages (Future)**
+  - Add logo to landing page
+  - Include in footer of all pages
+  - Use in feature showcase sections
+
+**Technical Implementation Notes:**
+- Store logo files in `public/images/logo/` directory
+- Use SVG format for logos (scalable, sharp on all displays)
+- Use PNG with transparency for social media and OG images
+- Implement lazy loading for logo images where appropriate
+- Add alt text for accessibility: "Agent Hub logo"
+- Consider dark mode logo variant if implementing dark theme
+
 ---
 
 **Last Updated:** January 9, 2026
