@@ -364,7 +364,7 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
         break;
 
       case 'country':
-        const country = COUNTRIES.find(c => c.code === selectedCountry);
+        const country = ALL_COUNTRIES.find(c => c.code === selectedCountry);
         newArea = {
           ...newArea,
           country_code: selectedCountry,
