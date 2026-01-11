@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUpload } from '@/components/property/ImageUpload';
+import { PropertyAddressSearch, PropertyLocationData } from '@/components/property/PropertyAddressSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { uploadPropertyImage, uploadFloorPlan, validateFloorPlanFile } from '@/lib/storage';
@@ -21,14 +22,13 @@ export default function AddProperty() {
   const [uploading, setUploading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [floorPlanFile, setFloorPlanFile] = useState<File | null>(null);
+  const [propertyLocation, setPropertyLocation] = useState<PropertyLocationData | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
     // Basic details
     title: '',
     description: '',
-    city: '',
-    state: 'NSW',
     price: '',
     bedrooms: '',
     bathrooms: '',
@@ -160,8 +160,13 @@ export default function AddProperty() {
     }
 
     // Validate required fields
-    if (!formData.title || !formData.city || !formData.state || !formData.price) {
+    if (!formData.title || !formData.price) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (!propertyLocation) {
+      toast.error('Please enter the property address');
       return;
     }
 
@@ -179,8 +184,15 @@ export default function AddProperty() {
         .insert({
           title: formData.title,
           description: formData.description || null,
-          city: formData.city,
-          state: formData.state,
+          // Location fields (auto-filled from address search)
+          street_address: propertyLocation.streetAddress,
+          city: propertyLocation.city,
+          state: propertyLocation.state,
+          country: propertyLocation.country,
+          postcode: propertyLocation.postcode,
+          latitude: propertyLocation.latitude,
+          longitude: propertyLocation.longitude,
+          // Basic details
           price: parseInt(formData.price),
           bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
           bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
@@ -360,36 +372,12 @@ export default function AddProperty() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="city">City *</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleChange('city', e.target.value)}
-                  placeholder="Sydney"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="state">State *</Label>
-                <Select value={formData.state} onValueChange={(val) => handleChange('state', val)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NSW">NSW</SelectItem>
-                    <SelectItem value="VIC">VIC</SelectItem>
-                    <SelectItem value="QLD">QLD</SelectItem>
-                    <SelectItem value="SA">SA</SelectItem>
-                    <SelectItem value="WA">WA</SelectItem>
-                    <SelectItem value="TAS">TAS</SelectItem>
-                    <SelectItem value="NT">NT</SelectItem>
-                    <SelectItem value="ACT">ACT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {/* Smart Address Search - Auto-fills street, city, state, country, postcode, coordinates */}
+            <PropertyAddressSearch
+              value={propertyLocation}
+              onChange={setPropertyLocation}
+              disabled={uploading}
+            />
 
             <div className="grid grid-cols-3 gap-4">
               <div>

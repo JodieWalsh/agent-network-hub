@@ -63,14 +63,16 @@ export interface GeocodeResult {
 
 export interface LocationSuggestion {
   id: string;
-  name: string; // Short name (e.g., "Sydney")
+  name: string; // Short name (e.g., "Sydney" or "123 Collins Street")
   fullName: string; // Full hierarchy (e.g., "Sydney, New South Wales, Australia")
   coordinates: Coordinates;
   placeType: string[];
+  streetAddress?: string; // Street address with number (e.g., "123 Collins Street")
   city?: string;
   state?: string;
   country?: string;
   countryCode?: string;
+  postcode?: string;
   bbox?: [number, number, number, number];
 }
 
@@ -138,6 +140,11 @@ export async function mapboxAutocomplete(
       const state = feature.context?.find(c => c.id.startsWith('region'))?.text;
       const country = feature.context?.find(c => c.id.startsWith('country'))?.text;
       const countryCode = feature.context?.find(c => c.id.startsWith('country'))?.short_code?.toUpperCase();
+      const postcode = feature.context?.find(c => c.id.startsWith('postcode'))?.text;
+
+      // For address-type results, extract the street address
+      const isAddress = feature.place_type.includes('address');
+      const streetAddress = isAddress ? feature.text : undefined;
 
       return {
         id: feature.id,
@@ -148,10 +155,12 @@ export async function mapboxAutocomplete(
           lng: feature.center[0],
         },
         placeType: feature.place_type,
+        streetAddress,
         city,
         state,
         country,
         countryCode,
+        postcode,
         bbox: feature.bbox,
       };
     });
