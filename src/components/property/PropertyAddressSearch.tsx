@@ -19,6 +19,7 @@ export interface PropertyLocationData {
   city: string;
   state: string;
   country: string;
+  countryCode: string; // ISO 3166-1 alpha-2 (e.g., "GB", "US", "AU")
   postcode: string;
   latitude: number;
   longitude: number;
@@ -56,6 +57,7 @@ export function PropertyAddressSearch({
         city: value.city,
         state: value.state,
         country: value.country,
+        countryCode: value.countryCode,
         postcode: value.postcode,
       });
     }
@@ -75,6 +77,7 @@ export function PropertyAddressSearch({
       city: location.city || '',
       state: location.state || '',
       country: location.country || '',
+      countryCode: location.countryCode || '', // ISO country code for currency detection
       postcode: location.postcode || '',
       latitude: location.coordinates.lat,
       longitude: location.coordinates.lng,

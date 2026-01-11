@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUpload } from '@/components/property/ImageUpload';
 import { PropertyAddressSearch, PropertyLocationData } from '@/components/property/PropertyAddressSearch';
+import { PriceInput } from '@/components/property/PriceInput';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { uploadPropertyImage, uploadFloorPlan, validateFloorPlanFile } from '@/lib/storage';
+import { getCurrencyForCountry } from '@/lib/currency';
 import { toast } from 'sonner';
 import { Home, Building2, Trees, Eye, Car, Sun, Shield, Leaf, ChefHat, Ruler, MapPin, DollarSign, FileText, Upload, Loader2 } from 'lucide-react';
 
@@ -23,6 +25,7 @@ export default function AddProperty() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [floorPlanFile, setFloorPlanFile] = useState<File | null>(null);
   const [propertyLocation, setPropertyLocation] = useState<PropertyLocationData | null>(null);
+  const [currency, setCurrency] = useState('AUD'); // Default to AUD
 
   // Form state
   const [formData, setFormData] = useState({
@@ -137,6 +140,18 @@ export default function AddProperty() {
     });
   };
 
+  // Auto-detect currency when property location changes
+  const handleLocationChange = (location: PropertyLocationData | null) => {
+    setPropertyLocation(location);
+
+    if (location && location.country) {
+      // Auto-detect currency from country
+      const detectedCurrency = getCurrencyForCountry(location.countryCode);
+      setCurrency(detectedCurrency);
+      toast.success(`Currency auto-set to ${detectedCurrency} based on ${location.country}`);
+    }
+  };
+
   const handleFloorPlanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
@@ -194,6 +209,7 @@ export default function AddProperty() {
           longitude: propertyLocation.longitude,
           // Basic details
           price: parseInt(formData.price),
+          currency: currency, // Auto-detected from property country
           bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
           bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
           status: formData.status,
@@ -372,25 +388,24 @@ export default function AddProperty() {
               />
             </div>
 
-            {/* Smart Address Search - Auto-fills street, city, state, country, postcode, coordinates */}
+            {/* Smart Address Search - Auto-fills street, city, state, country, postcode, coordinates, AND currency */}
             <PropertyAddressSearch
               value={propertyLocation}
-              onChange={setPropertyLocation}
+              onChange={handleLocationChange}
               disabled={uploading}
             />
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="price">Price (AUD) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => handleChange('price', e.target.value)}
-                  placeholder="850000"
-                  required
-                />
-              </div>
+            {/* Smart Price Input with Auto-Currency Detection */}
+            <PriceInput
+              value={formData.price}
+              currency={currency}
+              onChange={(val) => handleChange('price', val)}
+              onCurrencyChange={setCurrency}
+              disabled={uploading}
+              required
+            />
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bedrooms">Bedrooms</Label>
                 <Input

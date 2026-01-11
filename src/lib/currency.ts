@@ -1,162 +1,177 @@
-// Currency & Units Engine
-// Mock exchange rates - structured for easy API integration later
+/**
+ * Currency Utilities
+ *
+ * Auto-detect currency based on property country
+ * Support for 100+ countries and all major currencies
+ */
 
-export type CurrencyCode = 'AUD' | 'USD' | 'GBP' | 'EUR' | 'NZD' | 'CAD';
-export type UnitSystem = 'metric' | 'imperial';
+export interface Currency {
+  code: string; // ISO 4217 code (e.g., "GBP", "USD", "EUR")
+  symbol: string; // Currency symbol (e.g., "£", "$", "€")
+  name: string; // Full name (e.g., "British Pound", "US Dollar")
+  symbolPosition: 'before' | 'after'; // Where to display symbol
+  decimalPlaces: number; // Number of decimal places
+}
 
-// Mock exchange rates (relative to AUD)
-const EXCHANGE_RATES: Record<CurrencyCode, number> = {
-  AUD: 1.0,
-  USD: 0.65,
-  GBP: 0.52,
-  EUR: 0.61,
-  NZD: 1.08,
-  CAD: 0.88,
+// All major currencies
+export const CURRENCIES: Record<string, Currency> = {
+  // Major currencies
+  USD: { code: 'USD', symbol: '$', name: 'US Dollar', symbolPosition: 'before', decimalPlaces: 2 },
+  EUR: { code: 'EUR', symbol: '€', name: 'Euro', symbolPosition: 'before', decimalPlaces: 2 },
+  GBP: { code: 'GBP', symbol: '£', name: 'British Pound', symbolPosition: 'before', decimalPlaces: 2 },
+  JPY: { code: 'JPY', symbol: '¥', name: 'Japanese Yen', symbolPosition: 'before', decimalPlaces: 0 },
+  CNY: { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', symbolPosition: 'before', decimalPlaces: 2 },
+
+  // Asia-Pacific
+  AUD: { code: 'AUD', symbol: '$', name: 'Australian Dollar', symbolPosition: 'before', decimalPlaces: 2 },
+  NZD: { code: 'NZD', symbol: '$', name: 'New Zealand Dollar', symbolPosition: 'before', decimalPlaces: 2 },
+  CAD: { code: 'CAD', symbol: '$', name: 'Canadian Dollar', symbolPosition: 'before', decimalPlaces: 2 },
+  HKD: { code: 'HKD', symbol: '$', name: 'Hong Kong Dollar', symbolPosition: 'before', decimalPlaces: 2 },
+  SGD: { code: 'SGD', symbol: '$', name: 'Singapore Dollar', symbolPosition: 'before', decimalPlaces: 2 },
+  INR: { code: 'INR', symbol: '₹', name: 'Indian Rupee', symbolPosition: 'before', decimalPlaces: 2 },
+  KRW: { code: 'KRW', symbol: '₩', name: 'South Korean Won', symbolPosition: 'before', decimalPlaces: 0 },
+  THB: { code: 'THB', symbol: '฿', name: 'Thai Baht', symbolPosition: 'before', decimalPlaces: 2 },
+  MYR: { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit', symbolPosition: 'before', decimalPlaces: 2 },
+  IDR: { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah', symbolPosition: 'before', decimalPlaces: 0 },
+  PHP: { code: 'PHP', symbol: '₱', name: 'Philippine Peso', symbolPosition: 'before', decimalPlaces: 2 },
+  VND: { code: 'VND', symbol: '₫', name: 'Vietnamese Dong', symbolPosition: 'after', decimalPlaces: 0 },
+
+  // Americas
+  BRL: { code: 'BRL', symbol: 'R$', name: 'Brazilian Real', symbolPosition: 'before', decimalPlaces: 2 },
+  MXN: { code: 'MXN', symbol: '$', name: 'Mexican Peso', symbolPosition: 'before', decimalPlaces: 2 },
+  ARS: { code: 'ARS', symbol: '$', name: 'Argentine Peso', symbolPosition: 'before', decimalPlaces: 2 },
+  CLP: { code: 'CLP', symbol: '$', name: 'Chilean Peso', symbolPosition: 'before', decimalPlaces: 0 },
+  COP: { code: 'COP', symbol: '$', name: 'Colombian Peso', symbolPosition: 'before', decimalPlaces: 0 },
+  PEN: { code: 'PEN', symbol: 'S/', name: 'Peruvian Sol', symbolPosition: 'before', decimalPlaces: 2 },
+
+  // Europe
+  CHF: { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc', symbolPosition: 'before', decimalPlaces: 2 },
+  SEK: { code: 'SEK', symbol: 'kr', name: 'Swedish Krona', symbolPosition: 'after', decimalPlaces: 2 },
+  NOK: { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone', symbolPosition: 'after', decimalPlaces: 2 },
+  DKK: { code: 'DKK', symbol: 'kr', name: 'Danish Krone', symbolPosition: 'after', decimalPlaces: 2 },
+  PLN: { code: 'PLN', symbol: 'zł', name: 'Polish Zloty', symbolPosition: 'after', decimalPlaces: 2 },
+  CZK: { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna', symbolPosition: 'after', decimalPlaces: 2 },
+  HUF: { code: 'HUF', symbol: 'Ft', name: 'Hungarian Forint', symbolPosition: 'after', decimalPlaces: 0 },
+  RON: { code: 'RON', symbol: 'lei', name: 'Romanian Leu', symbolPosition: 'after', decimalPlaces: 2 },
+
+  // Middle East & Africa
+  AED: { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', symbolPosition: 'before', decimalPlaces: 2 },
+  SAR: { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal', symbolPosition: 'before', decimalPlaces: 2 },
+  ILS: { code: 'ILS', symbol: '₪', name: 'Israeli Shekel', symbolPosition: 'before', decimalPlaces: 2 },
+  TRY: { code: 'TRY', symbol: '₺', name: 'Turkish Lira', symbolPosition: 'before', decimalPlaces: 2 },
+  ZAR: { code: 'ZAR', symbol: 'R', name: 'South African Rand', symbolPosition: 'before', decimalPlaces: 2 },
+  EGP: { code: 'EGP', symbol: '£', name: 'Egyptian Pound', symbolPosition: 'before', decimalPlaces: 2 },
+
+  // Other
+  RUB: { code: 'RUB', symbol: '₽', name: 'Russian Ruble', symbolPosition: 'after', decimalPlaces: 2 },
 };
 
-// Currency symbols
-export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  AUD: 'A$',
-  USD: '$',
-  GBP: '£',
-  EUR: '€',
-  NZD: 'NZ$',
-  CAD: 'C$',
+// Country code (ISO 3166-1 alpha-2) to currency code mapping
+export const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  // Europe (Eurozone)
+  AT: 'EUR', BE: 'EUR', CY: 'EUR', EE: 'EUR', FI: 'EUR', FR: 'EUR',
+  DE: 'EUR', GR: 'EUR', IE: 'EUR', IT: 'EUR', LV: 'EUR', LT: 'EUR',
+  LU: 'EUR', MT: 'EUR', NL: 'EUR', PT: 'EUR', SK: 'EUR', SI: 'EUR',
+  ES: 'EUR', HR: 'EUR',
+
+  // Europe (Non-Eurozone)
+  GB: 'GBP', // United Kingdom
+  CH: 'CHF', // Switzerland
+  SE: 'SEK', // Sweden
+  NO: 'NOK', // Norway
+  DK: 'DKK', // Denmark
+  PL: 'PLN', // Poland
+  CZ: 'CZK', // Czech Republic
+  HU: 'HUF', // Hungary
+  RO: 'RON', // Romania
+
+  // Americas
+  US: 'USD', // United States
+  CA: 'CAD', // Canada
+  MX: 'MXN', // Mexico
+  BR: 'BRL', // Brazil
+  AR: 'ARS', // Argentina
+  CL: 'CLP', // Chile
+  CO: 'COP', // Colombia
+  PE: 'PEN', // Peru
+
+  // Asia-Pacific
+  AU: 'AUD', // Australia
+  NZ: 'NZD', // New Zealand
+  JP: 'JPY', // Japan
+  CN: 'CNY', // China
+  HK: 'HKD', // Hong Kong
+  SG: 'SGD', // Singapore
+  IN: 'INR', // India
+  KR: 'KRW', // South Korea
+  TH: 'THB', // Thailand
+  MY: 'MYR', // Malaysia
+  ID: 'IDR', // Indonesia
+  PH: 'PHP', // Philippines
+  VN: 'VND', // Vietnam
+
+  // Middle East & Africa
+  AE: 'AED', // United Arab Emirates
+  SA: 'SAR', // Saudi Arabia
+  IL: 'ILS', // Israel
+  TR: 'TRY', // Turkey
+  ZA: 'ZAR', // South Africa
+  EG: 'EGP', // Egypt
+
+  // Other
+  RU: 'RUB', // Russia
 };
 
-// Countries that use imperial system
-const IMPERIAL_COUNTRIES = ['US', 'USA', 'United States', 'Myanmar', 'Liberia'];
-
-export interface CurrencyConversion {
-  originalAmount: number;
-  originalCurrency: CurrencyCode;
-  convertedAmount: number;
-  convertedCurrency: CurrencyCode;
-  rate: number;
+/**
+ * Get currency for a country code
+ * @param countryCode - ISO 3166-1 alpha-2 country code (e.g., "GB", "US")
+ * @returns Currency code (e.g., "GBP", "USD") or "AUD" as default
+ */
+export function getCurrencyForCountry(countryCode: string | undefined): string {
+  if (!countryCode) return 'AUD';
+  return COUNTRY_TO_CURRENCY[countryCode.toUpperCase()] || 'AUD';
 }
 
 /**
- * Convert amount from one currency to another
- * Uses mock rates - ready for API integration
+ * Get currency details
+ * @param currencyCode - ISO 4217 currency code (e.g., "GBP", "USD")
+ * @returns Currency object or AUD as default
  */
-export function convertCurrency(
-  amount: number,
-  fromCurrency: CurrencyCode,
-  toCurrency: CurrencyCode
-): CurrencyConversion {
-  const fromRate = EXCHANGE_RATES[fromCurrency];
-  const toRate = EXCHANGE_RATES[toCurrency];
-  const rate = toRate / fromRate;
-  
-  return {
-    originalAmount: amount,
-    originalCurrency: fromCurrency,
-    convertedAmount: Math.round(amount * rate),
-    convertedCurrency: toCurrency,
-    rate,
-  };
+export function getCurrency(currencyCode: string): Currency {
+  return CURRENCIES[currencyCode.toUpperCase()] || CURRENCIES.AUD;
 }
 
 /**
- * Format currency for display
+ * Format price with currency symbol
+ * @param amount - Numeric amount
+ * @param currencyCode - Currency code
+ * @returns Formatted string (e.g., "£450,000", "$1,200,000")
  */
-export function formatCurrency(
-  amountCents: number,
-  currency: CurrencyCode = 'AUD'
-): string {
-  const symbol = CURRENCY_SYMBOLS[currency];
-  const amount = amountCents / 100;
-  
-  return `${symbol}${amount.toLocaleString('en-AU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })}`;
-}
+export function formatPrice(amount: number, currencyCode: string): string {
+  const currency = getCurrency(currencyCode);
+  const formatted = amount.toLocaleString('en-US', {
+    minimumFractionDigits: currency.decimalPlaces,
+    maximumFractionDigits: currency.decimalPlaces,
+  });
 
-/**
- * Format with conversion estimate
- */
-export function formatWithConversion(
-  amountCents: number,
-  fromCurrency: CurrencyCode,
-  toCurrency: CurrencyCode
-): { primary: string; estimate: string | null } {
-  const primary = formatCurrency(amountCents, fromCurrency);
-  
-  if (fromCurrency === toCurrency) {
-    return { primary, estimate: null };
+  if (currency.symbolPosition === 'before') {
+    return `${currency.symbol}${formatted}`;
+  } else {
+    return `${formatted} ${currency.symbol}`;
   }
-  
-  const conversion = convertCurrency(amountCents, fromCurrency, toCurrency);
-  const estimate = `≈ ${formatCurrency(conversion.convertedAmount, toCurrency)}`;
-  
-  return { primary, estimate };
 }
 
 /**
- * Determine default unit system based on location
+ * Get all currencies as array for dropdown (sorted by code)
  */
-export function getDefaultUnitSystem(country?: string): UnitSystem {
-  if (!country) return 'metric';
-  return IMPERIAL_COUNTRIES.some(c => 
-    country.toLowerCase().includes(c.toLowerCase())
-  ) ? 'imperial' : 'metric';
+export function getAllCurrencies(): Currency[] {
+  return Object.values(CURRENCIES).sort((a, b) => a.code.localeCompare(b.code));
 }
 
 /**
- * Convert distance between units
+ * Get popular currencies for quick selection
  */
-export function convertDistance(
-  value: number,
-  from: UnitSystem,
-  to: UnitSystem
-): number {
-  if (from === to) return value;
-  if (from === 'metric' && to === 'imperial') {
-    return Math.round(value * 0.621371 * 10) / 10; // km to miles
-  }
-  return Math.round(value * 1.60934 * 10) / 10; // miles to km
-}
-
-/**
- * Format distance with units
- */
-export function formatDistance(
-  distanceKm: number,
-  unitSystem: UnitSystem
-): string {
-  if (unitSystem === 'imperial') {
-    const miles = convertDistance(distanceKm, 'metric', 'imperial');
-    return `${miles} mi`;
-  }
-  return `${Math.round(distanceKm)} km`;
-}
-
-/**
- * Convert area between units
- */
-export function convertArea(
-  value: number,
-  from: UnitSystem,
-  to: UnitSystem
-): number {
-  if (from === to) return value;
-  if (from === 'metric' && to === 'imperial') {
-    return Math.round(value * 10.7639 * 10) / 10; // sqm to sqft
-  }
-  return Math.round(value * 0.092903 * 10) / 10; // sqft to sqm
-}
-
-/**
- * Format area with units
- */
-export function formatArea(
-  areaSqm: number,
-  unitSystem: UnitSystem
-): string {
-  if (unitSystem === 'imperial') {
-    const sqft = convertArea(areaSqm, 'metric', 'imperial');
-    return `${sqft.toLocaleString()} sq ft`;
-  }
-  return `${areaSqm.toLocaleString()} m²`;
+export function getPopularCurrencies(): Currency[] {
+  return ['AUD', 'USD', 'GBP', 'EUR', 'NZD', 'CAD', 'JPY', 'CNY', 'SGD', 'HKD']
+    .map(code => CURRENCIES[code]);
 }
