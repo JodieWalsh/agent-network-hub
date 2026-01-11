@@ -39,28 +39,33 @@ export function LocationSearch({
   className = '',
   disabled = false,
 }: LocationSearchProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(value?.fullName || '');
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
   const [userProximity, setUserProximity] = useState<{ lat: number; lng: number } | null>(null);
-  const [isTyping, setIsTyping] = useState(false); // Track if user is actively typing
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const prevValueRef = useRef(value);
 
-  // Update search query when value changes externally (but NOT when user is typing)
+  // Only sync searchQuery when value changes from OUTSIDE (not from user typing)
   useEffect(() => {
-    if (!isTyping) {
-      if (value) {
+    // Only update if value actually changed and it's different from current searchQuery
+    if (prevValueRef.current !== value) {
+      prevValueRef.current = value;
+
+      if (value && value.fullName !== searchQuery) {
+        // External value changed to something new
         setSearchQuery(value.fullName);
-      } else if (searchQuery === '') {
-        // Only reset if search query is already empty
-        setSearchQuery('');
+      } else if (value === null && searchQuery !== '') {
+        // External value was cleared, but only clear searchQuery if it's not empty
+        // This prevents clearing while user is typing
+        // Don't clear automatically - let user keep typing
       }
     }
-  }, [value, isTyping]);
+  }, [value]);
 
   // Fetch user's location for proximity biasing (only once)
   useEffect(() => {
@@ -122,7 +127,6 @@ export function LocationSearch({
 
   // Select suggestion
   const handleSelectSuggestion = useCallback((suggestion: LocationSuggestion) => {
-    setIsTyping(false); // User has finished typing by selecting
     setSearchQuery(suggestion.fullName);
     onChange(suggestion);
     setShowSuggestions(false);
@@ -134,14 +138,13 @@ export function LocationSearch({
     onChange(null);
     setSuggestions([]);
     setShowSuggestions(false);
-    setIsTyping(false);
     inputRef.current?.focus();
   }, [onChange]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsTyping(true); // Mark that user is actively typing
-    setSearchQuery(e.target.value);
+    const newValue = e.target.value;
+    setSearchQuery(newValue);
     if (value) {
       onChange(null); // Clear selection when user types
     }
@@ -150,7 +153,6 @@ export function LocationSearch({
   // Use current location (geolocation)
   const handleUseMyLocation = useCallback(async () => {
     setGeolocating(true);
-    setIsTyping(false); // Not typing, using geolocation
     const coords = await getUserLocation();
 
     if (coords) {
