@@ -14,11 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Users, Home, BarChart3, Settings, Check, X, Clock, Shield, UserCheck, ShieldAlert } from 'lucide-react';
+import { Users, Home, BarChart3, Settings, Check, X, Clock, Shield, UserCheck, ShieldAlert, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RoleBadge } from '@/components/ui/role-badge';
+import { AdminPropertyReviewModal } from '@/components/admin/AdminPropertyReviewModal';
 
 interface PendingUser {
   id: string;
@@ -88,6 +89,10 @@ export default function Admin() {
   const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
   const [roleChangeUserId, setRoleChangeUserId] = useState<string | null>(null);
   const [roleChangeUserName, setRoleChangeUserName] = useState<string>('');
+
+  // Property review modal state
+  const [reviewPropertyId, setReviewPropertyId] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -300,6 +305,21 @@ export default function Admin() {
       toast.success('Property approved successfully');
       fetchData();
     }
+  };
+
+  const openPropertyReviewModal = (propertyId: string) => {
+    setReviewPropertyId(propertyId);
+    setReviewModalOpen(true);
+  };
+
+  const handlePropertyApproveFromModal = () => {
+    setReviewModalOpen(false);
+    fetchData();
+  };
+
+  const handlePropertyRejectFromModal = () => {
+    setReviewModalOpen(false);
+    fetchData();
   };
 
   const openMakeAdminDialog = (userId: string, userName: string) => {
@@ -534,6 +554,14 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openPropertyReviewModal(property.id)}
+                          >
+                            <Eye size={16} className="mr-1" />
+                            View Details
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
@@ -782,6 +810,15 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Property Review Modal */}
+      <AdminPropertyReviewModal
+        propertyId={reviewPropertyId}
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        onApprove={handlePropertyApproveFromModal}
+        onReject={handlePropertyRejectFromModal}
+      />
     </DashboardLayout>
   );
 }
