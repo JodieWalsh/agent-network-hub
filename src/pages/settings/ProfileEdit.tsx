@@ -12,8 +12,9 @@ import { toast } from "sonner";
 import { MapPin, User, Briefcase, Save, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockGeocode, mockAutocomplete, SERVICE_REGIONS } from "@/lib/geocoder";
+import { mockGeocode, mockAutocomplete } from "@/lib/geocoder";
 import { AvatarUpload } from "@/components/profile/AvatarUpload";
+import { ServiceAreaManager } from "@/components/profile/ServiceAreaManager";
 
 const userTypeLabels: Record<string, string> = {
   buyers_agent: "Buyer's Agent",
@@ -47,7 +48,6 @@ export default function ProfileEdit() {
   const [homeBaseAddress, setHomeBaseAddress] = useState("");
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [serviceRegions, setServiceRegions] = useState<string[]>([]);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -116,7 +116,6 @@ export default function ProfileEdit() {
         setUserType(data.user_type || "");
         setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
         setHomeBaseAddress(data.home_base_address || "");
-        setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
         setAvatarUrl(data.avatar_url || null);
       }
     } catch (error) {
@@ -134,7 +133,6 @@ export default function ProfileEdit() {
           setUserType(data.user_type || "");
           setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
           setHomeBaseAddress(data.home_base_address || "");
-          setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
           setAvatarUrl(data.avatar_url || null);
         } else {
           toast.error("Failed to load profile");
@@ -146,14 +144,6 @@ export default function ProfileEdit() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRegionToggle = (region: string) => {
-    setServiceRegions((prev) =>
-      prev.includes(region)
-        ? prev.filter((r) => r !== region)
-        : [...prev, region]
-    );
   };
 
   const handleSpecializationToggle = (spec: string) => {
@@ -198,7 +188,6 @@ export default function ProfileEdit() {
           home_base_address: homeBaseAddress || null,
           latitude,
           longitude,
-          service_regions: serviceRegions.length > 0 ? serviceRegions : null,
         })
         .eq("id", user.id);
 
@@ -394,34 +383,11 @@ export default function ProfileEdit() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label>Service Regions</Label>
-                <p className="text-sm text-muted-foreground">
-                  Select the areas where you provide services
-                </p>
-                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto p-1">
-                  {SERVICE_REGIONS.map((region) => (
-                    <div
-                      key={region}
-                      className="flex items-center space-x-2"
-                    >
-                      <Checkbox
-                        id={region}
-                        checked={serviceRegions.includes(region)}
-                        onCheckedChange={() => handleRegionToggle(region)}
-                      />
-                      <label
-                        htmlFor={region}
-                        className="text-sm cursor-pointer"
-                      >
-                        {region}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </CardContent>
           </Card>
+
+          {/* Service Areas - New Location System */}
+          {user && <ServiceAreaManager userId={user.id} />}
 
           {/* Professional Information */}
           <Card className="border-border/50">
