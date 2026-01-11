@@ -5,6 +5,9 @@
  * Support for 100+ countries and all major currencies
  */
 
+// Type exports for legacy compatibility
+export type CurrencyCode = 'AUD' | 'USD' | 'GBP' | 'EUR' | 'NZD' | 'CAD' | 'JPY' | 'CNY' | 'HKD' | 'SGD' | string;
+
 export interface Currency {
   code: string; // ISO 4217 code (e.g., "GBP", "USD", "EUR")
   symbol: string; // Currency symbol (e.g., "£", "$", "€")
@@ -122,6 +125,48 @@ export const COUNTRY_TO_CURRENCY: Record<string, string> = {
   RU: 'RUB', // Russia
 };
 
+// Currency symbols map (legacy compatibility)
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  AUD: '$',
+  USD: '$',
+  GBP: '£',
+  EUR: '€',
+  NZD: '$',
+  CAD: '$',
+  JPY: '¥',
+  CNY: '¥',
+  HKD: '$',
+  SGD: '$',
+  INR: '₹',
+  KRW: '₩',
+  THB: '฿',
+  MYR: 'RM',
+  IDR: 'Rp',
+  PHP: '₱',
+  VND: '₫',
+  BRL: 'R$',
+  MXN: '$',
+  ARS: '$',
+  CLP: '$',
+  COP: '$',
+  PEN: 'S/',
+  CHF: 'Fr',
+  SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
+  PLN: 'zł',
+  CZK: 'Kč',
+  HUF: 'Ft',
+  RON: 'lei',
+  AED: 'د.إ',
+  SAR: '﷼',
+  ILS: '₪',
+  TRY: '₺',
+  ZAR: 'R',
+  EGP: '£',
+  RUB: '₽',
+};
+
 /**
  * Get currency for a country code
  * @param countryCode - ISO 3166-1 alpha-2 country code (e.g., "GB", "US")
@@ -162,6 +207,40 @@ export function formatPrice(amount: number, currencyCode: string): string {
 }
 
 /**
+ * Format currency for display (legacy compatibility)
+ * @param amountCents - Amount in cents
+ * @param currencyCode - Currency code
+ * @returns Formatted string
+ */
+export function formatCurrency(
+  amountCents: number,
+  currencyCode: string = 'AUD'
+): string {
+  const amount = amountCents / 100;
+  return formatPrice(amount, currencyCode);
+}
+
+/**
+ * Format with conversion estimate (legacy compatibility)
+ * Note: This is a simplified version - real currency conversion would require an API
+ */
+export function formatWithConversion(
+  amountCents: number,
+  fromCurrency: string,
+  toCurrency: string
+): { primary: string; estimate: string | null } {
+  const primary = formatCurrency(amountCents, fromCurrency);
+
+  if (fromCurrency === toCurrency) {
+    return { primary, estimate: null };
+  }
+
+  // For now, just return the primary without conversion
+  // In a real app, you'd call a currency conversion API here
+  return { primary, estimate: null };
+}
+
+/**
  * Get all currencies as array for dropdown (sorted by code)
  */
 export function getAllCurrencies(): Currency[] {
@@ -174,4 +253,81 @@ export function getAllCurrencies(): Currency[] {
 export function getPopularCurrencies(): Currency[] {
   return ['AUD', 'USD', 'GBP', 'EUR', 'NZD', 'CAD', 'JPY', 'CNY', 'SGD', 'HKD']
     .map(code => CURRENCIES[code]);
+}
+
+// =============================================================================
+// DISTANCE & AREA FORMATTING (for Directory and other components)
+// =============================================================================
+
+export type UnitSystem = 'metric' | 'imperial';
+
+/**
+ * Convert distance between units
+ */
+export function convertDistance(
+  value: number,
+  from: UnitSystem,
+  to: UnitSystem
+): number {
+  if (from === to) return value;
+  if (from === 'metric' && to === 'imperial') {
+    return Math.round(value * 0.621371 * 10) / 10; // km to miles
+  }
+  return Math.round(value * 1.60934 * 10) / 10; // miles to km
+}
+
+/**
+ * Format distance with units
+ */
+export function formatDistance(
+  distanceKm: number,
+  unitSystem: UnitSystem
+): string {
+  if (unitSystem === 'imperial') {
+    const miles = convertDistance(distanceKm, 'metric', 'imperial');
+    return `${miles} mi`;
+  }
+  return `${Math.round(distanceKm)} km`;
+}
+
+/**
+ * Convert area between units
+ */
+export function convertArea(
+  value: number,
+  from: UnitSystem,
+  to: UnitSystem
+): number {
+  if (from === to) return value;
+  if (from === 'metric' && to === 'imperial') {
+    return Math.round(value * 10.7639 * 10) / 10; // sqm to sqft
+  }
+  return Math.round(value * 0.092903 * 10) / 10; // sqft to sqm
+}
+
+/**
+ * Format area with units
+ */
+export function formatArea(
+  areaSqm: number,
+  unitSystem: UnitSystem
+): string {
+  if (unitSystem === 'imperial') {
+    const sqft = convertArea(areaSqm, 'metric', 'imperial');
+    return `${sqft.toLocaleString()} sq ft`;
+  }
+  return `${areaSqm.toLocaleString()} m²`;
+}
+
+// Countries that use imperial system
+const IMPERIAL_COUNTRIES = ['US', 'USA', 'United States', 'Myanmar', 'Liberia'];
+
+/**
+ * Determine default unit system based on location
+ */
+export function getDefaultUnitSystem(country?: string): UnitSystem {
+  if (!country) return 'metric';
+  return IMPERIAL_COUNTRIES.some(c =>
+    country.toLowerCase().includes(c.toLowerCase())
+  ) ? 'imperial' : 'metric';
 }
