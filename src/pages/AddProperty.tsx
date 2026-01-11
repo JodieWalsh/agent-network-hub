@@ -180,6 +180,20 @@ export default function AddProperty() {
       return;
     }
 
+    // Validate price is a valid positive number
+    const priceValue = parseInt(formData.price, 10);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      toast.error('Please enter a valid price (positive whole number)');
+      return;
+    }
+
+    // Log price for debugging (helps identify any corruption)
+    console.log('Submitting property with price:', {
+      original: formData.price,
+      parsed: priceValue,
+      currency: currency,
+    });
+
     if (!propertyLocation) {
       toast.error('Please enter the property address');
       return;
@@ -208,7 +222,7 @@ export default function AddProperty() {
           latitude: propertyLocation.latitude,
           longitude: propertyLocation.longitude,
           // Basic details
-          price: parseInt(formData.price),
+          price: priceValue,
           currency: currency, // Auto-detected from property country
           bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
           bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,

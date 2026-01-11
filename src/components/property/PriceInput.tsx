@@ -58,6 +58,8 @@ export function PriceInput({
           <Input
             id="price"
             type="number"
+            min="0"
+            step="1"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={`Enter price in ${currencyData.code}`}
@@ -121,6 +123,8 @@ export function PriceInput({
         <span className="font-medium">{currencyData.code}</span>
         <span>•</span>
         <span>{currencyData.name}</span>
+        <span>•</span>
+        <span className="text-xs">Enter whole number only (e.g., 900000 for {currencyData.symbol}900,000)</span>
       </div>
     </div>
   );
