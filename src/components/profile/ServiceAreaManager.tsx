@@ -495,6 +495,7 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
   const [selectedStateCountry, setSelectedStateCountry] = useState('AU'); // For state/province country selection
   const [selectedState, setSelectedState] = useState('');
   const [saving, setSaving] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null); // Track last added area for success message
 
   // Load existing service areas
   useEffect(() => {
@@ -648,15 +649,50 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
         if (error) throw error;
       }
 
-      toast.success('Service area added successfully');
-      await loadServiceAreas();
-      setIsAdding(false);
+      // Smart flow: For state and country types, keep form open for adding more
+      const displayName = getAreaDisplayName(newArea as ServiceArea);
+
+      if (newAreaType === 'state' || newAreaType === 'country') {
+        // Keep form open, show success message, offer to add another
+        setJustAdded(displayName);
+
+        // Reset only the selection, keep country (for states) and area type
+        if (newAreaType === 'state') {
+          setSelectedState(''); // Clear state selection, keep country
+        } else if (newAreaType === 'country') {
+          setSelectedCountry('AU'); // Reset to default for next country selection
+        }
+
+        await loadServiceAreas();
+        toast.success(`Added: ${displayName}`);
+      } else {
+        // For other types (radius, region, global), close form as before
+        toast.success('Service area added successfully');
+        await loadServiceAreas();
+        setIsAdding(false);
+        setJustAdded(null);
+      }
     } catch (error: any) {
       console.error('Error saving service area:', error);
       toast.error('Failed to save service area: ' + error.message);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddAnother = () => {
+    // Clear the just added message and reset for next entry
+    setJustAdded(null);
+    // Keep the form open, keep the area type and country (for states)
+  };
+
+  const handleDone = () => {
+    // Close the form completely
+    setIsAdding(false);
+    setJustAdded(null);
+    setSelectedState('');
+    setSelectedCountry('AU');
+    setSelectedStateCountry('AU');
   };
 
   const handleDeleteArea = async (areaId: string) => {
@@ -929,25 +965,70 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2">
-              <Button
-                type="button"
-                onClick={handleSaveNewArea}
-                disabled={saving}
-                className="flex-1"
-              >
-                {saving ? 'Saving...' : 'Add Service Area'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAdding(false)}
-                disabled={saving}
-              >
-                Cancel
-              </Button>
-            </div>
+            {/* Success Message & Add Another (for state and country types) */}
+            {justAdded && (newAreaType === 'state' || newAreaType === 'country') && (
+              <div className="space-y-3 p-4 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                <div className="flex items-start gap-2">
+                  <div className="text-green-600 dark:text-green-400 mt-0.5">✓</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      Added: {justAdded}
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                      {newAreaType === 'state'
+                        ? `Add another state in ${ALL_COUNTRIES.find(c => c.code === selectedStateCountry)?.name}?`
+                        : 'Add another country?'
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleAddAnother}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    {newAreaType === 'state' ? 'Add Another State' : 'Add Another Country'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDone}
+                    size="sm"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Normal Actions (when not showing success message) */}
+            {!justAdded && (
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={handleSaveNewArea}
+                  disabled={saving}
+                  className="flex-1"
+                >
+                  {saving ? 'Saving...' : 'Add Service Area'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setJustAdded(null);
+                  }}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <Button
