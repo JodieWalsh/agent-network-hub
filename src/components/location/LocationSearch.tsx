@@ -52,20 +52,17 @@ export function LocationSearch({
 
   // Only sync searchQuery when value changes from OUTSIDE (not from user typing)
   useEffect(() => {
-    // Only update if value actually changed and it's different from current searchQuery
+    // Only update if value actually changed
     if (prevValueRef.current !== value) {
       prevValueRef.current = value;
 
-      if (value && value.fullName !== searchQuery) {
+      if (value && value.fullName) {
         // External value changed to something new
         setSearchQuery(value.fullName);
-      } else if (value === null && searchQuery !== '') {
-        // External value was cleared, but only clear searchQuery if it's not empty
-        // This prevents clearing while user is typing
-        // Don't clear automatically - let user keep typing
       }
+      // If value is null, don't clear searchQuery - allow user to keep typing
     }
-  }, [value]);
+  }, [value]); // CRITICAL: Only depend on value, NOT searchQuery!
 
   // Fetch user's location for proximity biasing (only once)
   useEffect(() => {
@@ -223,7 +220,8 @@ export function LocationSearch({
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           className="pl-10 pr-10"
-          disabled={disabled || loading}
+          disabled={disabled}
+          // NOTE: Don't disable during loading - user must be able to continue typing!
         />
 
         {/* Loading Spinner */}
