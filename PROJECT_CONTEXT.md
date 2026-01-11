@@ -954,7 +954,93 @@ Once logo assets are created, implement them across the platform:
 - Add alt text for accessibility: "Agent Hub logo"
 - Consider dark mode logo variant if implementing dark theme
 
+### MARKETING & EXPLAINER CONTENT
+
+**Video Script for Co-Owner Dani and Potential Buyers Agents:**
+
+Create a comprehensive explainer video showcasing Agent Hub's unique features, with special emphasis on the Global Location/Service Area System.
+
+**Key Feature to Explain: Global Location/Service Area System**
+
+This is a differentiating feature that sets Agent Hub apart from competitors. The script should thoroughly explain:
+
+1. **Multiple Service Area Levels** - How agents can specify where they work at various granularities:
+   - **Radius-based:** "50km from Sydney CBD" or "150km from Melbourne"
+   - **Suburb/Region:** "Eastern Suburbs, Sydney" or "Notting Hill, London"
+   - **State/Province level:** "Anywhere in New South Wales" or "All of California"
+   - **Country-wide:** "Anywhere in Australia" or "Anywhere in Canada"
+   - **Global:** "I work internationally - anywhere in the world"
+
+2. **Location Disambiguation** - How the system handles ambiguous searches:
+   - Example: Searching "Paris" shows both:
+     - Paris, Île-de-France, France ✓
+     - Paris, Texas, United States ✓
+   - Example: Searching "London" shows:
+     - London, United Kingdom ✓
+     - London, Ontario, Canada ✓
+   - Visual demonstration: Type in search box, show dropdown with hierarchical display (City, State, Country)
+   - Explain proximity biasing: Results near you appear first, but all countries are searchable
+
+3. **Multiple Service Areas** - How agents can have several service areas:
+   - Example: "I work in BOTH Sydney AND Melbourne"
+   - Example: "I have a 100km radius from Brisbane AND I cover all of Gold Coast"
+   - Example: International agent: "London, UK + New York, USA + Sydney, Australia"
+   - Show the service area manager interface where agents add/remove areas
+   - Explain the radius slider (5km to 250km for rural/regional coverage)
+   - Show how agents can mix and match area types
+
+4. **Priority System** - How primary service areas work:
+   - First service area added is marked as "Primary"
+   - Primary area shows prominently on agent profile
+   - Agents can have unlimited additional service areas
+   - Visual badge: "Primary" label on main service area
+
+5. **Why This Is Better Than Competitors:**
+   - **Truly Global:** Not restricted to one country (e.g., not "Australia only")
+   - **Flexible:** Mix radius, suburbs, states, countries - whatever makes sense for your business
+   - **Precise:** Use exact radius distances OR named regions
+   - **Unlimited:** Add as many service areas as you need
+   - **Smart Search:** Location disambiguation means you always find what you're looking for
+   - **Future-proof:** Built for international expansion from day one
+   - **B2B Professional:** Designed for agents who work across regions, not just local areas
+
+**Script Tone & Style:**
+- Friendly and approachable (this is Dani speaking to fellow agents)
+- Professional but not overly corporate
+- Use real examples: "Let's say you're based in Sydney but also take clients in Melbourne..."
+- Show, don't just tell: Screen recordings of the feature in action
+- Address pain points: "Tired of platforms that only let you pick ONE city? We get it."
+
+**Visual Elements to Include:**
+- Screen recording: Agent going to Profile Edit → Service Areas
+- Screen recording: Adding a radius-based service area (searching for "Paris", selecting Paris, France, setting radius to 75km)
+- Screen recording: Adding a second service area (showing "Sydney, Australia")
+- Screen recording: The location search autocomplete showing international results
+- Screenshot: Agent profile showing multiple service areas with Primary badge
+- Comparison graphic: Agent Hub vs Competitor (showing flexibility)
+- Map visualization (future): Service areas displayed on map
+
+**Key Messages:**
+- "Work where YOU want to work"
+- "International from day one"
+- "No more 'location not supported' errors"
+- "Your business isn't limited to one suburb - neither are we"
+- "Built for the modern, mobile buyers agent"
+
+**Call to Action:**
+- "Set up your service areas in under 2 minutes"
+- "Join agents from Sydney, London, New York, and beyond"
+- "Try it now - it's free for professionals"
+
+**Deliverables:**
+- [ ] Full video script (3-5 minutes)
+- [ ] List of required screen recordings
+- [ ] List of required screenshots
+- [ ] Suggested B-roll footage (if any)
+- [ ] Subtitle/caption text for social media versions
+- [ ] Short version (60 seconds) for social media ads
+
 ---
 
-**Last Updated:** January 9, 2026
-**Project Status:** Active Development - Core Features Complete, OAuth Implemented
+**Last Updated:** January 11, 2026
+**Project Status:** Active Development - Core Features Complete, OAuth Implemented, Global Location System Implemented
