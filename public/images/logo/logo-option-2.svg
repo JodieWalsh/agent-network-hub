@@ -1,17 +1,19 @@
-<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle (optional, can be removed for transparent version) -->
-  <circle cx="40" cy="40" r="38" fill="none" stroke="#064E3B" stroke-width="2"/>
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular badge design -->
+  <circle cx="50" cy="50" r="46" fill="none" stroke="#064E3B" stroke-width="2"/>
 
-  <!-- Stylized A -->
-  <path d="M25 55L32 30H36L43 55" stroke="#064E3B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="28" y1="45" x2="40" y2="45" stroke="#E8B4B8" stroke-width="3" stroke-linecap="round"/>
+  <!-- B (for Buyers) - stylized -->
+  <path d="M30 30V55M30 30H38C40.5 30 42 31.5 42 34C42 36.5 40.5 38 38 38H30M30 38H40C42.5 38 44 39.5 44 42.5C44 45.5 42.5 47 40 47H30" stroke="#064E3B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- Stylized H -->
-  <path d="M47 30V55M47 42.5H58M58 30V55" stroke="#064E3B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- A (for Agent) - stylized with handshake element -->
+  <path d="M54 55L58 30H62L66 55" stroke="#064E3B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="55.5" y1="45" x2="64.5" y2="45" stroke="#E8B4B8" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- Connecting element (rose gold accent) -->
-  <circle cx="40" cy="25" r="3" fill="#E8B4B8"/>
+  <!-- Connection dots representing collaboration -->
+  <circle cx="35" cy="25" r="2" fill="#E8B4B8"/>
+  <circle cx="60" cy="25" r="2" fill="#E8B4B8"/>
 
-  <!-- Small text below (optional) -->
-  <text x="40" y="68" font-family="Arial, sans-serif" font-size="8" font-weight="500" fill="#064E3B" text-anchor="middle">AGENT HUB</text>
+  <!-- Small text below -->
+  <text x="50" y="72" font-family="Arial, sans-serif" font-size="7" font-weight="600" fill="#064E3B" text-anchor="middle" letter-spacing="0.5">BUYERS AGENT</text>
+  <text x="50" y="82" font-family="Arial, sans-serif" font-size="7" font-weight="300" fill="#064E3B" text-anchor="middle" letter-spacing="0.5">HUB</text>
 </svg>

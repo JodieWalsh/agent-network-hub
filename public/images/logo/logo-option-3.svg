@@ -1,46 +1,65 @@
-<svg width="120" height="140" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Symbol: Network of houses/properties connected -->
+<svg width="140" height="160" viewBox="0 0 140 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Symbol: Buyers agents collaborating (represented by connected keys/people) -->
   <g id="symbol">
-    <!-- Center house (larger) -->
-    <g transform="translate(60, 40)">
-      <path d="M-12 0L0 -12L12 0V20H-12V0Z" fill="#064E3B"/>
-      <rect x="-4" y="8" width="8" height="12" fill="#E8B4B8"/>
+    <!-- Center: Buyer (house with key) -->
+    <g transform="translate(70, 50)">
+      <!-- House -->
+      <path d="M-15 5L0 -10L15 5V25H-15V5Z" fill="#064E3B"/>
+      <!-- Door with key hole -->
+      <rect x="-5" y="12" width="10" height="13" fill="#E8B4B8"/>
+      <circle cx="0" cy="18" r="2" fill="#064E3B"/>
     </g>
 
-    <!-- Top left house (smaller) -->
-    <g transform="translate(25, 25)">
-      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
-      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    <!-- Top Left: Buyers agent -->
+    <g transform="translate(30, 30)">
+      <!-- Person icon -->
+      <circle cx="0" cy="0" r="6" fill="#064E3B"/>
+      <path d="M-8 15C-8 15 -6 8 0 8C6 8 8 15 8 15" stroke="#064E3B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Key in hand -->
+      <line x1="8" y1="12" x2="16" y2="12" stroke="#E8B4B8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="17" cy="12" r="1.5" fill="#E8B4B8"/>
     </g>
 
-    <!-- Top right house (smaller) -->
-    <g transform="translate(95, 25)">
-      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
-      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    <!-- Top Right: Buyers agent -->
+    <g transform="translate(110, 30)">
+      <!-- Person icon -->
+      <circle cx="0" cy="0" r="6" fill="#064E3B"/>
+      <path d="M-8 15C-8 15 -6 8 0 8C6 8 8 15 8 15" stroke="#064E3B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Key in hand -->
+      <line x1="-8" y1="12" x2="-16" y2="12" stroke="#E8B4B8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="-17" cy="12" r="1.5" fill="#E8B4B8"/>
     </g>
 
-    <!-- Bottom left house (smaller) -->
-    <g transform="translate(25, 70)">
-      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
-      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    <!-- Bottom Left: Buyers agent -->
+    <g transform="translate(30, 85)">
+      <!-- Person icon -->
+      <circle cx="0" cy="0" r="6" fill="#064E3B"/>
+      <path d="M-8 15C-8 15 -6 8 0 8C6 8 8 15 8 15" stroke="#064E3B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Key in hand -->
+      <line x1="8" y1="4" x2="16" y2="4" stroke="#E8B4B8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="17" cy="4" r="1.5" fill="#E8B4B8"/>
     </g>
 
-    <!-- Bottom right house (smaller) -->
-    <g transform="translate(95, 70)">
-      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
-      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    <!-- Bottom Right: Buyers agent -->
+    <g transform="translate(110, 85)">
+      <!-- Person icon -->
+      <circle cx="0" cy="0" r="6" fill="#064E3B"/>
+      <path d="M-8 15C-8 15 -6 8 0 8C6 8 8 15 8 15" stroke="#064E3B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Key in hand -->
+      <line x1="-8" y1="4" x2="-16" y2="4" stroke="#E8B4B8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="-17" cy="4" r="1.5" fill="#E8B4B8"/>
     </g>
 
-    <!-- Connection lines (network) -->
-    <line x1="35" y1="28" x2="50" y2="40" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
-    <line x1="85" y1="28" x2="70" y2="40" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
-    <line x1="35" y1="72" x2="50" y2="60" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
-    <line x1="85" y1="72" x2="70" y2="60" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <!-- Connection lines (collaboration network) -->
+    <line x1="40" y1="40" x2="55" y2="50" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.7"/>
+    <line x1="100" y1="40" x2="85" y2="50" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.7"/>
+    <line x1="40" y1="90" x2="55" y2="70" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.7"/>
+    <line x1="100" y1="90" x2="85" y2="70" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.7"/>
   </g>
 
   <!-- Text below -->
   <g id="text">
-    <text x="60" y="110" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#064E3B" text-anchor="middle">AGENT</text>
-    <text x="60" y="128" font-family="Arial, sans-serif" font-size="18" font-weight="300" fill="#064E3B" text-anchor="middle">HUB</text>
+    <text x="70" y="125" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#064E3B" text-anchor="middle" letter-spacing="0.5">BUYERS AGENT</text>
+    <text x="70" y="145" font-family="Arial, sans-serif" font-size="16" font-weight="300" fill="#064E3B" text-anchor="middle" letter-spacing="0.5">HUB</text>
   </g>
 </svg>
