@@ -171,16 +171,12 @@ export function AppSidebar() {
       >
         {/* Logo */}
         <div className="p-5 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center gap-3" onClick={() => setIsMobileOpen(false)}>
-            <div className="w-8 h-8 rounded-md bg-forest/5 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-forest" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold text-foreground">
-                Agent Hub
-              </h1>
-              <p className="text-xs text-muted-foreground">Professional Network</p>
-            </div>
+          <Link to="/" className="flex items-center" onClick={() => setIsMobileOpen(false)}>
+            <img
+              src="/images/logo/logo-option-1.svg"
+              alt="Buyers Agent Hub"
+              className="h-10 w-auto"
+            />
           </Link>
         </div>
 

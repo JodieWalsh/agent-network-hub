@@ -114,7 +114,7 @@ export default function Auth() {
         } else {
           toast({
             title: "Account Created!",
-            description: "Welcome to Agent Hub. Your professional network awaits.",
+            description: "Welcome to Buyers Agent Hub. Your professional network awaits.",
           });
         }
       }
@@ -150,25 +150,23 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-lg bg-rose-gold flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-forest" />
-          </div>
-          <div>
-            <h1 className="font-serif text-2xl font-semibold text-foreground">Agent Hub</h1>
-            <p className="text-xs text-muted-foreground">Professional Network</p>
-          </div>
+        <div className="flex justify-center mb-8">
+          <img
+            src="/images/logo/logo-option-1.svg"
+            alt="Buyers Agent Hub"
+            className="h-16 w-auto"
+          />
         </div>
 
         <Card className="bg-card border-border shadow-elegant">
           <CardHeader className="text-center">
             <CardTitle className="font-serif text-2xl">
-              {isLogin ? "Welcome Back" : "Join Agent Hub"}
+              {isLogin ? "Welcome Back" : "Join Buyers Agent Hub"}
             </CardTitle>
             <CardDescription>
               {isLogin
                 ? "Sign in to access your professional network"
-                : "Create your account to connect with agents"}
+                : "Create your account to connect with buyers agents"}
             </CardDescription>
           </CardHeader>
           <CardContent>
