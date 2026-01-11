@@ -1,0 +1,46 @@
+==============================================================================
+                    COPY THIS TO START NEW CLAUDE SESSION
+==============================================================================
+
+I'm working on Agent Hub, a B2B SaaS platform for real estate professionals.
+
+PROJECT CONTEXT:
+- Platform: React + TypeScript + Vite + Tailwind + shadcn/ui
+- Backend: Supabase (PostgreSQL with PostGIS, Storage, Auth)
+- Location: Mapbox Geocoding API
+- Current branch: main
+- Dev server: http://localhost:8087
+
+RECENT WORK (January 11, 2026):
+We just fixed three critical bugs:
+1. Added Admin Property Review Modal - admins can now view full property details before approving/rejecting
+2. Fixed missing street numbers in addresses - Mapbox geocoder now combines house number + street name
+3. Fixed price storage and validation - upgraded to BIGINT, added validation, prevented corruption
+
+KEY PROJECT FILES:
+- Plan file: C:\Users\Jodie Ralph\.claude\plans\drifting-whistling-matsumoto.md
+- Session summary: SESSION_SUMMARY_2026-01-11.md
+- Database migrations: supabase/migrations/*.sql
+- Environment: .env (Supabase + Mapbox credentials configured)
+
+IMPORTANT CONTEXT:
+- Properties require admin approval before appearing in marketplace
+- User roles: admin, verified_professional, pending_professional, guest
+- File uploads go to Supabase Storage (property-images, floor-plans buckets)
+- Currency auto-detects from property country (UK→GBP, US→USD, AU→AUD)
+- Addresses use single smart search field (like Zillow/Airbnb)
+
+Please read:
+1. SESSION_SUMMARY_2026-01-11.md
+2. HOW_TO_RESUME_WITH_CLAUDE.md
+3. The plan file at C:\Users\Jodie Ralph\.claude\plans\drifting-whistling-matsumoto.md
+
+Then let me know you're ready and I'll tell you what I need help with.
+
+==============================================================================
+                              OR USE THIS SHORTER VERSION
+==============================================================================
+
+Continue working on Agent Hub. Read SESSION_SUMMARY_2026-01-11.md and HOW_TO_RESUME_WITH_CLAUDE.md, then let me know you're ready for the next task.
+
+==============================================================================
