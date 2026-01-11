@@ -1,0 +1,28 @@
+<svg width="240" height="60" viewBox="0 0 240 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon: House with network connection -->
+  <g id="icon">
+    <!-- House outline -->
+    <path d="M30 18L40 10L50 18V42H30V18Z" stroke="#064E3B" stroke-width="2" fill="none"/>
+    <!-- Roof -->
+    <path d="M27 20L40 10L53 20" stroke="#064E3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Door -->
+    <rect x="37" y="32" width="6" height="10" fill="#064E3B"/>
+    <!-- Connection dots -->
+    <circle cx="22" cy="30" r="2.5" fill="#E8B4B8"/>
+    <circle cx="58" cy="30" r="2.5" fill="#E8B4B8"/>
+    <!-- Connection lines -->
+    <line x1="24.5" y1="30" x2="30" y2="30" stroke="#E8B4B8" stroke-width="1.5"/>
+    <line x1="50" y1="30" x2="55.5" y2="30" stroke="#E8B4B8" stroke-width="1.5"/>
+  </g>
+
+  <!-- Text: Agent Hub -->
+  <g id="text">
+    <!-- Agent -->
+    <text x="75" y="32" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#064E3B">Agent</text>
+    <!-- Hub -->
+    <text x="75" y="48" font-family="Arial, sans-serif" font-size="20" font-weight="300" fill="#064E3B">Hub</text>
+  </g>
+
+  <!-- Separator line (subtle) -->
+  <line x1="68" y1="20" x2="68" y2="48" stroke="#E8B4B8" stroke-width="1" opacity="0.3"/>
+</svg>

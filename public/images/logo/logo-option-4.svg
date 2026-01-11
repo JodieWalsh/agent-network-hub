@@ -1,0 +1,20 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Agent text -->
+  <text x="10" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#064E3B" letter-spacing="2">AGENT</text>
+
+  <!-- Hub text -->
+  <text x="120" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="300" fill="#064E3B" letter-spacing="2">HUB</text>
+
+  <!-- Roof accent above "AGENT" -->
+  <path d="M60 8L70 3L80 8" stroke="#E8B4B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Subtle underline with rose gold accent -->
+  <line x1="10" y1="45" x2="110" y2="45" stroke="#064E3B" stroke-width="2"/>
+  <line x1="120" y1="45" x2="185" y2="45" stroke="#E8B4B8" stroke-width="2"/>
+
+  <!-- Small connection dot -->
+  <circle cx="115" cy="45" r="2.5" fill="#E8B4B8"/>
+
+  <!-- Tagline (optional, can be removed) -->
+  <text x="10" y="55" font-family="Arial, sans-serif" font-size="8" font-weight="400" fill="#064E3B" opacity="0.6" letter-spacing="1">PROFESSIONAL REAL ESTATE NETWORK</text>
+</svg>

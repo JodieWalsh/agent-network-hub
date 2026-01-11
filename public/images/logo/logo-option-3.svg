@@ -1,0 +1,46 @@
+<svg width="120" height="140" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Symbol: Network of houses/properties connected -->
+  <g id="symbol">
+    <!-- Center house (larger) -->
+    <g transform="translate(60, 40)">
+      <path d="M-12 0L0 -12L12 0V20H-12V0Z" fill="#064E3B"/>
+      <rect x="-4" y="8" width="8" height="12" fill="#E8B4B8"/>
+    </g>
+
+    <!-- Top left house (smaller) -->
+    <g transform="translate(25, 25)">
+      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
+      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    </g>
+
+    <!-- Top right house (smaller) -->
+    <g transform="translate(95, 25)">
+      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
+      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    </g>
+
+    <!-- Bottom left house (smaller) -->
+    <g transform="translate(25, 70)">
+      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
+      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    </g>
+
+    <!-- Bottom right house (smaller) -->
+    <g transform="translate(95, 70)">
+      <path d="M-8 0L0 -8L8 0V12H-8V0Z" fill="#064E3B" opacity="0.6"/>
+      <circle cx="0" cy="4" r="2" fill="#E8B4B8"/>
+    </g>
+
+    <!-- Connection lines (network) -->
+    <line x1="35" y1="28" x2="50" y2="40" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <line x1="85" y1="28" x2="70" y2="40" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <line x1="35" y1="72" x2="50" y2="60" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <line x1="85" y1="72" x2="70" y2="60" stroke="#E8B4B8" stroke-width="1.5" stroke-dasharray="2 2"/>
+  </g>
+
+  <!-- Text below -->
+  <g id="text">
+    <text x="60" y="110" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#064E3B" text-anchor="middle">AGENT</text>
+    <text x="60" y="128" font-family="Arial, sans-serif" font-size="18" font-weight="300" fill="#064E3B" text-anchor="middle">HUB</text>
+  </g>
+</svg>

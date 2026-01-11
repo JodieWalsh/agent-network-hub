@@ -1,0 +1,17 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle (optional, can be removed for transparent version) -->
+  <circle cx="40" cy="40" r="38" fill="none" stroke="#064E3B" stroke-width="2"/>
+
+  <!-- Stylized A -->
+  <path d="M25 55L32 30H36L43 55" stroke="#064E3B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="28" y1="45" x2="40" y2="45" stroke="#E8B4B8" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Stylized H -->
+  <path d="M47 30V55M47 42.5H58M58 30V55" stroke="#064E3B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Connecting element (rose gold accent) -->
+  <circle cx="40" cy="25" r="3" fill="#E8B4B8"/>
+
+  <!-- Small text below (optional) -->
+  <text x="40" y="68" font-family="Arial, sans-serif" font-size="8" font-weight="500" fill="#064E3B" text-anchor="middle">AGENT HUB</text>
+</svg>

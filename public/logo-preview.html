@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Hub - Logo Options Preview</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8edf2 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #064E3B;
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 50px;
+    }
+
+    .brand-colors {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    .color-swatch {
+      text-align: center;
+    }
+
+    .color-box {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .color-box.forest { background: #064E3B; }
+    .color-box.rose { background: #E8B4B8; }
+
+    .color-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .color-code {
+      font-size: 12px;
+      color: #666;
+      font-family: monospace;
+    }
+
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 40px;
+      margin-bottom: 60px;
+    }
+
+    .logo-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .logo-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .logo-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #064E3B;
+      margin-bottom: 8px;
+    }
+
+    .logo-description {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .logo-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      background: #fafafa;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .logo-preview img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .background-toggles {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .bg-toggle {
+      padding: 8px 16px;
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .bg-toggle:hover {
+      border-color: #064E3B;
+      color: #064E3B;
+    }
+
+    .bg-toggle.active {
+      background: #064E3B;
+      color: white;
+      border-color: #064E3B;
+    }
+
+    .logo-preview.bg-light { background: #fafafa; }
+    .logo-preview.bg-white { background: white; }
+    .logo-preview.bg-dark { background: #1a1a1a; }
+    .logo-preview.bg-green { background: #064E3B; }
+
+    .logo-details {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+    }
+
+    .comparison-section {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .comparison-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #064E3B;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .logos-row {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 40px;
+      background: #fafafa;
+      border-radius: 12px;
+    }
+
+    .logos-row img {
+      height: 60px;
+      width: auto;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 30px;
+      border-top: 1px solid #ddd;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Agent Hub Logo Options</h1>
+    <p class="subtitle">4 Professional Logo Concepts for Your B2B Real Estate Platform</p>
+
+    <!-- Brand Colors -->
+    <div class="brand-colors">
+      <div class="color-swatch">
+        <div class="color-box forest"></div>
+        <div class="color-label">Deep Forest Green</div>
+        <div class="color-code">#064E3B</div>
+      </div>
+      <div class="color-swatch">
+        <div class="color-box rose"></div>
+        <div class="color-label">Rose Gold</div>
+        <div class="color-code">#E8B4B8</div>
+      </div>
+    </div>
+
+    <!-- Logo Grid -->
+    <div class="logo-grid">
+      <!-- Option 1 -->
+      <div class="logo-card">
+        <div class="logo-title">Option 1: Icon + Text (Horizontal)</div>
+        <div class="logo-description">
+          Professional corporate layout with a house icon connected by network elements.
+          Perfect for headers and wide spaces.
+        </div>
+        <div class="background-toggles">
+          <button class="bg-toggle active" onclick="changeBg(this, 'option1', 'bg-light')">Light</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option1', 'bg-white')">White</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option1', 'bg-dark')">Dark</button>
+        </div>
+        <div class="logo-preview bg-light" id="preview-option1">
+          <img src="/images/logo/logo-option-1.svg" alt="Agent Hub Logo Option 1">
+        </div>
+        <div class="logo-details">Best for: Website header, business cards, letterhead</div>
+      </div>
+
+      <!-- Option 2 -->
+      <div class="logo-card">
+        <div class="logo-title">Option 2: Monogram (AH)</div>
+        <div class="logo-description">
+          Stylized "AH" lettermark in a circular frame. Modern and minimal,
+          works perfectly as a small icon or app logo.
+        </div>
+        <div class="background-toggles">
+          <button class="bg-toggle active" onclick="changeBg(this, 'option2', 'bg-light')">Light</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option2', 'bg-white')">White</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option2', 'bg-dark')">Dark</button>
+        </div>
+        <div class="logo-preview bg-light" id="preview-option2">
+          <img src="/images/logo/logo-option-2.svg" alt="Agent Hub Logo Option 2">
+        </div>
+        <div class="logo-details">Best for: Favicon, app icon, social media profile</div>
+      </div>
+
+      <!-- Option 3 -->
+      <div class="logo-card">
+        <div class="logo-title">Option 3: Network Symbol</div>
+        <div class="logo-description">
+          Connected houses representing a network of real estate professionals.
+          Distinctive and memorable with clear brand message.
+        </div>
+        <div class="background-toggles">
+          <button class="bg-toggle active" onclick="changeBg(this, 'option3', 'bg-light')">Light</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option3', 'bg-white')">White</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option3', 'bg-dark')">Dark</button>
+        </div>
+        <div class="logo-preview bg-light" id="preview-option3">
+          <img src="/images/logo/logo-option-3.svg" alt="Agent Hub Logo Option 3">
+        </div>
+        <div class="logo-details">Best for: Marketing materials, presentation slides</div>
+      </div>
+
+      <!-- Option 4 -->
+      <div class="logo-card">
+        <div class="logo-title">Option 4: Elegant Wordmark</div>
+        <div class="logo-description">
+          Typography-focused design with subtle roof accent and underline.
+          Clean, professional, and highly readable.
+        </div>
+        <div class="background-toggles">
+          <button class="bg-toggle active" onclick="changeBg(this, 'option4', 'bg-light')">Light</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option4', 'bg-white')">White</button>
+          <button class="bg-toggle" onclick="changeBg(this, 'option4', 'bg-dark')">Dark</button>
+        </div>
+        <div class="logo-preview bg-light" id="preview-option4">
+          <img src="/images/logo/logo-option-4.svg" alt="Agent Hub Logo Option 4">
+        </div>
+        <div class="logo-details">Best for: Email signatures, documents, simple headers</div>
+      </div>
+    </div>
+
+    <!-- Side by Side Comparison -->
+    <div class="comparison-section">
+      <h2 class="comparison-title">Side-by-Side Comparison</h2>
+      <div class="logos-row">
+        <img src="/images/logo/logo-option-1.svg" alt="Option 1">
+        <img src="/images/logo/logo-option-2.svg" alt="Option 2">
+        <img src="/images/logo/logo-option-3.svg" alt="Option 3">
+        <img src="/images/logo/logo-option-4.svg" alt="Option 4">
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Agent Hub - Professional B2B Real Estate Platform</p>
+      <p style="margin-top: 8px; font-size: 12px;">Click the background buttons to test each logo on different backgrounds</p>
+    </div>
+  </div>
+
+  <script>
+    function changeBg(button, logoId, bgClass) {
+      // Remove active class from all buttons in this card
+      const card = button.closest('.logo-card');
+      card.querySelectorAll('.bg-toggle').forEach(btn => btn.classList.remove('active'));
+
+      // Add active class to clicked button
+      button.classList.add('active');
+
+      // Change background of preview
+      const preview = document.getElementById('preview-' + logoId);
+      preview.className = 'logo-preview ' + bgClass;
+    }
+  </script>
+</body>
+</html>
