@@ -127,6 +127,107 @@ Implemented a comprehensive **Global Location/Geography System** for THREE use c
 
 **Commit:** `6ce07cd` - "Fix critical keyboard input bug in LocationSearch"
 
+### Bug #3: Input Disabled During API Loading (CRITICAL)
+**Problem:** Backspace STILL not working even after Bug #2 fix. Input became completely unresponsive during location searches.
+
+**Root Cause:** The Input component had `disabled={disabled || loading}` which disabled the entire input field while API calls were in progress. This prevented ALL keyboard input including backspace, delete, and typing.
+
+**Fix Applied:**
+Changed `disabled={disabled || loading}` to `disabled={disabled}` only. The input should never be disabled during API loading - users must be able to continue typing while autocomplete runs.
+
+**Result:** Complete keyboard input now works correctly, even during API calls.
+
+**Commit:** Part of global location improvements
+
+### Bug #4: Location Search Restricted to Australia Only
+**Problem:** LocationSearch component in ServiceAreaManager had `country="au"` hardcoded, limiting all searches to Australian locations only. Users couldn't search for international locations.
+
+**Root Cause:** Two instances of `country="au"` prop on LocationSearch components (lines 357, 393)
+
+**Fix Applied:**
+Removed `country="au"` props from both LocationSearch usages, making the platform truly global.
+
+**Result:** Users can now search for locations worldwide (Paris, London, Sydney, New York, etc.)
+
+### Bug #5: Country Dropdown Showing Only 5 Countries
+**Problem:** "Entire country" dropdown only showed 5 countries (AU, NZ, US, GB, CA), making it impossible to add service areas for other countries.
+
+**Root Cause:** Hardcoded COUNTRIES array with only 5 popular countries
+
+**Fix Applied:**
+1. Created POPULAR_COUNTRIES array (top 15 countries)
+2. Created ALL_COUNTRIES array with all 195 countries (ISO 3166-1 alpha-2)
+3. Combined arrays with separator in dropdown
+
+**Result:** Users can now select any of 195 countries for their service areas
+
+### Bug #6: Add Service Area Button Not Working (Country Type)
+**Problem:** After adding all 195 countries, the green "Add Service Area" button stopped working for "Entire country" option. No error messages, just silent failure.
+
+**Root Cause:** Renamed `COUNTRIES` to `ALL_COUNTRIES` but forgot to update reference in `handleSaveNewArea` function (line 367)
+
+**Fix Applied:**
+Changed `const country = COUNTRIES.find(...)` to `const country = ALL_COUNTRIES.find(...)`
+
+**Result:** Country selection works perfectly again
+
+---
+
+## ✨ Enhancements Added
+
+### Enhancement #1: Increased Maximum Radius (100km → 250km)
+**Request:** Users needed larger service area coverage
+
+**Changes:**
+- Slider max changed from 100 to 250
+- Updated step labels to show 50km, 100km, 150km, 200km, 250km intervals
+- Allows agents to cover broader geographic regions
+
+### Enhancement #2: Global State Selection with 10 Countries
+**Request:** Redesign "Entire state" to use 2-step flow (Country → State) instead of only showing Australian states
+
+**Implementation:**
+1. Created comprehensive STATES_BY_COUNTRY object with 10 major countries:
+   - 🇦🇺 Australia (8 states/territories)
+   - 🇺🇸 United States (50 states)
+   - 🇨🇦 Canada (13 provinces/territories)
+   - 🇬🇧 United Kingdom (4 countries)
+   - 🇳🇿 New Zealand (16 regions)
+   - 🇩🇪 Germany (16 Bundesländer)
+   - 🇫🇷 France (13 régions)
+   - 🇮🇳 India (29 states)
+   - 🇧🇷 Brazil (27 states)
+   - 🇲🇽 Mexico (32 states)
+
+2. Added 2-step selection flow:
+   - First: Select country from dropdown
+   - Then: Search for state/province within that country
+
+**Result:** 290+ states/provinces searchable across 10 countries
+
+### Enhancement #3: Smart UX for Adding Multiple States/Countries
+**Problem:** After adding a state or country, the form closed completely. Users had to click "Add Service Area" → Select "Entire state" → Pick country → Search state again for EACH addition. Tedious for adding multiple states.
+
+**New Smart Flow:**
+1. User adds "California" → Instead of closing, shows SUCCESS message
+2. Two action buttons appear:
+   - **"Add Another"** - Clears selection, keeps same country selected, lets user immediately search for another state
+   - **"Done"** - Closes form completely
+3. For countries: Same flow, resets to 'Australia' default
+
+**Benefits:**
+- Dramatically faster workflow for adding multiple states/countries
+- Reduces clicks from 5+ to just 2 per additional area
+- Better UX for bulk data entry
+
+**Implementation Details:**
+- Added `justAdded` state to track successful additions
+- Added `handleAddAnother()` and `handleDone()` functions
+- Updated `handleSaveNewArea()` to keep form open for state/country types
+- Smart selection reset (keeps context, clears only what's needed)
+
+**Commit:** `86fa383` - "Smart UX: Keep form open after adding state/country"
+
 ---
 
 ## 🗄️ Database Schema Summary
