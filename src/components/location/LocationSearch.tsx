@@ -1,14 +1,19 @@
 /**
  * LocationSearch Component
  *
- * Reusable location autocomplete search with Mapbox integration
+ * Reusable GLOBAL location autocomplete search with Mapbox integration
  * Shows hierarchical location disambiguation (City, State, Country)
- * Supports biasing results to user's location
+ * Biases results to user's location (proximity) but shows worldwide results
  *
  * Use cases:
- * - Agent service areas (broad: cities, regions, countries)
- * - Property addresses (precise: street addresses)
- * - Client brief search areas (flexible)
+ * - Agent service areas (broad: cities, regions, countries - GLOBAL)
+ * - Property addresses (precise: street addresses - GLOBAL)
+ * - Client brief search areas (flexible - GLOBAL)
+ *
+ * Examples:
+ * - "Paris" → Paris, France + Paris, Texas, USA
+ * - "London" → London, United Kingdom + London, Ontario, Canada
+ * - "Sydney" → Sydney, Australia + Sydney, Nova Scotia, Canada
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';

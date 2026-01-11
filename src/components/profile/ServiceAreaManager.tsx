@@ -353,9 +353,9 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
                   <LocationSearch
                     value={selectedLocation}
                     onChange={setSelectedLocation}
-                    placeholder="Search for a location..."
-                    country="au"
+                    placeholder="Search for a location worldwide..."
                     allowGeolocation
+                    // No country restriction - global platform!
                   />
                 </div>
                 {selectedLocation && (
@@ -389,9 +389,9 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
                 <LocationSearch
                   value={selectedLocation}
                   onChange={setSelectedLocation}
-                  placeholder="Search for a region or city..."
-                  country="au"
+                  placeholder="Search for a region or city worldwide..."
                   types={['place', 'locality', 'region']}
+                  // No country restriction - global platform!
                 />
               </div>
             )}
