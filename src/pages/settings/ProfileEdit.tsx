@@ -13,6 +13,7 @@ import { MapPin, User, Briefcase, Save, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockGeocode, mockAutocomplete, SERVICE_REGIONS } from "@/lib/geocoder";
+import { AvatarUpload } from "@/components/profile/AvatarUpload";
 
 const userTypeLabels: Record<string, string> = {
   buyers_agent: "Buyer's Agent",
@@ -40,6 +41,7 @@ export default function ProfileEdit() {
   const [city, setCity] = useState("");
   const [userType, setUserType] = useState("");
   const [specializations, setSpecializations] = useState<string[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Location state
   const [homeBaseAddress, setHomeBaseAddress] = useState("");
@@ -115,6 +117,7 @@ export default function ProfileEdit() {
         setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
         setHomeBaseAddress(data.home_base_address || "");
         setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
+        setAvatarUrl(data.avatar_url || null);
       }
     } catch (error) {
       console.error("🔴 [ProfileEdit] Error fetching profile:", error);
@@ -132,6 +135,7 @@ export default function ProfileEdit() {
           setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
           setHomeBaseAddress(data.home_base_address || "");
           setServiceRegions(Array.isArray(data.service_regions) ? data.service_regions : []);
+          setAvatarUrl(data.avatar_url || null);
         } else {
           toast.error("Failed to load profile");
         }
@@ -298,7 +302,16 @@ export default function ProfileEdit() {
                 Your basic profile information visible to other users
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Avatar Upload */}
+              <div className="flex justify-center py-4">
+                <AvatarUpload
+                  currentAvatarUrl={avatarUrl}
+                  userId={user!.id}
+                  onUploadSuccess={(url) => setAvatarUrl(url)}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
