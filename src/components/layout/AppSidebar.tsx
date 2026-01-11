@@ -175,7 +175,7 @@ export function AppSidebar() {
             <img
               src="/images/logo/logo-option-1.svg"
               alt="Buyers Agent Hub"
-              className="h-10 w-auto"
+              className="h-15 w-auto"
             />
           </Link>
         </div>
