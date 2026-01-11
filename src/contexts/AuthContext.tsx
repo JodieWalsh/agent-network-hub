@@ -6,6 +6,7 @@ import { UserRole, ApprovalStatus, UserPermissionContext } from "@/lib/permissio
 interface Profile {
   id: string;
   full_name: string | null;
+  avatar_url: string | null;
   role: UserRole;
   user_type: string;
   approval_status: ApprovalStatus;
