@@ -45,18 +45,22 @@ export function LocationSearch({
   const [loading, setLoading] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
   const [userProximity, setUserProximity] = useState<{ lat: number; lng: number } | null>(null);
+  const [isTyping, setIsTyping] = useState(false); // Track if user is actively typing
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Update search query when value changes externally
+  // Update search query when value changes externally (but NOT when user is typing)
   useEffect(() => {
-    if (value) {
-      setSearchQuery(value.fullName);
-    } else {
-      setSearchQuery('');
+    if (!isTyping) {
+      if (value) {
+        setSearchQuery(value.fullName);
+      } else if (searchQuery === '') {
+        // Only reset if search query is already empty
+        setSearchQuery('');
+      }
     }
-  }, [value]);
+  }, [value, isTyping]);
 
   // Fetch user's location for proximity biasing (only once)
   useEffect(() => {
@@ -118,6 +122,7 @@ export function LocationSearch({
 
   // Select suggestion
   const handleSelectSuggestion = useCallback((suggestion: LocationSuggestion) => {
+    setIsTyping(false); // User has finished typing by selecting
     setSearchQuery(suggestion.fullName);
     onChange(suggestion);
     setShowSuggestions(false);
@@ -129,11 +134,13 @@ export function LocationSearch({
     onChange(null);
     setSuggestions([]);
     setShowSuggestions(false);
+    setIsTyping(false);
     inputRef.current?.focus();
   }, [onChange]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsTyping(true); // Mark that user is actively typing
     setSearchQuery(e.target.value);
     if (value) {
       onChange(null); // Clear selection when user types
@@ -143,6 +150,7 @@ export function LocationSearch({
   // Use current location (geolocation)
   const handleUseMyLocation = useCallback(async () => {
     setGeolocating(true);
+    setIsTyping(false); // Not typing, using geolocation
     const coords = await getUserLocation();
 
     if (coords) {
@@ -221,14 +229,15 @@ export function LocationSearch({
           <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
         )}
 
-        {/* Clear Button */}
-        {value && !loading && !disabled && (
+        {/* Clear Button - Shows when there's any text in the search */}
+        {searchQuery && !loading && !disabled && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={handleClear}
             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 hover:bg-muted"
+            aria-label="Clear search"
           >
             <X className="h-4 w-4" />
           </Button>
