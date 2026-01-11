@@ -253,16 +253,237 @@ const ALL_COUNTRIES = [
   { code: 'ZW', name: 'Zimbabwe' },
 ];
 
-const AUSTRALIAN_STATES = [
-  { code: 'NSW', name: 'New South Wales' },
-  { code: 'VIC', name: 'Victoria' },
-  { code: 'QLD', name: 'Queensland' },
-  { code: 'WA', name: 'Western Australia' },
-  { code: 'SA', name: 'South Australia' },
-  { code: 'TAS', name: 'Tasmania' },
-  { code: 'ACT', name: 'Australian Capital Territory' },
-  { code: 'NT', name: 'Northern Territory' },
-];
+// States/Provinces/Regions by Country (major countries with admin divisions)
+const STATES_BY_COUNTRY: Record<string, Array<{ code: string; name: string }>> = {
+  AU: [ // Australia - States & Territories
+    { code: 'NSW', name: 'New South Wales' },
+    { code: 'VIC', name: 'Victoria' },
+    { code: 'QLD', name: 'Queensland' },
+    { code: 'WA', name: 'Western Australia' },
+    { code: 'SA', name: 'South Australia' },
+    { code: 'TAS', name: 'Tasmania' },
+    { code: 'ACT', name: 'Australian Capital Territory' },
+    { code: 'NT', name: 'Northern Territory' },
+  ],
+  US: [ // United States - 50 States
+    { code: 'AL', name: 'Alabama' },
+    { code: 'AK', name: 'Alaska' },
+    { code: 'AZ', name: 'Arizona' },
+    { code: 'AR', name: 'Arkansas' },
+    { code: 'CA', name: 'California' },
+    { code: 'CO', name: 'Colorado' },
+    { code: 'CT', name: 'Connecticut' },
+    { code: 'DE', name: 'Delaware' },
+    { code: 'FL', name: 'Florida' },
+    { code: 'GA', name: 'Georgia' },
+    { code: 'HI', name: 'Hawaii' },
+    { code: 'ID', name: 'Idaho' },
+    { code: 'IL', name: 'Illinois' },
+    { code: 'IN', name: 'Indiana' },
+    { code: 'IA', name: 'Iowa' },
+    { code: 'KS', name: 'Kansas' },
+    { code: 'KY', name: 'Kentucky' },
+    { code: 'LA', name: 'Louisiana' },
+    { code: 'ME', name: 'Maine' },
+    { code: 'MD', name: 'Maryland' },
+    { code: 'MA', name: 'Massachusetts' },
+    { code: 'MI', name: 'Michigan' },
+    { code: 'MN', name: 'Minnesota' },
+    { code: 'MS', name: 'Mississippi' },
+    { code: 'MO', name: 'Missouri' },
+    { code: 'MT', name: 'Montana' },
+    { code: 'NE', name: 'Nebraska' },
+    { code: 'NV', name: 'Nevada' },
+    { code: 'NH', name: 'New Hampshire' },
+    { code: 'NJ', name: 'New Jersey' },
+    { code: 'NM', name: 'New Mexico' },
+    { code: 'NY', name: 'New York' },
+    { code: 'NC', name: 'North Carolina' },
+    { code: 'ND', name: 'North Dakota' },
+    { code: 'OH', name: 'Ohio' },
+    { code: 'OK', name: 'Oklahoma' },
+    { code: 'OR', name: 'Oregon' },
+    { code: 'PA', name: 'Pennsylvania' },
+    { code: 'RI', name: 'Rhode Island' },
+    { code: 'SC', name: 'South Carolina' },
+    { code: 'SD', name: 'South Dakota' },
+    { code: 'TN', name: 'Tennessee' },
+    { code: 'TX', name: 'Texas' },
+    { code: 'UT', name: 'Utah' },
+    { code: 'VT', name: 'Vermont' },
+    { code: 'VA', name: 'Virginia' },
+    { code: 'WA', name: 'Washington' },
+    { code: 'WV', name: 'West Virginia' },
+    { code: 'WI', name: 'Wisconsin' },
+    { code: 'WY', name: 'Wyoming' },
+  ],
+  CA: [ // Canada - Provinces & Territories
+    { code: 'AB', name: 'Alberta' },
+    { code: 'BC', name: 'British Columbia' },
+    { code: 'MB', name: 'Manitoba' },
+    { code: 'NB', name: 'New Brunswick' },
+    { code: 'NL', name: 'Newfoundland and Labrador' },
+    { code: 'NS', name: 'Nova Scotia' },
+    { code: 'ON', name: 'Ontario' },
+    { code: 'PE', name: 'Prince Edward Island' },
+    { code: 'QC', name: 'Quebec' },
+    { code: 'SK', name: 'Saskatchewan' },
+    { code: 'NT', name: 'Northwest Territories' },
+    { code: 'NU', name: 'Nunavut' },
+    { code: 'YT', name: 'Yukon' },
+  ],
+  GB: [ // United Kingdom - Countries
+    { code: 'ENG', name: 'England' },
+    { code: 'SCT', name: 'Scotland' },
+    { code: 'WLS', name: 'Wales' },
+    { code: 'NIR', name: 'Northern Ireland' },
+  ],
+  NZ: [ // New Zealand - Regions
+    { code: 'AUK', name: 'Auckland' },
+    { code: 'BOP', name: 'Bay of Plenty' },
+    { code: 'CAN', name: 'Canterbury' },
+    { code: 'GIS', name: 'Gisborne' },
+    { code: 'HKB', name: "Hawke's Bay" },
+    { code: 'MWT', name: 'Manawatū-Whanganui' },
+    { code: 'MBH', name: 'Marlborough' },
+    { code: 'NSN', name: 'Nelson' },
+    { code: 'NTL', name: 'Northland' },
+    { code: 'OTA', name: 'Otago' },
+    { code: 'STL', name: 'Southland' },
+    { code: 'TKI', name: 'Taranaki' },
+    { code: 'TAS', name: 'Tasman' },
+    { code: 'WKO', name: 'Waikato' },
+    { code: 'WGN', name: 'Wellington' },
+    { code: 'WTC', name: 'West Coast' },
+  ],
+  DE: [ // Germany - Bundesländer (States)
+    { code: 'BW', name: 'Baden-Württemberg' },
+    { code: 'BY', name: 'Bavaria (Bayern)' },
+    { code: 'BE', name: 'Berlin' },
+    { code: 'BB', name: 'Brandenburg' },
+    { code: 'HB', name: 'Bremen' },
+    { code: 'HH', name: 'Hamburg' },
+    { code: 'HE', name: 'Hesse (Hessen)' },
+    { code: 'MV', name: 'Mecklenburg-Vorpommern' },
+    { code: 'NI', name: 'Lower Saxony (Niedersachsen)' },
+    { code: 'NW', name: 'North Rhine-Westphalia (Nordrhein-Westfalen)' },
+    { code: 'RP', name: 'Rhineland-Palatinate (Rheinland-Pfalz)' },
+    { code: 'SL', name: 'Saarland' },
+    { code: 'SN', name: 'Saxony (Sachsen)' },
+    { code: 'ST', name: 'Saxony-Anhalt (Sachsen-Anhalt)' },
+    { code: 'SH', name: 'Schleswig-Holstein' },
+    { code: 'TH', name: 'Thuringia (Thüringen)' },
+  ],
+  FR: [ // France - Régions
+    { code: 'ARA', name: 'Auvergne-Rhône-Alpes' },
+    { code: 'BFC', name: 'Bourgogne-Franche-Comté' },
+    { code: 'BRE', name: 'Brittany (Bretagne)' },
+    { code: 'CVL', name: 'Centre-Val de Loire' },
+    { code: 'COR', name: 'Corsica (Corse)' },
+    { code: 'GES', name: 'Grand Est' },
+    { code: 'HDF', name: 'Hauts-de-France' },
+    { code: 'IDF', name: 'Île-de-France' },
+    { code: 'NOR', name: 'Normandy (Normandie)' },
+    { code: 'NAQ', name: 'Nouvelle-Aquitaine' },
+    { code: 'OCC', name: 'Occitanie' },
+    { code: 'PDL', name: 'Pays de la Loire' },
+    { code: 'PAC', name: "Provence-Alpes-Côte d'Azur" },
+  ],
+  IN: [ // India - States (major ones)
+    { code: 'AP', name: 'Andhra Pradesh' },
+    { code: 'AR', name: 'Arunachal Pradesh' },
+    { code: 'AS', name: 'Assam' },
+    { code: 'BR', name: 'Bihar' },
+    { code: 'CG', name: 'Chhattisgarh' },
+    { code: 'GA', name: 'Goa' },
+    { code: 'GJ', name: 'Gujarat' },
+    { code: 'HR', name: 'Haryana' },
+    { code: 'HP', name: 'Himachal Pradesh' },
+    { code: 'JK', name: 'Jammu and Kashmir' },
+    { code: 'JH', name: 'Jharkhand' },
+    { code: 'KA', name: 'Karnataka' },
+    { code: 'KL', name: 'Kerala' },
+    { code: 'MP', name: 'Madhya Pradesh' },
+    { code: 'MH', name: 'Maharashtra' },
+    { code: 'MN', name: 'Manipur' },
+    { code: 'ML', name: 'Meghalaya' },
+    { code: 'MZ', name: 'Mizoram' },
+    { code: 'NL', name: 'Nagaland' },
+    { code: 'OR', name: 'Odisha' },
+    { code: 'PB', name: 'Punjab' },
+    { code: 'RJ', name: 'Rajasthan' },
+    { code: 'SK', name: 'Sikkim' },
+    { code: 'TN', name: 'Tamil Nadu' },
+    { code: 'TG', name: 'Telangana' },
+    { code: 'TR', name: 'Tripura' },
+    { code: 'UP', name: 'Uttar Pradesh' },
+    { code: 'UT', name: 'Uttarakhand' },
+    { code: 'WB', name: 'West Bengal' },
+  ],
+  BR: [ // Brazil - States
+    { code: 'AC', name: 'Acre' },
+    { code: 'AL', name: 'Alagoas' },
+    { code: 'AP', name: 'Amapá' },
+    { code: 'AM', name: 'Amazonas' },
+    { code: 'BA', name: 'Bahia' },
+    { code: 'CE', name: 'Ceará' },
+    { code: 'DF', name: 'Federal District (Distrito Federal)' },
+    { code: 'ES', name: 'Espírito Santo' },
+    { code: 'GO', name: 'Goiás' },
+    { code: 'MA', name: 'Maranhão' },
+    { code: 'MT', name: 'Mato Grosso' },
+    { code: 'MS', name: 'Mato Grosso do Sul' },
+    { code: 'MG', name: 'Minas Gerais' },
+    { code: 'PA', name: 'Pará' },
+    { code: 'PB', name: 'Paraíba' },
+    { code: 'PR', name: 'Paraná' },
+    { code: 'PE', name: 'Pernambuco' },
+    { code: 'PI', name: 'Piauí' },
+    { code: 'RJ', name: 'Rio de Janeiro' },
+    { code: 'RN', name: 'Rio Grande do Norte' },
+    { code: 'RS', name: 'Rio Grande do Sul' },
+    { code: 'RO', name: 'Rondônia' },
+    { code: 'RR', name: 'Roraima' },
+    { code: 'SC', name: 'Santa Catarina' },
+    { code: 'SP', name: 'São Paulo' },
+    { code: 'SE', name: 'Sergipe' },
+    { code: 'TO', name: 'Tocantins' },
+  ],
+  MX: [ // Mexico - States
+    { code: 'AG', name: 'Aguascalientes' },
+    { code: 'BC', name: 'Baja California' },
+    { code: 'BS', name: 'Baja California Sur' },
+    { code: 'CM', name: 'Campeche' },
+    { code: 'CS', name: 'Chiapas' },
+    { code: 'CH', name: 'Chihuahua' },
+    { code: 'CO', name: 'Coahuila' },
+    { code: 'CL', name: 'Colima' },
+    { code: 'DF', name: 'Mexico City (Ciudad de México)' },
+    { code: 'DG', name: 'Durango' },
+    { code: 'GT', name: 'Guanajuato' },
+    { code: 'GR', name: 'Guerrero' },
+    { code: 'HG', name: 'Hidalgo' },
+    { code: 'JA', name: 'Jalisco' },
+    { code: 'ME', name: 'State of Mexico (México)' },
+    { code: 'MI', name: 'Michoacán' },
+    { code: 'MO', name: 'Morelos' },
+    { code: 'NA', name: 'Nayarit' },
+    { code: 'NL', name: 'Nuevo León' },
+    { code: 'OA', name: 'Oaxaca' },
+    { code: 'PU', name: 'Puebla' },
+    { code: 'QE', name: 'Querétaro' },
+    { code: 'QR', name: 'Quintana Roo' },
+    { code: 'SL', name: 'San Luis Potosí' },
+    { code: 'SI', name: 'Sinaloa' },
+    { code: 'SO', name: 'Sonora' },
+    { code: 'TB', name: 'Tabasco' },
+    { code: 'TM', name: 'Tamaulipas' },
+    { code: 'TL', name: 'Tlaxcala' },
+    { code: 'VE', name: 'Veracruz' },
+    { code: 'YU', name: 'Yucatán' },
+    { code: 'ZA', name: 'Zacatecas' },
+  ],
+};
 
 export function ServiceAreaManager({ userId, initialAreas = [], onChange }: ServiceAreaManagerProps) {
   const [areas, setAreas] = useState<ServiceArea[]>(initialAreas);
@@ -270,7 +491,8 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
   const [newAreaType, setNewAreaType] = useState<ServiceArea['area_type']>('radius');
   const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null);
   const [radius, setRadius] = useState(25);
-  const [selectedCountry, setSelectedCountry] = useState('AU');
+  const [selectedCountry, setSelectedCountry] = useState('AU'); // For entire country selection
+  const [selectedStateCountry, setSelectedStateCountry] = useState('AU'); // For state/province country selection
   const [selectedState, setSelectedState] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -312,6 +534,7 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
     setIsAdding(true);
     setSelectedLocation(null);
     setRadius(25);
+    setSelectedStateCountry('AU'); // Reset to default
     setSelectedState('');
   };
 
@@ -350,16 +573,18 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
 
       case 'state':
         if (!selectedState) {
-          toast.error('Please select a state');
+          toast.error('Please select a state/province');
           return;
         }
-        const state = AUSTRALIAN_STATES.find(s => s.code === selectedState);
+        const stateList = STATES_BY_COUNTRY[selectedStateCountry];
+        const state = stateList?.find(s => s.code === selectedState);
+        const stateCountry = ALL_COUNTRIES.find(c => c.code === selectedStateCountry);
         newArea = {
           ...newArea,
           state_code: selectedState,
           state_name: state?.name,
-          country_code: 'AU',
-          country_name: 'Australia',
+          country_code: selectedStateCountry,
+          country_name: stateCountry?.name,
         };
         break;
 
@@ -599,21 +824,63 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
 
             {/* State Type */}
             {newAreaType === 'state' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">State</label>
-                <Select value={selectedState} onValueChange={setSelectedState}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AUSTRALIAN_STATES.map(state => (
-                      <SelectItem key={state.code} value={state.code}>
-                        {state.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                {/* Step 1: Select Country */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Country</label>
+                  <Select
+                    value={selectedStateCountry}
+                    onValueChange={(value) => {
+                      setSelectedStateCountry(value);
+                      setSelectedState(''); // Reset state when country changes
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {/* Show only countries that have states/provinces data */}
+                      {Object.keys(STATES_BY_COUNTRY)
+                        .map(code => ALL_COUNTRIES.find(c => c.code === code))
+                        .filter(Boolean)
+                        .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
+                        .map(country => (
+                          <SelectItem key={country!.code} value={country!.code}>
+                            {country!.name}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {Object.keys(STATES_BY_COUNTRY).length} countries with states/provinces available
+                  </p>
+                </div>
+
+                {/* Step 2: Select State/Province (appears after country selected) */}
+                {selectedStateCountry && STATES_BY_COUNTRY[selectedStateCountry] && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      State/Province/Region
+                    </label>
+                    <Select value={selectedState} onValueChange={setSelectedState}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a state/province" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {STATES_BY_COUNTRY[selectedStateCountry].map(state => (
+                          <SelectItem key={state.code} value={state.code}>
+                            {state.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {STATES_BY_COUNTRY[selectedStateCountry].length} available
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Country Type */}
