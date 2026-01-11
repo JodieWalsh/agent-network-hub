@@ -30,8 +30,9 @@ export interface MapboxFeature {
   place_type: string[]; // e.g., ['place', 'locality']
   relevance: number;
   properties: Record<string, any>;
-  text: string; // Place name
+  text: string; // Place name (street name for addresses)
   place_name: string; // Full formatted name with hierarchy
+  address?: string; // House/building number (only for address-type results)
   center: [number, number]; // [lng, lat]
   geometry: {
     type: 'Point';
@@ -142,13 +143,17 @@ export async function mapboxAutocomplete(
       const countryCode = feature.context?.find(c => c.id.startsWith('country'))?.short_code?.toUpperCase();
       const postcode = feature.context?.find(c => c.id.startsWith('postcode'))?.text;
 
-      // For address-type results, extract the street address
+      // For address-type results, extract the street address with house number
+      // feature.address = house number (e.g., "42")
+      // feature.text = street name (e.g., "Danehurst Street")
       const isAddress = feature.place_type.includes('address');
-      const streetAddress = isAddress ? feature.text : undefined;
+      const streetAddress = isAddress
+        ? `${feature.address || ''} ${feature.text}`.trim()
+        : undefined;
 
       return {
         id: feature.id,
-        name: feature.text,
+        name: isAddress && streetAddress ? streetAddress : feature.text,
         fullName: feature.place_name,
         coordinates: {
           lat: feature.center[1],
