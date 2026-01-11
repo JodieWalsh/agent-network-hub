@@ -368,14 +368,14 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
                       value={[radius]}
                       onValueChange={(value) => setRadius(value[0])}
                       min={5}
-                      max={100}
+                      max={250}
                       step={5}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>5 km</span>
-                      <span>50 km</span>
-                      <span>100 km</span>
+                      <span>125 km</span>
+                      <span>250 km</span>
                     </div>
                   </div>
                 )}
