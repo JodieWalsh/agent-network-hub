@@ -329,7 +329,16 @@ export default function InspectionSpotlights() {
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 text-forest mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground line-clamp-2">{job.property_address}</p>
+                        {job.property_address.startsWith('Area:') ? (
+                          <>
+                            <Badge variant="outline" className="mb-1 bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                              General Area
+                            </Badge>
+                            <p className="font-medium text-foreground line-clamp-2">{job.property_address.replace('Area: ', '')}</p>
+                          </>
+                        ) : (
+                          <p className="font-medium text-foreground line-clamp-2">{job.property_address}</p>
+                        )}
                       </div>
                     </div>
 

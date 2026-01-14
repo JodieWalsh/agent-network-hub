@@ -42,6 +42,7 @@ import {
   Sparkles,
   User,
   MessageSquare,
+  MapPinned,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -316,8 +317,21 @@ export default function InspectionSpotlightDetail() {
               </div>
 
               <div className="flex items-start gap-3 mb-2">
-                <MapPin className="h-6 w-6 text-forest mt-0.5" />
-                <h1 className="text-3xl font-bold text-foreground">{job.property_address}</h1>
+                {job.property_address.startsWith('Area:') ? (
+                  <MapPinned className="h-6 w-6 text-blue-600 mt-0.5" />
+                ) : (
+                  <MapPin className="h-6 w-6 text-forest mt-0.5" />
+                )}
+                <div className="flex-1">
+                  {job.property_address.startsWith('Area:') && (
+                    <Badge variant="outline" className="mb-2 bg-blue-50 text-blue-700 border-blue-200">
+                      General Area Booking
+                    </Badge>
+                  )}
+                  <h1 className="text-3xl font-bold text-foreground">
+                    {job.property_address.startsWith('Area:') ? job.property_address.replace('Area: ', '') : job.property_address}
+                  </h1>
+                </div>
               </div>
 
               <p className="text-lg font-semibold text-forest">
@@ -397,8 +411,17 @@ export default function InspectionSpotlightDetail() {
                 <p className="mt-1">{PROPERTY_TYPE_LABELS[job.property_type]}</p>
               </div>
               <div>
-                <Label className="text-sm text-muted-foreground">Address</Label>
-                <p className="mt-1">{job.property_address}</p>
+                <Label className="text-sm text-muted-foreground">
+                  {job.property_address.startsWith('Area:') ? 'General Area' : 'Address'}
+                </Label>
+                <p className="mt-1">
+                  {job.property_address.startsWith('Area:') ? job.property_address.replace('Area: ', '') : job.property_address}
+                </p>
+                {job.property_address.startsWith('Area:') && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Exact property address to be confirmed later
+                  </p>
+                )}
               </div>
             </div>
 
