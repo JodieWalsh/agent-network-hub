@@ -37,7 +37,9 @@ import {
   FileText,
   Zap,
   AlertCircle,
+  MapPinned,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -118,6 +120,8 @@ export default function CreateInspectionJob() {
   const [preferredDate2, setPreferredDate2] = useState('');
   const [preferredDate3, setPreferredDate3] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [addressUnknown, setAddressUnknown] = useState(false);
+  const [generalArea, setGeneralArea] = useState('');
 
   const [formData, setFormData] = useState<JobFormData>({
     property_address: '',
@@ -156,7 +160,11 @@ export default function CreateInspectionJob() {
   const canProceedFromStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.property_address && formData.property_type);
+        // Can proceed if exact address is provided OR if address is unknown but general area is specified
+        const hasLocation = addressUnknown
+          ? generalArea.trim().length > 0
+          : formData.property_address.length > 0;
+        return !!(hasLocation && formData.property_type);
       case 2:
         return !!(formData.urgency_level && formData.scope_requirements.trim());
       case 3:
@@ -188,9 +196,14 @@ export default function CreateInspectionJob() {
       // Collect preferred dates
       const dates = [preferredDate1, preferredDate2, preferredDate3].filter(d => d);
 
+      // Use general area if address is unknown, otherwise use exact address
+      const propertyAddress = addressUnknown
+        ? `Area: ${generalArea}`
+        : formData.property_address;
+
       const { error } = await supabase.from('inspection_jobs').insert({
         creator_id: user.id,
-        property_address: formData.property_address,
+        property_address: propertyAddress,
         property_location: formData.property_lat && formData.property_lng
           ? `POINT(${formData.property_lng} ${formData.property_lat})`
           : null,
@@ -228,9 +241,14 @@ export default function CreateInspectionJob() {
       // Collect preferred dates
       const dates = [preferredDate1, preferredDate2, preferredDate3].filter(d => d);
 
+      // Use general area if address is unknown, otherwise use exact address
+      const propertyAddress = addressUnknown
+        ? `Area: ${generalArea}`
+        : formData.property_address;
+
       const { error } = await supabase.from('inspection_jobs').insert({
         creator_id: user.id,
-        property_address: formData.property_address,
+        property_address: propertyAddress,
         property_location: formData.property_lat && formData.property_lng
           ? `POINT(${formData.property_lng} ${formData.property_lat})`
           : null,
@@ -322,25 +340,74 @@ export default function CreateInspectionJob() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Property Address */}
-                <div className="space-y-2">
-                  <Label>Property Address *</Label>
-                  <LocationSearch
-                    value={selectedLocation}
-                    onChange={handleLocationSelected}
-                    placeholder="Search for property address..."
-                    types={['address', 'place']}
+                {/* Address Unknown Checkbox */}
+                <div className="flex items-start space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Checkbox
+                    id="address-unknown"
+                    checked={addressUnknown}
+                    onCheckedChange={(checked) => {
+                      setAddressUnknown(checked as boolean);
+                      if (checked) {
+                        // Clear exact address when switching to area mode
+                        setSelectedLocation(null);
+                        setFormData(prev => ({
+                          ...prev,
+                          property_address: '',
+                          property_lat: null,
+                          property_lng: null,
+                        }));
+                      } else {
+                        // Clear general area when switching to exact address
+                        setGeneralArea('');
+                      }
+                    }}
                   />
-                  {selectedLocation && (
-                    <div className="flex items-start gap-2 p-3 bg-forest/5 border border-forest/20 rounded-md">
-                      <MapPin className="h-4 w-4 text-forest mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{selectedLocation.name}</p>
-                        <p className="text-xs text-muted-foreground">{selectedLocation.fullName}</p>
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex-1">
+                    <Label htmlFor="address-unknown" className="font-medium cursor-pointer flex items-center gap-2">
+                      <MapPinned className="h-4 w-4 text-blue-600" />
+                      Exact address not yet confirmed
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Check this if you're booking an inspector in advance for properties in a general area
+                    </p>
+                  </div>
                 </div>
+
+                {/* Property Address OR General Area */}
+                {!addressUnknown ? (
+                  <div className="space-y-2">
+                    <Label>Property Address *</Label>
+                    <LocationSearch
+                      value={selectedLocation}
+                      onChange={handleLocationSelected}
+                      placeholder="Type to search for exact property address..."
+                      types={['address', 'place', 'locality', 'neighborhood', 'postcode']}
+                    />
+                    {selectedLocation && (
+                      <div className="flex items-start gap-2 p-3 bg-forest/5 border border-forest/20 rounded-md">
+                        <MapPin className="h-4 w-4 text-forest mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{selectedLocation.name}</p>
+                          <p className="text-xs text-muted-foreground">{selectedLocation.fullName}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>General Area *</Label>
+                    <Textarea
+                      placeholder="e.g., Richmond and surrounding suburbs within 10km, Eastern suburbs of Melbourne, North Shore Sydney..."
+                      value={generalArea}
+                      onChange={(e) => setGeneralArea(e.target.value)}
+                      rows={3}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Describe the general area where you expect to request inspections. The inspector can confirm availability for this region.
+                    </p>
+                  </div>
+                )}
 
                 {/* Property Type */}
                 <div className="space-y-2">
@@ -550,9 +617,22 @@ export default function CreateInspectionJob() {
                   <h3 className="font-medium text-sm text-muted-foreground">PROPERTY</h3>
                   <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                     <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-forest mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">{formData.property_address}</p>
+                      {addressUnknown ? (
+                        <MapPinned className="h-4 w-4 text-blue-600 mt-0.5" />
+                      ) : (
+                        <MapPin className="h-4 w-4 text-forest mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        {addressUnknown ? (
+                          <>
+                            <Badge variant="outline" className="mb-2 bg-blue-50 text-blue-700 border-blue-200">
+                              General Area Booking
+                            </Badge>
+                            <p className="text-sm font-medium">{generalArea}</p>
+                          </>
+                        ) : (
+                          <p className="text-sm font-medium">{formData.property_address}</p>
+                        )}
                         <Badge variant="outline" className="mt-1">{PROPERTY_TYPES.find(t => t.value === formData.property_type)?.label}</Badge>
                       </div>
                     </div>
