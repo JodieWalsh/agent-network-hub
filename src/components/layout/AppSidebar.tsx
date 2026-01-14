@@ -79,7 +79,7 @@ export function AppSidebar() {
       icon: ClipboardCheck,
       path: "/inspections",
       children: [
-        { label: "Browse Spotlights", icon: ClipboardCheck, path: "/inspections" },
+        { label: "Browse Spotlights", icon: ClipboardCheck, path: "/inspections/spotlights" },
         { label: "Post New Job", icon: ClipboardCheck, path: "/inspections/jobs/new" },
       ],
     },
