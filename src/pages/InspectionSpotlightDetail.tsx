@@ -65,6 +65,19 @@ interface InspectionJob {
   preferred_inspection_dates: string[] | null;
   scope_requirements: string | null;
   special_instructions: string | null;
+  client_brief_id: string | null;
+}
+
+interface ClientBrief {
+  id: string;
+  brief_title: string;
+  client_name: string;
+  min_bedrooms: number | null;
+  max_bedrooms: number | null;
+  min_bathrooms: number | null;
+  min_budget: number | null;
+  max_budget: number | null;
+  property_types: string[] | null;
 }
 
 interface InspectionBid {
@@ -126,6 +139,7 @@ export default function InspectionSpotlightDetail() {
 
   const [job, setJob] = useState<InspectionJob | null>(null);
   const [creator, setCreator] = useState<Creator | null>(null);
+  const [clientBrief, setClientBrief] = useState<ClientBrief | null>(null);
   const [bids, setBids] = useState<InspectionBid[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBidDialog, setShowBidDialog] = useState(false);
@@ -168,6 +182,19 @@ export default function InspectionSpotlightDetail() {
 
       if (creatorError) throw creatorError;
       setCreator(creatorData);
+
+      // Fetch client brief if linked
+      if (jobData.client_brief_id) {
+        const { data: briefData, error: briefError } = await supabase
+          .from('client_briefs')
+          .select('id, brief_title, client_name, min_bedrooms, max_bedrooms, min_bathrooms, min_budget, max_budget, property_types')
+          .eq('id', jobData.client_brief_id)
+          .single();
+
+        if (!briefError && briefData) {
+          setClientBrief(briefData);
+        }
+      }
 
       // Fetch bids (only if user is creator or admin)
       if (user && (user.id === jobData.creator_id || profile?.role === 'admin')) {
@@ -373,28 +400,91 @@ export default function InspectionSpotlightDetail() {
           </Card>
         )}
 
-        {/* Inspection Scope */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-forest" />
-              Inspection Scope
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="text-sm text-muted-foreground">Requirements</Label>
-              <p className="mt-1">{job.scope_requirements || 'Not specified'}</p>
-            </div>
+        {/* Client Brief OR Inspection Scope */}
+        {clientBrief ? (
+          <Card className="border-purple-200 bg-purple-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-purple-600" />
+                Evaluate Against Client Brief
+              </CardTitle>
+              <CardDescription>
+                This property should be assessed against the following client requirements
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-white rounded-lg border border-purple-200">
+                <h4 className="font-semibold text-lg text-purple-900 mb-1">{clientBrief.brief_title}</h4>
+                <p className="text-sm text-muted-foreground mb-4">Client: {clientBrief.client_name}</p>
 
-            {job.special_instructions && (
-              <div>
-                <Label className="text-sm text-muted-foreground">Special Instructions</Label>
-                <p className="mt-1">{job.special_instructions}</p>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {clientBrief.min_bedrooms && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Bedrooms</Label>
+                      <p className="font-medium">
+                        {clientBrief.min_bedrooms}
+                        {clientBrief.max_bedrooms ? `-${clientBrief.max_bedrooms}` : '+'}
+                      </p>
+                    </div>
+                  )}
+                  {clientBrief.min_bathrooms && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Bathrooms</Label>
+                      <p className="font-medium">{clientBrief.min_bathrooms}+</p>
+                    </div>
+                  )}
+                  {clientBrief.max_budget && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Budget</Label>
+                      <p className="font-medium">
+                        {clientBrief.min_budget ? `$${clientBrief.min_budget.toLocaleString()}` : 'Up to'} - ${clientBrief.max_budget.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {clientBrief.property_types && clientBrief.property_types.length > 0 && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Property Types</Label>
+                      <p className="font-medium capitalize">{clientBrief.property_types.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              <div className="text-sm text-muted-foreground bg-purple-100 p-3 rounded-lg">
+                <strong>📋 Inspector Task:</strong> Assess whether this property meets the client's requirements and provide detailed feedback on how well it aligns with their brief.
+              </div>
+
+              {job.special_instructions && (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Additional Instructions</Label>
+                  <p className="mt-1 text-sm">{job.special_instructions}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-forest" />
+                Inspection Scope
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm text-muted-foreground">Requirements</Label>
+                <p className="mt-1">{job.scope_requirements || 'Not specified'}</p>
+              </div>
+
+              {job.special_instructions && (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Special Instructions</Label>
+                  <p className="mt-1">{job.special_instructions}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Property Details */}
         <Card>
