@@ -20,6 +20,7 @@ import ClientBriefForm from "./pages/ClientBriefForm";
 import ClientBriefDetail from "./pages/ClientBriefDetail";
 import CreateInspectionJob from "./pages/CreateInspectionJob";
 import InspectionSpotlights from "./pages/InspectionSpotlights";
+import InspectionSpotlightDetail from "./pages/InspectionSpotlightDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/inspections" element={<Inspections />} />
             <Route path="/inspections/spotlights" element={<InspectionSpotlights />} />
+            <Route path="/inspections/spotlights/:id" element={<InspectionSpotlightDetail />} />
 
             {/* Protected Routes */}
             <Route
