@@ -74,7 +74,15 @@ export function AppSidebar() {
     ] : []),
     { label: "Agent Directory", icon: Users, path: "/directory" },
     { label: "Property Marketplace", icon: Building2, path: "/marketplace" },
-    { label: "Inspection Requests", icon: ClipboardCheck, path: "/inspections" },
+    {
+      label: "Inspections",
+      icon: ClipboardCheck,
+      path: "/inspections",
+      children: [
+        { label: "Browse Spotlights", icon: ClipboardCheck, path: "/inspections" },
+        { label: "Post New Job", icon: ClipboardCheck, path: "/inspections/jobs/new" },
+      ],
+    },
     // Verified professionals and admins can create briefs
     ...(profile?.role === 'verified_professional' || profile?.role === 'admin' ? [
       { label: "Client Briefs", icon: FileText, path: "/briefs" },

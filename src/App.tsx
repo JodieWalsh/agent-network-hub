@@ -18,6 +18,7 @@ import AddProperty from "./pages/AddProperty";
 import ClientBriefs from "./pages/ClientBriefs";
 import ClientBriefForm from "./pages/ClientBriefForm";
 import ClientBriefDetail from "./pages/ClientBriefDetail";
+import CreateInspectionJob from "./pages/CreateInspectionJob";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
                   <ClientBriefDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inspections/jobs/new"
+              element={
+                <ProtectedRoute requiredPermission="CAN_POST_INSPECTIONS" showForbidden>
+                  <CreateInspectionJob />
                 </ProtectedRoute>
               }
             />
