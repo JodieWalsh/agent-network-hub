@@ -1,5 +1,5 @@
 interface WelcomeHeaderProps {
-  userName: string;
+  userName?: string | null;
 }
 
 export function WelcomeHeader({ userName }: WelcomeHeaderProps) {
@@ -8,10 +8,10 @@ export function WelcomeHeader({ userName }: WelcomeHeaderProps) {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl lg:text-2xl font-sans font-semibold text-foreground">
-            Welcome back, {userName}
+            {userName ? `Welcome back, ${userName}` : "Welcome to Buyers Agent Hub"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your network is growing
+            {userName ? "Your network is growing" : "Please sign in to access your dashboard"}
           </p>
         </div>
         

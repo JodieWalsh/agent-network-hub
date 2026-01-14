@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronDown, ChevronUp, Save } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BriefLocationManager, type BriefLocation } from "@/components/client-brief/BriefLocationManager";
 
 type Priority = "must_have" | "important" | "nice_to_have" | "dont_care";
 
@@ -258,8 +259,8 @@ export default function ClientBriefForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState<BriefFormData>(initialFormData);
-  const [suburbInput, setSuburbInput] = useState("");
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["basic"]));
+  const [briefLocations, setBriefLocations] = useState<BriefLocation[]>([]);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["basic", "locations"]));
   const [submitting, setSubmitting] = useState(false);
 
   const toggleSection = (section: string) => {
@@ -272,23 +273,6 @@ export default function ClientBriefForm() {
       }
       return newSet;
     });
-  };
-
-  const handleAddSuburb = () => {
-    if (suburbInput.trim() && !formData.preferred_suburbs.includes(suburbInput.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        preferred_suburbs: [...prev.preferred_suburbs, suburbInput.trim()],
-      }));
-      setSuburbInput("");
-    }
-  };
-
-  const handleRemoveSuburb = (suburb: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      preferred_suburbs: prev.preferred_suburbs.filter((s) => s !== suburb),
-    }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -398,9 +382,42 @@ export default function ClientBriefForm() {
         flexibility_notes: formData.flexibility_notes || null,
       };
 
-      const { error } = await supabase.from("client_briefs").insert(briefData);
+      const { data: createdBrief, error } = await supabase
+        .from("client_briefs")
+        .insert(briefData)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Save locations if any were added
+      if (briefLocations.length > 0 && createdBrief) {
+        const locationInserts = briefLocations.map(location => ({
+          brief_id: createdBrief.id,
+          location_name: location.location_name,
+          center_point: `POINT(${location.longitude} ${location.latitude})`,
+          radius_km: location.radius_km,
+          priority_tier: location.priority_tier,
+          city: location.city || null,
+          state: location.state || null,
+          country_code: location.country_code || null,
+          suburb: location.suburb || null,
+        }));
+
+        const { error: locationsError } = await supabase
+          .from("client_brief_locations")
+          .insert(locationInserts);
+
+        if (locationsError) {
+          console.error("Error saving locations:", locationsError);
+          // Don't fail the whole operation, just warn
+          toast({
+            variant: "destructive",
+            title: "Warning",
+            description: "Brief created but some locations could not be saved.",
+          });
+        }
+      }
 
       toast({
         title: "Brief Created",
@@ -569,39 +586,22 @@ export default function ClientBriefForm() {
                   </div>
                 </div>
 
-                <div>
-                  <Label>Preferred Suburbs</Label>
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      value={suburbInput}
-                      onChange={(e) => setSuburbInput(e.target.value)}
-                      placeholder="Enter suburb name"
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSuburb())}
-                    />
-                    <Button type="button" onClick={handleAddSuburb} variant="outline">
-                      Add
-                    </Button>
-                  </div>
-                  {formData.preferred_suburbs.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.preferred_suburbs.map((suburb) => (
-                        <span
-                          key={suburb}
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-forest/10 text-forest text-sm rounded-md"
-                        >
-                          {suburb}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSuburb(suburb)}
-                            className="hover:text-forest/70"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Location Preferences */}
+          <Card>
+            <SectionHeader title="Location Preferences" section="locations" />
+            {expandedSections.has("locations") && (
+              <CardContent className="space-y-4 pt-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add your client's preferred locations with priorities. You can set must-have areas, nice-to-have options, and exclude specific areas.
+                </p>
+                <BriefLocationManager
+                  locations={briefLocations}
+                  onChange={setBriefLocations}
+                />
               </CardContent>
             )}
           </Card>

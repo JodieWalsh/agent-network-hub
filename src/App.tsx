@@ -65,7 +65,7 @@ const App = () => (
             <Route
               path="/briefs"
               element={
-                <ProtectedRoute requiredRole="verified_professional" showForbidden>
+                <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
                   <ClientBriefs />
                 </ProtectedRoute>
               }
@@ -73,7 +73,7 @@ const App = () => (
             <Route
               path="/briefs/new"
               element={
-                <ProtectedRoute requiredRole="verified_professional" showForbidden>
+                <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
                   <ClientBriefForm />
                 </ProtectedRoute>
               }
@@ -81,7 +81,7 @@ const App = () => (
             <Route
               path="/briefs/:id"
               element={
-                <ProtectedRoute requiredRole="verified_professional" showForbidden>
+                <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
                   <ClientBriefDetail />
                 </ProtectedRoute>
               }

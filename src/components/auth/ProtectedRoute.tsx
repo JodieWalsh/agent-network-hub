@@ -38,7 +38,8 @@ export function ProtectedRoute({
   }
 
   // Check role-based access
-  if (requiredRole && profile?.role !== requiredRole) {
+  // Admins bypass role checks - they have access to everything
+  if (requiredRole && profile?.role !== requiredRole && profile?.role !== 'admin') {
     console.log('Role check failed:', { requiredRole, actualRole: profile?.role, profile });
     if (showForbidden) {
       return <ForbiddenPage />;

@@ -31,23 +31,29 @@ interface ClientBrief {
 
 export default function ClientBriefs() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [briefs, setBriefs] = useState<ClientBrief[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchBriefs();
-  }, [user]);
+  }, [user, profile]);
 
   const fetchBriefs = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Admins see all briefs, verified professionals see only their own
+      let query = supabase
         .from("client_briefs")
-        .select("*")
-        .eq("agent_id", user.id)
-        .order("updated_at", { ascending: false });
+        .select("*");
+
+      // If not admin, filter by agent_id
+      if (profile?.role !== 'admin') {
+        query = query.eq("agent_id", user.id);
+      }
+
+      const { data, error } = await query.order("updated_at", { ascending: false });
 
       if (error) throw error;
 

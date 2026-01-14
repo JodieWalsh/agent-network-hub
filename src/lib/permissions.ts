@@ -17,7 +17,8 @@ export type Permission =
   | 'CAN_VIEW_MARKETPLACE'
   | 'CAN_VIEW_DIRECTORY'
   | 'CAN_POST_INSPECTIONS'
-  | 'CAN_SEND_MESSAGES';
+  | 'CAN_SEND_MESSAGES'
+  | 'CAN_MANAGE_CLIENT_BRIEFS';
 
 export interface UserPermissionContext {
   isAuthenticated: boolean;
@@ -39,6 +40,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'CAN_VIEW_DIRECTORY',
     'CAN_POST_INSPECTIONS',
     'CAN_SEND_MESSAGES',
+    'CAN_MANAGE_CLIENT_BRIEFS',
   ],
   verified_professional: [
     'CAN_SUBMIT_PROPERTY',
@@ -47,6 +49,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'CAN_VIEW_DIRECTORY',
     'CAN_POST_INSPECTIONS',
     'CAN_SEND_MESSAGES',
+    'CAN_MANAGE_CLIENT_BRIEFS',
   ],
   pending_professional: [
     'CAN_VIEW_MARKETPLACE',

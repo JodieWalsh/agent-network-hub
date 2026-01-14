@@ -1042,5 +1042,97 @@ This is a differentiating feature that sets Agent Hub apart from competitors. Th
 
 ---
 
-**Last Updated:** January 11, 2026
-**Project Status:** Active Development - Core Features Complete, OAuth Implemented, Global Location System Implemented
+**EXPLAINER VIDEO CONTENT - CLIENT BRIEF LOCATION SYSTEM WITH PRIORITIES:**
+
+This is a key differentiator from other platforms! The script should explain:
+
+1. **Client Brief Location System with Priorities** - How agents can specify client location preferences with three priority levels:
+   - **Must-Have (Primary):** Client's top priority areas - properties MUST be in these locations
+     - Example: "Richmond, VIC - 25km radius" + "South Yarra, VIC - Exact suburb only"
+     - Visual: Gold/amber cards with star icon
+     - Matching logic: Properties must match at least one must-have location
+
+   - **Nice-to-Have (Secondary):** Client would consider these areas if the property is right
+     - Example: "Geelong, VIC - 50km radius"
+     - Visual: Blue cards with thumbs-up icon
+     - Matching logic: Properties score higher if in nice-to-have areas, but not required
+
+   - **Exclude (Blacklist):** Areas the client absolutely does NOT want to see
+     - Example: "Dandenong, VIC" - client explicitly said no to this area
+     - Visual: Red cards with ban icon
+     - Matching logic: Properties in excluded areas are filtered out completely
+
+2. **Radius vs Exact Suburb** - How agents can choose precision level:
+   - **Radius-based:** "Within 25km of Richmond" - useful for flexible searches
+     - Slider from 0-100km
+     - Shows geographic circle on map (future feature)
+   - **Exact suburb only:** "Only properties IN South Yarra" - no radius, precise match
+     - Checkbox to disable radius
+     - Matches only properties with exact city/suburb match
+
+3. **Real-World Use Case Examples:**
+   - **Example 1 - Young Family:**
+     - Must-have: "Richmond (25km), Hawthorn (exact suburb)"
+     - Nice-to-have: "Brighton (50km), Camberwell (10km)"
+     - Exclude: "Dandenong, Frankston" (too far from family)
+
+   - **Example 2 - Investment Buyer:**
+     - Must-have: "Melbourne CBD (10km), Brisbane CBD (15km)"
+     - Nice-to-have: "Sydney CBD (5km)" (if the numbers work)
+     - Exclude: "Remote regional areas" (low rental demand)
+
+   - **Example 3 - Relocating Professional:**
+     - Must-have: "San Francisco, CA (50km)" (job location)
+     - Nice-to-have: "Oakland, CA (25km), Berkeley, CA (20km)"
+     - Exclude: "San Jose, CA" (too long commute)
+
+4. **How This Helps Buyers Agents:**
+   - **Save Time:** Automatically filter out irrelevant properties
+   - **Match Accuracy:** System scores properties based on location priorities
+   - **Client Satisfaction:** Show clients you understand their needs precisely
+   - **Smart Recommendations:** Algorithm prioritizes must-have locations
+   - **Clear Documentation:** Visual representation of client preferences
+   - **Flexibility:** Different clients, different needs - system adapts
+
+5. **Global Coverage:**
+   - Works worldwide (Sydney, London, New York, Paris, Tokyo - anywhere!)
+   - Uses Mapbox global location data
+   - Consistent experience across countries
+   - Location disambiguation: "Richmond, VIC" vs "Richmond, VA"
+
+6. **Visual Demo Points:**
+   - Screen recording: Creating a client brief, clicking "Location Preferences"
+   - Screen recording: Searching for "Richmond", selecting Richmond, Victoria, Australia
+   - Screen recording: Setting priority to "Must-have", adjusting radius slider to 25km
+   - Screen recording: Adding "Geelong" as "Nice-to-have" with 50km radius
+   - Screen recording: Adding "Dandenong" as "Exclude"
+   - Screenshot: Final display showing three sections (must-have, nice-to-have, exclude) with color coding
+   - Screenshot: Property matching results showing prioritized listings
+
+**Key Messages:**
+- "Understand your client's location preferences like never before"
+- "Three-tier priority system: Must-have, Nice-to-have, Exclude"
+- "Precise control with radius or exact suburb matching"
+- "Works globally - from Sydney to San Francisco"
+- "Save time, increase accuracy, delight clients"
+
+**Why This Is Better Than Competitors:**
+- **Priority Levels:** Not just "preferred suburbs" - actual priority ranking
+- **Radius Control:** 0-100km slider for each location individually
+- **Exclude Areas:** Explicitly filter out unwanted areas (competitors don't have this!)
+- **Multiple Precision Levels:** Mix exact suburbs with radius-based areas
+- **Global Coverage:** Not limited to one country or city database
+- **Visual Clarity:** Color-coded cards make priorities obvious at a glance
+- **Smart Matching:** Algorithm uses priorities to rank property matches
+
+**Technical Excellence:**
+- Real-time global location search powered by Mapbox
+- PostGIS geographic database for radius calculations
+- Smart matching algorithm considers all three priority tiers
+- Fast, responsive interface
+- Mobile-friendly design
+
+---
+
+**Last Updated:** January 14, 2026
+**Project Status:** Active Development - Core Features Complete, OAuth Implemented, Global Location System Implemented, Client Brief Location System with Priorities Implemented
