@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -18,11 +18,13 @@ import {
   LogIn,
   Shield,
   FileText,
+  Search,
+  Plus,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { UnitToggle } from "@/components/ui/unit-toggle";
 
 interface NavItem {
   label: string;
@@ -64,6 +66,51 @@ export function AppSidebar() {
   const { toast } = useToast();
   const [expandedItems, setExpandedItems] = useState<string[]>(["Settings"]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [hasPostedJobs, setHasPostedJobs] = useState(false);
+
+  // Check if user has posted any inspection jobs
+  useEffect(() => {
+    const checkPostedJobs = async () => {
+      if (!user) {
+        setHasPostedJobs(false);
+        return;
+      }
+
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+        let accessToken = supabaseKey;
+        try {
+          const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+          const storedSession = localStorage.getItem(storageKey);
+          if (storedSession) {
+            const parsed = JSON.parse(storedSession);
+            accessToken = parsed?.access_token || supabaseKey;
+          }
+        } catch (e) {}
+
+        const response = await fetch(
+          `${supabaseUrl}/rest/v1/inspection_jobs?select=id&requesting_agent_id=eq.${user.id}&limit=1`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setHasPostedJobs(Array.isArray(data) && data.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking posted jobs:', error);
+      }
+    };
+
+    checkPostedJobs();
+  }, [user]);
 
   // Build dynamic nav items based on user role
   const dynamicNavItems = [
@@ -79,8 +126,11 @@ export function AppSidebar() {
       icon: ClipboardCheck,
       path: "/inspections",
       children: [
-        { label: "Browse Spotlights", icon: ClipboardCheck, path: "/inspections/spotlights" },
-        { label: "Post New Job", icon: ClipboardCheck, path: "/inspections/jobs/new" },
+        { label: "Browse Spotlights", icon: Search, path: "/inspections/spotlights" },
+        { label: "Post a Job", icon: Plus, path: "/inspections/jobs/new" },
+        ...(hasPostedJobs ? [
+          { label: "My Posted Jobs", icon: Briefcase, path: "/inspections/my-jobs" },
+        ] : []),
       ],
     },
     // Verified professionals and admins can create briefs
@@ -257,11 +307,6 @@ export function AppSidebar() {
             ))}
           </ul>
         </nav>
-
-        {/* Unit Toggle */}
-        <div className="px-3 py-2 border-t border-sidebar-border">
-          <UnitToggle />
-        </div>
 
         {/* User Section */}
         <div className="p-4 border-t border-sidebar-border">

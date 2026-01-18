@@ -21,6 +21,9 @@ import ClientBriefDetail from "./pages/ClientBriefDetail";
 import CreateInspectionJob from "./pages/CreateInspectionJob";
 import InspectionSpotlights from "./pages/InspectionSpotlights";
 import InspectionSpotlightDetail from "./pages/InspectionSpotlightDetail";
+import InspectionReportBuilder from "./pages/InspectionReportBuilder";
+import MyPostedJobs from "./pages/inspections/MyPostedJobs";
+import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +95,14 @@ const App = () => (
               }
             />
             <Route
+              path="/briefs/:id/edit"
+              element={
+                <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
+                  <ClientBriefForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/inspections/jobs/new"
               element={
                 <ProtectedRoute requiredPermission="CAN_POST_INSPECTIONS" showForbidden>
@@ -99,7 +110,24 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/inspections/my-jobs"
+              element={
+                <ProtectedRoute showForbidden>
+                  <MyPostedJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inspections/jobs/:jobId/report"
+              element={
+                <ProtectedRoute showForbidden>
+                  <InspectionReportBuilder />
+                </ProtectedRoute>
+              }
+            />
 
+            <Route path="/welcome" element={<Welcome />} />
             <Route path="/settings/profile" element={<ProfileEdit />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
