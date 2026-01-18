@@ -53,6 +53,7 @@ import {
   History,
   Plus,
   ClipboardList,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -80,6 +81,7 @@ interface InspectionJob {
   agreed_price: number | null;
   agreed_date: string | null;
   bid_count?: number;
+  bids?: InspectionBid[];
   client_brief?: {
     brief_name: string;
     client_name: string;
@@ -171,8 +173,8 @@ export default function MyPostedJobs() {
   const [loadingBids, setLoadingBids] = useState(false);
   const [showBidsDialog, setShowBidsDialog] = useState(false);
 
-  // Accept/Decline confirmation
-  const [confirmAction, setConfirmAction] = useState<{ type: 'accept' | 'decline' | 'cancel'; bid?: InspectionBid; job?: InspectionJob } | null>(null);
+  // Accept/Decline confirmation - now includes job for inline bid actions
+  const [confirmAction, setConfirmAction] = useState<{ type: 'accept' | 'decline' | 'cancel'; bid?: InspectionBid; job: InspectionJob } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -186,7 +188,7 @@ export default function MyPostedJobs() {
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
 
-      // Fetch jobs with bid count
+      // Fetch jobs
       const response = await fetch(
         `${supabaseUrl}/rest/v1/inspection_jobs?select=*,client_briefs:client_brief_id(brief_name,client_name)&requesting_agent_id=eq.${user.id}&order=created_at.desc`,
         {
@@ -201,11 +203,11 @@ export default function MyPostedJobs() {
 
       const jobsData = await response.json();
 
-      // Fetch bid counts for each job
+      // Fetch bids with inspector profiles for each job
       const jobsWithBids = await Promise.all(
         jobsData.map(async (job: any) => {
           const bidResponse = await fetch(
-            `${supabaseUrl}/rest/v1/inspection_bids?select=id&job_id=eq.${job.id}&status=eq.pending`,
+            `${supabaseUrl}/rest/v1/inspection_bids?select=*,inspector:inspector_id(full_name,user_type,reputation_score,avatar_url)&job_id=eq.${job.id}&order=created_at.desc`,
             {
               headers: {
                 'apikey': supabaseKey,
@@ -215,10 +217,14 @@ export default function MyPostedJobs() {
           );
 
           const bidsData = await bidResponse.json();
+          const bids = Array.isArray(bidsData) ? bidsData : [];
+          const pendingBids = bids.filter((b: any) => b.status === 'pending');
+
           return {
             ...job,
             client_brief: job.client_briefs,
-            bid_count: Array.isArray(bidsData) ? bidsData.length : 0,
+            bids: bids,
+            bid_count: pendingBids.length,
           };
         })
       );
@@ -285,8 +291,9 @@ export default function MyPostedJobs() {
     }
   };
 
-  const handleAcceptBid = async (bid: InspectionBid) => {
-    if (!user || !selectedJob) return;
+  const handleAcceptBid = async (bid: InspectionBid, job?: InspectionJob) => {
+    const targetJob = job || selectedJob;
+    if (!user || !targetJob) return;
 
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
@@ -307,7 +314,7 @@ export default function MyPostedJobs() {
 
       // 2. Decline other pending bids for this job
       await fetch(
-        `${supabaseUrl}/rest/v1/inspection_bids?job_id=eq.${selectedJob.id}&id=neq.${bid.id}&status=eq.pending`,
+        `${supabaseUrl}/rest/v1/inspection_bids?job_id=eq.${targetJob.id}&id=neq.${bid.id}&status=eq.pending`,
         {
           method: 'PATCH',
           headers: {
@@ -321,7 +328,7 @@ export default function MyPostedJobs() {
 
       // 3. Update the job status to assigned
       await fetch(
-        `${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${selectedJob.id}`,
+        `${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${targetJob.id}`,
         {
           method: 'PATCH',
           headers: {
@@ -549,6 +556,8 @@ export default function MyPostedJobs() {
                       onCancel={() => setConfirmAction({ type: 'cancel', job })}
                       onViewDetails={() => navigate(`/inspections/spotlights/${job.id}`)}
                       onViewReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
+                      onAcceptBid={(bid, j) => setConfirmAction({ type: 'accept', bid, job: j })}
+                      onDeclineBid={(bid, j) => setConfirmAction({ type: 'decline', bid, job: j })}
                       formatCurrency={formatCurrency}
                       formatDate={formatDate}
                       getDaysRemaining={getDaysRemaining}
@@ -637,8 +646,8 @@ export default function MyPostedJobs() {
                   confirmAction?.type === 'cancel' && 'bg-red-600 hover:bg-red-700'
                 )}
                 onClick={() => {
-                  if (confirmAction?.type === 'accept' && confirmAction.bid) {
-                    handleAcceptBid(confirmAction.bid);
+                  if (confirmAction?.type === 'accept' && confirmAction.bid && confirmAction.job) {
+                    handleAcceptBid(confirmAction.bid, confirmAction.job);
                   } else if (confirmAction?.type === 'decline' && confirmAction.bid) {
                     handleDeclineBid(confirmAction.bid);
                   } else if (confirmAction?.type === 'cancel' && confirmAction.job) {
@@ -667,6 +676,8 @@ interface JobCardProps {
   onCancel: () => void;
   onViewDetails: () => void;
   onViewReport: () => void;
+  onAcceptBid: (bid: InspectionBid, job: InspectionJob) => void;
+  onDeclineBid: (bid: InspectionBid, job: InspectionJob) => void;
   formatCurrency: (cents: number) => string;
   formatDate: (date: string) => string;
   getDaysRemaining: (expiresAt: string | null, inspectionDateTo: string) => number;
@@ -680,13 +691,18 @@ function JobCard({
   onCancel,
   onViewDetails,
   onViewReport,
+  onAcceptBid,
+  onDeclineBid,
   formatCurrency,
   formatDate,
   getDaysRemaining,
 }: JobCardProps) {
+  const [expanded, setExpanded] = useState(tabId === 'received'); // Auto-expand for bids received tab
   const statusConfig = STATUS_CONFIG[job.status];
   const StatusIcon = statusConfig.icon;
   const daysRemaining = getDaysRemaining(job.expires_at, job.inspection_date_to);
+  const pendingBids = job.bids?.filter(b => b.status === 'pending') || [];
+  const hasBids = pendingBids.length > 0;
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -730,13 +746,23 @@ function JobCard({
                 <Calendar size={14} className="text-blue-600" />
                 Posted {formatDate(job.created_at)}
               </span>
-              {job.bid_count !== undefined && job.bid_count > 0 && (
-                <span className="flex items-center gap-1.5">
+              {hasBids && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="flex items-center gap-1.5 hover:underline"
+                >
                   <Users size={14} className="text-purple-600" />
                   <span className="font-medium text-purple-700">
-                    {job.bid_count} bid{job.bid_count !== 1 ? 's' : ''} received
+                    {pendingBids.length} bid{pendingBids.length !== 1 ? 's' : ''} received
                   </span>
-                </span>
+                  <ChevronDown
+                    size={14}
+                    className={cn(
+                      'text-purple-600 transition-transform',
+                      expanded && 'rotate-180'
+                    )}
+                  />
+                </button>
               )}
               {job.status === 'open' && daysRemaining >= 0 && (
                 <span className={cn(
@@ -768,16 +794,10 @@ function JobCard({
 
             {/* Bids Received actions */}
             {tabId === 'received' && (
-              <>
-                <Button size="sm" onClick={onViewBids} className="bg-purple-600 hover:bg-purple-700">
-                  <Eye size={14} className="mr-1" />
-                  Review Bids
-                </Button>
-                <Button variant="outline" size="sm" onClick={onEdit}>
-                  <Edit size={14} className="mr-1" />
-                  Edit
-                </Button>
-              </>
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Edit size={14} className="mr-1" />
+                Edit Job
+              </Button>
             )}
 
             {/* In Progress actions */}
@@ -831,8 +851,95 @@ function JobCard({
             )}
           </div>
         </div>
+
+        {/* Inline Bids Section */}
+        {expanded && hasBids && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="space-y-3">
+              {pendingBids.map((bid) => (
+                <InlineBidCard
+                  key={bid.id}
+                  bid={bid}
+                  job={job}
+                  onAccept={() => onAcceptBid(bid, job)}
+                  onDecline={() => onDeclineBid(bid, job)}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+// Inline Bid Card - Compact version for displaying in job cards
+interface InlineBidCardProps {
+  bid: InspectionBid;
+  job: InspectionJob;
+  onAccept: () => void;
+  onDecline: () => void;
+  formatCurrency: (cents: number) => string;
+  formatDate: (date: string) => string;
+}
+
+function InlineBidCard({ bid, job, onAccept, onDecline, formatCurrency, formatDate }: InlineBidCardProps) {
+  return (
+    <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg border border-border/50 hover:border-forest/30 transition-colors">
+      {/* Inspector Avatar */}
+      <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
+        {bid.inspector?.avatar_url ? (
+          <img
+            src={bid.inspector.avatar_url}
+            alt={bid.inspector.full_name || 'Inspector'}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+        ) : (
+          <User size={20} className="text-forest" />
+        )}
+      </div>
+
+      {/* Bid Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="font-medium truncate">{bid.inspector?.full_name || 'Unknown'}</span>
+          {bid.inspector?.reputation_score && bid.inspector.reputation_score > 0 && (
+            <span className="flex items-center gap-0.5 text-xs text-amber-600">
+              <Star size={12} fill="currentColor" />
+              {bid.inspector.reputation_score}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="font-semibold text-green-700">{formatCurrency(bid.proposed_price)}</span>
+          {bid.proposed_date && (
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Calendar size={12} />
+              {formatDate(bid.proposed_date)}
+            </span>
+          )}
+          {bid.message && (
+            <span className="text-muted-foreground truncate max-w-[200px]" title={bid.message}>
+              "{bid.message}"
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Button size="sm" onClick={onAccept} className="bg-green-600 hover:bg-green-700 h-8 px-3">
+          <CheckCircle size={14} className="mr-1" />
+          Accept
+        </Button>
+        <Button size="sm" variant="outline" onClick={onDecline} className="text-red-600 h-8 px-3">
+          <XCircle size={14} className="mr-1" />
+          Decline
+        </Button>
+      </div>
+    </div>
   );
 }
 
