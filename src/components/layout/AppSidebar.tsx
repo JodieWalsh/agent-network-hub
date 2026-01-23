@@ -21,10 +21,12 @@ import {
   Search,
   Plus,
   Briefcase,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface NavItem {
   label: string;
@@ -67,12 +69,14 @@ export function AppSidebar() {
   const [expandedItems, setExpandedItems] = useState<string[]>(["Settings"]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [hasPostedJobs, setHasPostedJobs] = useState(false);
+  const [hasInspectionWork, setHasInspectionWork] = useState(false);
 
-  // Check if user has posted any inspection jobs
+  // Check if user has posted any inspection jobs or has inspection work
   useEffect(() => {
-    const checkPostedJobs = async () => {
+    const checkInspectionActivity = async () => {
       if (!user) {
         setHasPostedJobs(false);
+        setHasInspectionWork(false);
         return;
       }
 
@@ -90,7 +94,8 @@ export function AppSidebar() {
           }
         } catch (e) {}
 
-        const response = await fetch(
+        // Check for posted jobs
+        const postedJobsResponse = await fetch(
           `${supabaseUrl}/rest/v1/inspection_jobs?select=id&requesting_agent_id=eq.${user.id}&limit=1`,
           {
             headers: {
@@ -100,16 +105,41 @@ export function AppSidebar() {
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
+        if (postedJobsResponse.ok) {
+          const data = await postedJobsResponse.json();
           setHasPostedJobs(Array.isArray(data) && data.length > 0);
         }
+
+        // Check for inspection work (bids submitted OR assigned jobs)
+        const bidsResponse = await fetch(
+          `${supabaseUrl}/rest/v1/inspection_bids?select=id&inspector_id=eq.${user.id}&limit=1`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        const assignedJobsResponse = await fetch(
+          `${supabaseUrl}/rest/v1/inspection_jobs?select=id&assigned_inspector_id=eq.${user.id}&limit=1`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        const hasBids = bidsResponse.ok && (await bidsResponse.json()).length > 0;
+        const hasAssignedJobs = assignedJobsResponse.ok && (await assignedJobsResponse.json()).length > 0;
+        setHasInspectionWork(hasBids || hasAssignedJobs);
       } catch (error) {
-        console.error('Error checking posted jobs:', error);
+        console.error('Error checking inspection activity:', error);
       }
     };
 
-    checkPostedJobs();
+    checkInspectionActivity();
   }, [user]);
 
   // Build dynamic nav items based on user role
@@ -130,6 +160,9 @@ export function AppSidebar() {
         { label: "Post a Job", icon: Plus, path: "/inspections/jobs/new" },
         ...(hasPostedJobs ? [
           { label: "My Posted Jobs", icon: Briefcase, path: "/inspections/my-jobs" },
+        ] : []),
+        ...(hasInspectionWork ? [
+          { label: "My Inspection Work", icon: ClipboardList, path: "/inspections/my-work" },
         ] : []),
       ],
     },
@@ -197,7 +230,15 @@ export function AppSidebar() {
   };
 
   const getUserType = () => {
-    const type = user?.user_metadata?.user_type;
+    // Show role-based label for guests/pending users
+    if (profile?.role === 'guest' || profile?.approval_status === 'pending') {
+      return 'Guest';
+    }
+    if (profile?.role === 'admin') {
+      return 'Administrator';
+    }
+    // For verified professionals, show their user type
+    const type = profile?.user_type || user?.user_metadata?.user_type;
     return type ? userTypeLabels[type] || type : "Member";
   };
 
@@ -330,6 +371,7 @@ export function AppSidebar() {
                   </p>
                   <p className="text-xs text-muted-foreground">{getUserType()}</p>
                 </div>
+                <NotificationBell />
               </div>
               <button
                 onClick={handleSignOut}

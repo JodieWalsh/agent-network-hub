@@ -23,7 +23,10 @@ import InspectionSpotlights from "./pages/InspectionSpotlights";
 import InspectionSpotlightDetail from "./pages/InspectionSpotlightDetail";
 import InspectionReportBuilder from "./pages/InspectionReportBuilder";
 import MyPostedJobs from "./pages/inspections/MyPostedJobs";
+import MyInspectionWork from "./pages/inspections/MyInspectionWork";
 import Welcome from "./pages/Welcome";
+import ResetPassword from "./pages/ResetPassword";
+import Activity from "./pages/Activity";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,11 +42,13 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/directory" element={<Directory />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/inspections" element={<Inspections />} />
             <Route path="/inspections/spotlights" element={<InspectionSpotlights />} />
             <Route path="/inspections/spotlights/:id" element={<InspectionSpotlightDetail />} />
+            <Route path="/activity" element={<Activity />} />
 
             {/* Protected Routes */}
             <Route
@@ -115,6 +120,14 @@ const App = () => (
               element={
                 <ProtectedRoute showForbidden>
                   <MyPostedJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inspections/my-work"
+              element={
+                <ProtectedRoute showForbidden>
+                  <MyInspectionWork />
                 </ProtectedRoute>
               }
             />
