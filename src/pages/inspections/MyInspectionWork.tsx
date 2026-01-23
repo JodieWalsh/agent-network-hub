@@ -515,7 +515,7 @@ export default function MyInspectionWork() {
                 key={job.id}
                 job={job}
                 onViewJob={() => navigate(`/inspections/spotlights/${job.id}`)}
-                onCompleteReport={() => navigate(`/inspections/report/${job.id}`)}
+                onCompleteReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
               />
             ))
           )}
@@ -530,7 +530,7 @@ export default function MyInspectionWork() {
               <SubmittedJobCard
                 key={job.id}
                 job={job}
-                onViewReport={() => navigate(`/inspections/report/${job.id}`)}
+                onViewReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
               />
             ))
           )}
@@ -545,7 +545,7 @@ export default function MyInspectionWork() {
               <CompletedJobCard
                 key={job.id}
                 job={job}
-                onViewReport={() => navigate(`/inspections/report/${job.id}`)}
+                onViewReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
                 onLeaveReview={() => toast.info('Review feature coming soon!')}
               />
             ))
