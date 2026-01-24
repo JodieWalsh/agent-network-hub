@@ -221,7 +221,7 @@ interface InspectionJob {
   id: string;
   property_address: string;
   property_type: string;
-  creator_id: string;
+  requesting_agent_id: string;
   client_brief_id: string | null;
   status: string;
   agreed_price: number | null;
@@ -667,8 +667,10 @@ export default function InspectionReportBuilder() {
         time_spent_minutes: Math.floor(timeSpent / 60),
       };
 
+      let reportSaveSuccess = false;
+
       if (existingReportId) {
-        await fetch(`${supabaseUrl}/rest/v1/inspection_reports?id=eq.${existingReportId}`, {
+        const patchResponse = await fetch(`${supabaseUrl}/rest/v1/inspection_reports?id=eq.${existingReportId}`, {
           method: 'PATCH',
           headers: {
             'apikey': supabaseKey,
@@ -678,19 +680,37 @@ export default function InspectionReportBuilder() {
           },
           body: JSON.stringify(reportData),
         });
+        reportSaveSuccess = patchResponse.ok;
+        if (!reportSaveSuccess) {
+          const errorText = await patchResponse.text();
+          console.error('Report PATCH failed:', patchResponse.status, errorText);
+          throw new Error(`Failed to update report: ${patchResponse.status}`);
+        }
       } else {
-        await fetch(`${supabaseUrl}/rest/v1/inspection_reports`, {
+        const postResponse = await fetch(`${supabaseUrl}/rest/v1/inspection_reports`, {
           method: 'POST',
           headers: {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=minimal',
+            'Prefer': 'return=representation',
           },
           body: JSON.stringify(reportData),
         });
+        reportSaveSuccess = postResponse.ok;
+        if (!reportSaveSuccess) {
+          const errorText = await postResponse.text();
+          console.error('Report POST failed:', postResponse.status, errorText);
+          throw new Error(`Failed to save report: ${postResponse.status}. Please try again.`);
+        }
+        // Get the new report ID
+        const savedReport = await postResponse.json();
+        if (savedReport?.[0]?.id) {
+          setExistingReportId(savedReport[0].id);
+        }
       }
 
+      // Only update job status if report was saved successfully
       // Update job status to pending_review
       await fetch(`${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${jobId}`, {
         method: 'PATCH',
@@ -706,7 +726,7 @@ export default function InspectionReportBuilder() {
       // Send notification to job creator
       try {
         await notifyReportSubmitted(
-          job.creator_id,
+          job.requesting_agent_id,
           job.property_address,
           job.id,
           user.id
