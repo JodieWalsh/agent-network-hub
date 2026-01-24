@@ -268,8 +268,6 @@ export default function InspectionReportView() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
 
-  console.log('[ReportView] Component mounted, jobId:', jobId, 'user:', user?.id);
-
   const [job, setJob] = useState<InspectionJob | null>(null);
   const [report, setReport] = useState<InspectionReport | null>(null);
   const [clientBrief, setClientBrief] = useState<ClientBrief | null>(null);
@@ -278,23 +276,19 @@ export default function InspectionReportView() {
   const [approving, setApproving] = useState(false);
 
   useEffect(() => {
-    console.log('[ReportView] useEffect triggered, jobId:', jobId, 'user:', !!user);
     if (jobId && user) {
       fetchJobAndReport();
     } else if (!user) {
-      console.log('[ReportView] No user, stopping loading');
       setLoading(false);
     }
   }, [jobId, user]);
 
   const fetchJobAndReport = async () => {
-    console.log('[ReportView] fetchJobAndReport called');
     if (!jobId || !user) return;
     setLoading(true);
 
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
-      console.log('[ReportView] Fetching job:', jobId);
 
       // Fetch job
       const jobResponse = await fetch(
@@ -308,26 +302,16 @@ export default function InspectionReportView() {
         }
       );
 
-      if (!jobResponse.ok) {
-        const errorText = await jobResponse.text();
-        console.error('[ReportView] Job fetch failed:', jobResponse.status, errorText);
-        throw new Error('Failed to fetch job');
-      }
+      if (!jobResponse.ok) throw new Error('Failed to fetch job');
       const jobData = await jobResponse.json();
-      console.log('[ReportView] Job data:', jobData);
-      console.log('[ReportView] Job requesting_agent_id:', jobData.requesting_agent_id);
-      console.log('[ReportView] Current user.id:', user.id);
-      console.log('[ReportView] Profile role:', profile?.role);
       setJob(jobData);
 
       // Authorization check - only job creator or admin can view
       if (jobData.requesting_agent_id !== user.id && profile?.role !== 'admin') {
-        console.error('[ReportView] AUTH FAILED - user is not job creator or admin');
         toast.error('You are not authorized to view this report');
         navigate('/inspections/my-jobs');
         return;
       }
-      console.log('[ReportView] Auth check passed');
 
       // Fetch report
       const reportResponse = await fetch(
@@ -340,22 +324,15 @@ export default function InspectionReportView() {
         }
       );
 
-      const reportStatus = reportResponse.status;
-      const reportText = await reportResponse.text();
-
-      // Show alert with debug info
-      alert(`DEBUG: Report query status: ${reportStatus}\nJob ID: ${jobId}\nResponse: ${reportText.substring(0, 200)}`);
-
       if (!reportResponse.ok) {
-        toast.error('Failed to fetch report: ' + reportStatus);
+        toast.error('Failed to fetch report');
         navigate('/inspections/my-jobs?tab=reports');
         return;
       }
 
-      const reports = JSON.parse(reportText);
+      const reports = await reportResponse.json();
 
       if (!reports || reports.length === 0) {
-        alert(`DEBUG: No reports found!\nJob ID: ${jobId}\nQuery returned empty array.\nThis could be an RLS policy issue.`);
         toast.error('No report found for this job');
         navigate('/inspections/my-jobs?tab=reports');
         return;
