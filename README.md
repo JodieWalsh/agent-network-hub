@@ -1,73 +1,126 @@
-# Welcome to your Lovable project
+# Buyers Agent Hub
 
-## Project info
+A professional networking platform connecting buyers agents, real estate agents, inspectors, and other property professionals.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 📋 Project Documentation
 
-## How can I edit this code?
+Before making changes, please read the documentation:
 
-There are several ways of editing your application.
+| Document | Description |
+|----------|-------------|
+| [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md) | Architecture, features, database, key files reference |
+| [Key Features](docs/KEY_FEATURES.md) | Platform features and how they work |
+| [Dani's Approval Checklist](docs/DANI_APPROVAL_CHECKLIST.md) | Business decisions needing review |
+| [Project To-Do List](docs/PROJECT_TODO.md) | Future development tasks |
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend:** React, TypeScript, Vite
+- **Styling:** Tailwind CSS, shadcn-ui
+- **Backend:** Supabase (Auth, Database, Storage)
+- **Location:** Mapbox Geocoding API
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- Supabase project with required tables
+- Mapbox access token
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Environment Variables
 
-Follow these steps:
+Create a `.env` file with:
+
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+VITE_SUPABASE_PROJECT_ID=your-project-id
+VITE_MAPBOX_ACCESS_TOKEN=your-mapbox-token
+```
+
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to project directory
+cd agent-network-hub
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Database Migrations
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Push migrations to Supabase:
 
-**Use GitHub Codespaces**
+```sh
+npx supabase db push
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Key Features
 
-## What technologies are used for this project?
+- **Agent Directory** - Find and connect with property professionals
+- **Inspection Spotlights** - Post jobs for property inspections
+- **Bid System** - Transparent bidding with full audit trail
+- **My Posted Jobs** - Manage inspection requests and review bids
+- **Client Briefs** - Track buyer requirements and property searches
+- **Property Marketplace** - Share off-market properties
+- **Admin Dashboard** - User approval and platform management
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+src/
+├── components/       # Reusable UI components
+│   ├── auth/        # Authentication components
+│   ├── layout/      # Layout components (Sidebar, Header)
+│   ├── location/    # Location search components
+│   └── ui/          # shadcn-ui components
+├── contexts/        # React contexts (Auth, Units)
+├── hooks/           # Custom React hooks
+├── lib/             # Utilities and helpers
+├── pages/           # Page components
+│   ├── inspections/ # Inspection-related pages
+│   └── settings/    # Settings pages
+└── integrations/    # External service integrations
 
-## How can I deploy this project?
+docs/                # Documentation
+supabase/
+└── migrations/      # Database migrations
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## User Roles
 
-## Can I connect a custom domain to my Lovable project?
+| Role | Access Level |
+|------|--------------|
+| Guest | Limited - browsing only, awaiting approval |
+| Verified Professional | Full - all platform features |
+| Admin | Full + platform management |
 
-Yes, you can!
+## Testing Multiple Users
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+To test flows involving two users (e.g., job poster and bidder):
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. **Different browsers:** Chrome for User A, Firefox/Edge for User B
+2. **Incognito window:** Regular window for User A, Incognito for User B
+
+## Deployment
+
+This project uses Lovable for deployment. Open the Lovable dashboard and click Share → Publish.
+
+## Contributing
+
+1. Read the [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md)
+2. Check existing patterns in the codebase
+3. Follow TypeScript and React best practices
+4. Test with multiple user roles
+
+---
+
+*Last updated: January 2026*

@@ -1,0 +1,118 @@
+# 📝 BUYERS AGENT HUB - TO DO LIST
+
+## Future Development Tasks
+
+This document tracks features, improvements, and tasks to be done in future sessions.
+
+---
+
+## 🎨 DESIGN & UI/UX
+
+### 1. Full Visual Revamp
+**Priority:** Medium
+**Status:** To Do
+
+**What needs work:**
+- [ ] My Inspection Work dashboard - colours not good
+- [ ] Overall colour consistency across all pages
+- [ ] Review all new inspection marketplace screens for visual polish
+- [ ] Ensure Premium Network design system is applied consistently
+- [ ] Mobile responsiveness review
+
+**Design System Reminder:**
+- Primary: Deep Forest Green (#064E3B)
+- Accent: Rose Gold (#E8B4B8)
+- Background: Champagne (#FEF9E7) for cards
+- Success: Emerald (#059669)
+- Warning: Deep Ruby (#BE123C)
+- Bronze (#B45309) for premium/badge accents
+- White/near-white page backgrounds (Notion/Linear minimal style)
+
+**Tools to consider:**
+- Figma (UI design)
+- v0.dev (AI-generated React components)
+- Relume (AI wireframes)
+- Tailwind UI components
+
+---
+
+## 🔧 FEATURES TO BUILD
+
+### 2. Inspection Report Form
+**Priority:** High
+**Status:** Next Up
+
+Build the comprehensive form for inspectors to fill out after visiting a property.
+
+### 3. Report View Page
+**Priority:** High
+**Status:** To Do
+
+Display completed reports beautifully for the requesting agent.
+
+### 4. Gamification Components
+**Priority:** Medium
+**Status:** To Do
+
+- Badges display
+- Points tracking
+- Celebration animations
+- Leaderboards
+
+### 5. Review System
+**Priority:** Medium
+**Status:** To Do
+
+Two-way reviews after job completion.
+
+### 6. Payment Integration
+**Priority:** Medium
+**Status:** To Do
+
+Stripe integration for actual payments.
+
+### 7. Email Notifications
+**Priority:** Medium
+**Status:** To Do
+
+Actually send emails via Resend API (preferences are built, sending is not).
+
+### 8. Push Notifications
+**Priority:** Low
+**Status:** Future
+
+Mobile/browser push notifications.
+
+---
+
+## 🐛 BUGS TO FIX
+
+*(Add bugs here as they're discovered)*
+
+---
+
+## 💡 IDEAS TO EXPLORE
+
+- AI matching of properties to client briefs
+- Voice notes in inspection reports
+- Video walkthrough integration
+- Mobile app (React Native)
+
+---
+
+## ✅ COMPLETED
+
+- [x] Database tables for inspection marketplace
+- [x] Job posting form with client brief integration
+- [x] Property Spotlights board
+- [x] Job detail page with Express Interest
+- [x] Bidding system with edit & audit trail
+- [x] My Posted Jobs dashboard (for job creators)
+- [x] My Inspection Work dashboard (for inspectors)
+- [x] Notification system (in-app + preferences)
+- [x] Dani's Approval Checklist
+- [x] Key Features documentation
+
+---
+
+*Last updated: January 2026*
