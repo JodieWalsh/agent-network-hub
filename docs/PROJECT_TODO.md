@@ -65,19 +65,41 @@ Display completed reports beautifully for the requesting agent.
 
 Two-way reviews after job completion.
 
-### 6. Payment Integration
-**Priority:** Medium
+### 6. Subscription Billing System
+**Priority:** High
 **Status:** To Do
 
-Stripe integration for actual payments.
+Stripe integration for user subscriptions:
+- [ ] Subscription tiers (Free/Basic/Premium - awaiting Dani's decision)
+- [ ] Monthly and annual billing options
+- [ ] Stripe Checkout integration
+- [ ] Customer portal for managing subscriptions
+- [ ] Handle upgrades/downgrades
+- [ ] Cancellation flow
+- [ ] Webhook handling for payment events
+- [ ] Grace period for failed payments
 
-### 7. Email Notifications
+### 7. Marketplace Payment System (Inspection Fees)
+**Priority:** High
+**Status:** To Do
+
+Stripe Connect for marketplace payments:
+- [ ] Platform takes 10% of each inspection job fee
+- [ ] Escrow: Hold payment until report is submitted and approved
+- [ ] Release payment to inspector (90%) when requester approves
+- [ ] Transfer platform fee (10%) to Buyers Agent Hub account
+- [ ] Stripe Connect onboarding for inspectors (so they can receive payments)
+- [ ] Handle refunds and disputes
+- [ ] Payment history/earnings dashboard for inspectors
+- [ ] Payout settings (bank account, payout schedule)
+
+### 8. Email Notifications
 **Priority:** Medium
 **Status:** To Do
 
 Actually send emails via Resend API (preferences are built, sending is not).
 
-### 8. Push Notifications
+### 9. Push Notifications
 **Priority:** Low
 **Status:** Future
 
