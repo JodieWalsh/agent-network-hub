@@ -371,6 +371,19 @@ Budget you're offering: $200.00
 
 ---
 
+### 18. Stripe & Business Setup
+**Location:** Payment processing
+
+**Questions for Dani:**
+- [ ] Create new Stripe account for "Buyers Agent Hub"? (Recommended - separate from Jodie's other app)
+- [ ] Business structure: ABN? Pty Ltd? Partnership?
+- [ ] Business bank account for receiving payments?
+- [ ] Who is the "responsible person" for Stripe verification?
+- [ ] Business address for invoices?
+- [ ] GST registered? (Affects invoice formatting)
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -392,4 +405,4 @@ Budget you're offering: $200.00
 
 ---
 
-*Last updated: 24 January 2026 - Added #17 Escrow Payment Workflow*
+*Last updated: 25 January 2026 - Added #18 Stripe & Business Setup*
