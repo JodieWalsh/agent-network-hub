@@ -313,9 +313,9 @@ export default function InspectionReportView() {
         return;
       }
 
-      // Fetch report with inspector profile
+      // Fetch report
       const reportResponse = await fetch(
-        `${supabaseUrl}/rest/v1/inspection_reports?select=*,inspector:inspector_id(full_name,avatar_url)&job_id=eq.${jobId}`,
+        `${supabaseUrl}/rest/v1/inspection_reports?select=*&job_id=eq.${jobId}`,
         {
           headers: {
             'apikey': supabaseKey,
@@ -324,13 +324,41 @@ export default function InspectionReportView() {
         }
       );
 
-      if (!reportResponse.ok) throw new Error('Failed to fetch report');
+      console.log('[ReportView] Report response status:', reportResponse.status);
+
+      if (!reportResponse.ok) {
+        const errorText = await reportResponse.text();
+        console.error('[ReportView] Report fetch error:', errorText);
+        throw new Error('Failed to fetch report');
+      }
+
       const reports = await reportResponse.json();
+      console.log('[ReportView] Reports found:', reports?.length || 0, reports);
 
       if (!reports || reports.length === 0) {
         toast.error('No report found for this job');
-        navigate('/inspections/my-jobs');
+        navigate('/inspections/my-jobs?tab=reports');
         return;
+      }
+
+      // Fetch inspector profile separately
+      const reportData = reports[0];
+      try {
+        const inspectorResponse = await fetch(
+          `${supabaseUrl}/rest/v1/profiles?select=full_name,avatar_url&id=eq.${reportData.inspector_id}`,
+          {
+            headers: {
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${accessToken}`,
+              'Accept': 'application/vnd.pgrst.object+json',
+            },
+          }
+        );
+        if (inspectorResponse.ok) {
+          reportData.inspector = await inspectorResponse.json();
+        }
+      } catch (e) {
+        console.log('[ReportView] Could not fetch inspector profile:', e);
       }
 
       const reportData = reports[0];
