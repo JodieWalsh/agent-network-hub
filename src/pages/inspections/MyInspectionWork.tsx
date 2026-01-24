@@ -7,6 +7,16 @@
  * - Reports submitted awaiting payment
  * - Completed jobs
  * - Declined bids
+ *
+ * TODO: Future Enhancement - Earnings Dashboard
+ * =============================================
+ * Add a dedicated earnings section/tab showing:
+ * - Total earned (after platform fees)
+ * - Pending payments (submitted reports awaiting approval)
+ * - Payment history with breakdown per job
+ * - Total platform fees paid
+ * - Monthly/yearly earnings reports
+ * - CSV export functionality
  */
 
 import { useState, useEffect } from 'react';
@@ -784,24 +794,33 @@ function AcceptedJobCard({
               </div>
             )}
 
-            {/* Agreed Terms */}
-            <div className="flex flex-wrap items-center gap-4 p-3 bg-white/70 rounded-lg mb-3">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
-                <span className="font-semibold text-green-700">{formatCurrency(job.agreed_price || 0)}</span>
-              </div>
-              {inspectionDate && (
+            {/* Agreed Terms with Earnings */}
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-lg mb-3">
+              <div className="flex flex-wrap items-center gap-4 mb-2">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-forest" />
-                  <span className="text-sm">
-                    {inspectionDate.toLocaleDateString('en-AU', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-muted-foreground">Agreed fee:</span>
+                  <span className="font-medium text-green-700">{formatCurrency(job.agreed_price || 0)}</span>
                 </div>
-              )}
+                {inspectionDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-forest" />
+                    <span className="text-sm">
+                      {inspectionDate.toLocaleDateString('en-AU', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm">
+                <span className="text-emerald-700 font-semibold">
+                  Your earnings: {formatCurrency(Math.round((job.agreed_price || 0) * 0.90))}
+                </span>
+                <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
+              </div>
             </div>
 
             {/* Inspection Date Status */}

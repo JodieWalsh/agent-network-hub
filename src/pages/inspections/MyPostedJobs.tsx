@@ -684,12 +684,28 @@ export default function MyPostedJobs() {
                 {confirmAction?.type === 'cancel' && 'Cancel This Job?'}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                {confirmAction?.type === 'accept' && (
-                  <>
-                    You are accepting {confirmAction.bid?.inspector?.full_name}'s bid of{' '}
-                    {formatCurrency(confirmAction.bid?.proposed_price || 0)}.
-                    All other pending bids will be automatically declined.
-                  </>
+                {confirmAction?.type === 'accept' && confirmAction.bid && (
+                  <div className="space-y-4">
+                    <p>
+                      You're agreeing to pay <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong> for this inspection.
+                    </p>
+                    <div className="p-3 bg-emerald-50 rounded-lg text-sm">
+                      <p className="font-medium text-emerald-800 mb-2">Payment breakdown:</p>
+                      <div className="space-y-1 text-emerald-700">
+                        <div className="flex justify-between">
+                          <span>├── {confirmAction.bid.inspector?.full_name} receives:</span>
+                          <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.90))}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>└── Platform fee:</span>
+                          <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.10))}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Payment will be collected when you approve the completed report. All other pending bids will be automatically declined.
+                    </p>
+                  </div>
                 )}
                 {confirmAction?.type === 'decline' && (
                   <>
@@ -1113,15 +1129,13 @@ function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, formatCur
         </div>
         <div className="flex items-center gap-3 text-sm">
           <span className="font-semibold text-green-700">{formatCurrency(bid.proposed_price)}</span>
+          <span className="text-xs text-muted-foreground">
+            (→{formatCurrency(Math.round(bid.proposed_price * 0.90))})
+          </span>
           {bid.proposed_date && (
             <span className="text-muted-foreground flex items-center gap-1">
               <Calendar size={12} />
               {formatDate(bid.proposed_date)}
-            </span>
-          )}
-          {bid.message && (
-            <span className="text-muted-foreground truncate max-w-[200px]" title={bid.message}>
-              "{bid.message}"
             </span>
           )}
         </div>
@@ -1209,10 +1223,10 @@ function BidCard({ bid, onAccept, onDecline, formatCurrency, formatDate }: BidCa
               )}
             </div>
 
-            <div className="flex items-center gap-4 text-sm mb-2">
-              <span className="flex items-center gap-1.5 font-medium text-green-700">
+            <div className="flex flex-wrap items-center gap-4 text-sm mb-2">
+              <span className="flex items-center gap-1.5 font-semibold text-green-700">
                 <DollarSign size={14} />
-                {formatCurrency(bid.proposed_price)}
+                Bid: {formatCurrency(bid.proposed_price)}
               </span>
               {bid.proposed_date && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -1232,6 +1246,12 @@ function BidCard({ bid, onAccept, onDecline, formatCurrency, formatDate }: BidCa
                   {bid.history!.length - 1} edit{bid.history!.length - 1 !== 1 ? 's' : ''}
                 </button>
               )}
+            </div>
+
+            {/* Fee Breakdown */}
+            <div className="text-xs text-muted-foreground mb-2 pl-1">
+              <span className="mr-3">├── They'll receive: {formatCurrency(Math.round(bid.proposed_price * 0.90))}</span>
+              <span>└── Platform fee: {formatCurrency(Math.round(bid.proposed_price * 0.10))}</span>
             </div>
 
             {bid.message && (

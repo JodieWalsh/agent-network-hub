@@ -624,6 +624,37 @@ export default function InspectionSpotlightDetail() {
           </Card>
         )}
 
+        {/* Your Earnings - For Inspectors */}
+        {!isJobCreator && job.status === 'open' && (
+          <Card className="border-emerald-200 bg-emerald-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base text-emerald-800">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+                Your Earnings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-emerald-800">
+                  <span>Job budget:</span>
+                  <span className="font-semibold">${job.budget_amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-700">
+                  <span>Platform fee:</span>
+                  <span>10%</span>
+                </div>
+                <div className="pt-2 border-t border-emerald-200 flex justify-between text-emerald-900">
+                  <span className="font-medium">You'll receive:</span>
+                  <span className="font-bold">${(job.budget_amount * 0.90).toFixed(2)}</span>
+                </div>
+              </div>
+              <p className="text-xs text-emerald-600 mt-3">
+                Payment is released when the job poster approves your report.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Client Brief OR Inspection Scope */}
         {clientBrief ? (
           <Card className="border-purple-200 bg-purple-50/50">
@@ -938,6 +969,30 @@ export default function InspectionSpotlightDetail() {
                 />
               </div>
             </div>
+
+            {/* Earnings Breakdown - Live Calculation */}
+            {proposedAmount && proposedAmount > 0 && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-sm font-medium text-emerald-800 mb-2">📊 Earnings Breakdown</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between text-emerald-800">
+                    <span>Your bid:</span>
+                    <span className="font-semibold">${proposedAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 pl-4">
+                    <span>├── You receive (90%):</span>
+                    <span className="font-medium">${(proposedAmount * 0.90).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 pl-4">
+                    <span>└── Platform fee (10%):</span>
+                    <span className="font-medium">${(proposedAmount * 0.10).toFixed(2)}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-emerald-600 mt-2">
+                  This is the amount the job poster will pay. You'll receive your portion when they approve your report.
+                </p>
+              </div>
+            )}
 
             {/* Proposed Date */}
             <div className="space-y-2">

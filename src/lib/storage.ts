@@ -180,3 +180,90 @@ export function validateFloorPlanFile(file: File): { valid: boolean; error?: str
 
   return { valid: true };
 }
+
+/**
+ * Upload an inspection report photo to Supabase Storage
+ * @param file - Image file to upload
+ * @param userId - Inspector user ID
+ * @param jobId - Inspection job ID
+ * @param sectionId - Report section ID (e.g., '3' for Exterior)
+ * @returns Object with public URL and storage path
+ */
+export async function uploadInspectionPhoto(
+  file: File,
+  userId: string,
+  jobId: string,
+  sectionId: string
+): Promise<UploadResult> {
+  // Validate file type
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Invalid file type. Please upload JPEG, PNG, or WebP images.');
+  }
+
+  // Validate file size
+  if (file.size > MAX_IMAGE_SIZE) {
+    throw new Error(`Image size exceeds 5MB limit. File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+  }
+
+  // Generate unique filename with timestamp
+  const extension = getFileExtension(file.type);
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 8);
+  const path = `${jobId}/section-${sectionId}/${timestamp}-${randomId}.${extension}`;
+
+  // Upload to storage
+  const { data, error } = await supabase.storage
+    .from('inspection-photos')
+    .upload(path, file, { upsert: false });
+
+  if (error) {
+    throw new Error(`Failed to upload photo: ${error.message}`);
+  }
+
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('inspection-photos')
+    .getPublicUrl(path);
+
+  return { url: publicUrl, path: data.path };
+}
+
+/**
+ * Upload multiple inspection photos
+ * @param files - Array of image files
+ * @param userId - Inspector user ID
+ * @param jobId - Inspection job ID
+ * @param sectionId - Report section ID
+ * @returns Array of upload results
+ */
+export async function uploadInspectionPhotos(
+  files: File[],
+  userId: string,
+  jobId: string,
+  sectionId: string
+): Promise<UploadResult[]> {
+  const results: UploadResult[] = [];
+
+  for (const file of files) {
+    const result = await uploadInspectionPhoto(file, userId, jobId, sectionId);
+    results.push(result);
+  }
+
+  return results;
+}
+
+/**
+ * Delete inspection photos from storage
+ * @param paths - Array of storage paths to delete
+ */
+export async function deleteInspectionPhotos(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+
+  const { error } = await supabase.storage
+    .from('inspection-photos')
+    .remove(paths);
+
+  if (error) {
+    throw new Error(`Failed to delete photos: ${error.message}`);
+  }
+}

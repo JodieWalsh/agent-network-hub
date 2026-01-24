@@ -263,6 +263,86 @@ const getMatchStatusIcon = (status: MatchStatus | null) => {
   }
 };
 
+// Section ID to name mapping (matches InspectionReportBuilder SECTIONS)
+const SECTION_NAMES: Record<string, string> = {
+  '0': 'Inspection Details',
+  '1': 'Client Brief Match',
+  '2': 'First Impressions',
+  '3': 'Exterior',
+  '4': 'Living Areas',
+  '5': 'Kitchen',
+  '6': 'Bathrooms',
+  '7': 'Bedrooms',
+  '8': 'Other Spaces',
+  '9': 'Neighbourhood',
+  '10': 'Red Flags',
+  '11': 'Standouts',
+  '12': 'Market Context',
+  '13': 'Final Verdict',
+  '14': 'For Agent',
+};
+
+// Photo Gallery Component
+const PhotoGallery = ({ photos, sectionName }: { photos: string[]; sectionName?: string }) => {
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  if (!photos || photos.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Camera size={16} className="text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">
+          Photos ({photos.length})
+        </span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+        {photos.map((photo, index) => (
+          <div
+            key={index}
+            className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border border-border"
+            onClick={() => setSelectedPhoto(photo)}
+          >
+            <img
+              src={photo}
+              alt={`${sectionName || 'Section'} photo ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Lightbox for full-size photo */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img
+              src={selectedPhoto}
+              alt="Full size"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-2 right-2 bg-white/90 rounded-full p-2 hover:bg-white"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper to get photos for a section
+const getSectionPhotos = (sectionPhotos: SectionPhotos | null, sectionId: string): string[] => {
+  if (!sectionPhotos || typeof sectionPhotos !== 'object') return [];
+  return sectionPhotos[sectionId] || [];
+};
+
 export default function InspectionReportView() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
@@ -545,6 +625,27 @@ export default function InspectionReportView() {
           </div>
         </div>
 
+        {/* Peer Inspection Disclaimer Banner */}
+        <Card className="mb-6 border-amber-200 bg-amber-50/50">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <FileText className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-amber-900 mb-1">Peer Inspection Report</h3>
+                <p className="text-sm text-amber-800">
+                  This report reflects {report.inspector?.full_name || 'the inspector'}'s professional opinion based on
+                  a visual walkthrough{report.inspection_date ? ` on ${formatDate(report.inspection_date)}` : ''}.
+                  This is a peer-to-peer service between buyers agents – it is not a substitute for certified building,
+                  pest, or structural inspections.
+                </p>
+                <p className="text-xs text-amber-700 mt-2">
+                  We recommend engaging licensed professionals before any purchase decision.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Overall Verdict Card - Top Summary */}
         <Card className="mb-6 border-2 border-forest/20 bg-gradient-to-br from-forest/5 to-transparent">
           <CardContent className="p-6">
@@ -680,6 +781,10 @@ export default function InspectionReportView() {
             {report.first_impression_comments && (
               <p className="text-sm text-muted-foreground">{report.first_impression_comments}</p>
             )}
+            <PhotoGallery
+              photos={getSectionPhotos(report.section_photos as SectionPhotos, '2')}
+              sectionName="First Impressions"
+            />
           </CardContent>
         </Card>
 
@@ -725,6 +830,10 @@ export default function InspectionReportView() {
             {report.exterior_comments && (
               <p className="text-sm text-muted-foreground">{report.exterior_comments}</p>
             )}
+            <PhotoGallery
+              photos={getSectionPhotos(report.section_photos as SectionPhotos, '3')}
+              sectionName="Exterior"
+            />
           </CardContent>
         </Card>
 
@@ -759,6 +868,10 @@ export default function InspectionReportView() {
             {report.kitchen_comments && (
               <p className="text-sm text-muted-foreground">{report.kitchen_comments}</p>
             )}
+            <PhotoGallery
+              photos={getSectionPhotos(report.section_photos as SectionPhotos, '5')}
+              sectionName="Kitchen"
+            />
           </CardContent>
         </Card>
 
@@ -802,6 +915,10 @@ export default function InspectionReportView() {
             {report.bathroom_comments && (
               <p className="text-sm text-muted-foreground">{report.bathroom_comments}</p>
             )}
+            <PhotoGallery
+              photos={getSectionPhotos(report.section_photos as SectionPhotos, '6')}
+              sectionName="Bathrooms"
+            />
           </CardContent>
         </Card>
 
@@ -837,6 +954,10 @@ export default function InspectionReportView() {
             {report.bedroom_comments && (
               <p className="text-sm text-muted-foreground">{report.bedroom_comments}</p>
             )}
+            <PhotoGallery
+              photos={getSectionPhotos(report.section_photos as SectionPhotos, '7')}
+              sectionName="Bedrooms"
+            />
           </CardContent>
         </Card>
 
@@ -882,6 +1003,10 @@ export default function InspectionReportView() {
             {report.neighbourhood_comments && (
               <p className="text-sm text-muted-foreground">{report.neighbourhood_comments}</p>
             )}
+            <PhotoGallery
+              photos={getSectionPhotos(report.section_photos as SectionPhotos, '9')}
+              sectionName="Neighbourhood"
+            />
           </CardContent>
         </Card>
 
@@ -1075,6 +1200,34 @@ export default function InspectionReportView() {
           </CardContent>
         </Card>
 
+        {/* All Photos Section */}
+        {report.section_photos && typeof report.section_photos === 'object' &&
+          Object.values(report.section_photos as SectionPhotos).some(photos => photos && photos.length > 0) && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera size={20} className="text-blue-600" />
+                All Photos
+              </CardTitle>
+              <CardDescription>
+                {Object.values(report.section_photos as SectionPhotos).flat().length} photos submitted with this report
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {Object.entries(report.section_photos as SectionPhotos).map(([sectionId, photos]) => {
+                if (!photos || photos.length === 0) return null;
+                const sectionName = SECTION_NAMES[sectionId] || `Section ${sectionId}`;
+                return (
+                  <div key={sectionId} className="mb-6 last:mb-0">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">{sectionName}</h4>
+                    <PhotoGallery photos={photos} sectionName={sectionName} />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Bottom Action Bar */}
         {job.status === 'pending_review' && (
           <div className="sticky bottom-0 bg-white border-t p-4 -mx-4 flex justify-end gap-3">
@@ -1093,17 +1246,45 @@ export default function InspectionReportView() {
 
         {/* Approve Confirmation Dialog */}
         <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Approve This Report?</AlertDialogTitle>
-              <AlertDialogDescription>
-                By approving this report, you confirm the inspection has been completed satisfactorily.
-                The inspector will be notified and the job will be marked as complete.
-                {job.agreed_price && (
-                  <span className="block mt-2 font-medium">
-                    Agreed payment: {formatCurrency(job.agreed_price)}
-                  </span>
-                )}
+              <AlertDialogTitle>Approve Report & Release Payment?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  <p>You're confirming:</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Check size={16} className="text-green-600" />
+                      <span>You've reviewed {report?.inspector?.full_name || 'the inspector'}'s inspection report</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={16} className="text-green-600" />
+                      <span>You understand this is a peer opinion, not a certified inspection</span>
+                    </div>
+                  </div>
+                  {job.agreed_price && (
+                    <div className="p-3 bg-emerald-50 rounded-lg">
+                      <p className="font-medium text-emerald-800 mb-2">Payment will be processed:</p>
+                      <div className="space-y-1 text-sm text-emerald-700">
+                        <div className="flex justify-between">
+                          <span>├── Total charge to you:</span>
+                          <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>├── {report?.inspector?.full_name || 'Inspector'} receives:</span>
+                          <span>{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>└── Platform fee:</span>
+                          <span>{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    For any concerns noted in this report, we recommend engaging licensed professionals.
+                  </p>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1113,7 +1294,7 @@ export default function InspectionReportView() {
                 disabled={approving}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {approving ? 'Approving...' : 'Approve Report'}
+                {approving ? 'Approving...' : `Approve & Pay ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

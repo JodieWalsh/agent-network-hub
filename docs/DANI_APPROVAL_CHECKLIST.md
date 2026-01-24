@@ -289,6 +289,44 @@ This document tracks all business decisions, content, and pricing that Dani need
 
 ---
 
+### 16. Disclaimer & Fee Messaging
+**Location:** Throughout inspection marketplace
+
+**Context:** We've added transparent fee breakdowns and professional disclaimers throughout the inspection workflow:
+
+| Location | What's Shown |
+|----------|--------------|
+| Post Job (Budget step) | Live fee breakdown as poster enters budget |
+| Job Detail (for inspectors) | "Your Earnings" card showing 90% take-home |
+| Express Interest modal | Live earnings calculation as inspector bids |
+| Viewing Bids | Fee breakdown for each bid |
+| Accept Bid dialog | Full payment breakdown with confirmation |
+| My Work (accepted jobs) | Earnings display (after platform fee) |
+| Report Builder (start) | "Before You Begin" disclaimer about peer inspection |
+| Report Builder (submit) | Required checkbox confirming professional opinion disclaimer |
+| Report View (top) | "Peer Inspection Report" disclaimer banner |
+| Approve Report dialog | Payment breakdown with professional recommendation |
+
+**Sample Disclaimer Text:**
+> "This report reflects [Inspector Name]'s professional opinion based on a visual walkthrough. This is a peer-to-peer service between buyers agents – it is not a substitute for certified building, pest, or structural inspections."
+
+**Sample Fee Breakdown:**
+```
+Budget you're offering: $200.00
+├── Inspector receives (90%): $180.00
+└── Platform fee (10%): $20.00
+```
+
+**Questions for Dani:**
+- [ ] Review the 10% fee explanation wording - tone OK?
+- [ ] Is the fee breakdown format clear enough?
+- [ ] Review the "opinion not certified inspection" disclaimer - covers us legally?
+- [ ] Should we require users to accept terms before their very first job/bid?
+- [ ] Do we need a lawyer to review these disclaimers before launch?
+- [ ] Should there be a separate "Inspection Marketplace Terms" page?
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -310,4 +348,4 @@ This document tracks all business decisions, content, and pricing that Dani need
 
 ---
 
-*Last updated: 23 January 2026*
+*Last updated: 24 January 2026*

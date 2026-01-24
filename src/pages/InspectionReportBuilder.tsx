@@ -90,6 +90,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyReportSubmitted } from '@/lib/notifications';
+import { uploadInspectionPhotos, validateImageFile } from '@/lib/storage';
 
 // Types
 type MatchStatus = 'meets' | 'partial' | 'doesnt';
@@ -399,6 +400,7 @@ export default function InspectionReportBuilder() {
   const [existingReportId, setExistingReportId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [disclaimerConfirmed, setDisclaimerConfirmed] = useState(false);
   const [startTime] = useState<Date>(new Date());
   const [timeSpent, setTimeSpent] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -647,7 +649,8 @@ export default function InspectionReportBuilder() {
     return !!(
       formData.overall_score &&
       formData.recommendation &&
-      formData.summary_comments.trim().length > 10
+      formData.summary_comments.trim().length > 10 &&
+      disclaimerConfirmed
     );
   };
 
@@ -909,6 +912,43 @@ export default function InspectionReportBuilder() {
 
       {/* Form Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24">
+        {/* Professional Disclaimer - Shown on first section */}
+        {currentSection === 0 && (
+          <Card className="mb-6 border-blue-200 bg-blue-50/50">
+            <CardContent className="pt-6">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-2">Before You Begin</h3>
+                  <p className="text-sm text-blue-800 mb-3">
+                    This report captures your professional observations and opinions based on a visual walkthrough.
+                    You're sharing your honest assessment as a fellow buyers agent – you're not acting as a licensed
+                    building inspector, structural engineer, or pest specialist.
+                  </p>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Your colleague is relying on your experienced eye and local knowledge to help them decide whether
+                    to pursue this property further. Be thorough, be honest, and flag anything that might need
+                    professional follow-up.
+                  </p>
+                  {job?.agreed_price && (
+                    <div className="p-2 bg-emerald-100 rounded-lg inline-block">
+                      <p className="text-sm font-medium text-emerald-800">
+                        Your earnings for this job: ${((job.agreed_price * 0.90) / 100).toFixed(2)}
+                        <span className="text-xs ml-1">(paid when report is approved)</span>
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-sm text-blue-700 mt-3">
+                    Thank you for being part of our trusted network!
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Section 0: Inspection Details */}
         {currentSection === 0 && (
           <Card>
@@ -1109,7 +1149,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="2" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="2" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1186,7 +1226,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="3" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="3" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1255,7 +1295,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="4" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="4" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1355,7 +1395,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="5" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="5" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1451,7 +1491,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="6" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="6" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1520,7 +1560,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="7" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="7" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1558,7 +1598,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="8" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="8" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1661,7 +1701,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[150px]"
                 />
               </div>
-              <PhotoUpload sectionId="9" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="9" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1712,7 +1752,7 @@ export default function InspectionReportBuilder() {
                   <p className="text-xs text-red-600">Required when concerns are selected</p>
                 )}
               </div>
-              <PhotoUpload sectionId="10" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="10" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -1787,7 +1827,7 @@ export default function InspectionReportBuilder() {
                   className="min-h-[120px]"
                 />
               </div>
-              <PhotoUpload sectionId="11" formData={formData} updateFormData={updateFormData} />
+              <PhotoUpload sectionId="11" formData={formData} updateFormData={updateFormData} userId={user?.id || ''} jobId={jobId || ''} />
             </CardContent>
           </Card>
         )}
@@ -2065,6 +2105,26 @@ export default function InspectionReportBuilder() {
                 </div>
               </div>
 
+              {/* Professional Disclaimer Confirmation */}
+              <div className="p-4 border-2 border-amber-200 bg-amber-50/50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="disclaimer-confirmation"
+                    checked={disclaimerConfirmed}
+                    onCheckedChange={(checked) => setDisclaimerConfirmed(checked === true)}
+                    className="mt-1"
+                  />
+                  <label
+                    htmlFor="disclaimer-confirmation"
+                    className="text-sm text-amber-900 cursor-pointer leading-relaxed"
+                  >
+                    I confirm this report reflects my honest professional opinion based on a visual inspection.
+                    I understand this is not a certified building, pest, or structural inspection, and I recommend
+                    the buyer seek qualified professional inspections before making any purchase decision.
+                  </label>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="flex justify-center pt-4">
                 <Button
@@ -2079,7 +2139,9 @@ export default function InspectionReportBuilder() {
               </div>
               {!canSubmit() && (
                 <p className="text-center text-sm text-amber-600">
-                  Please complete all required fields before submitting
+                  {!disclaimerConfirmed
+                    ? 'Please confirm the professional disclaimer above before submitting'
+                    : 'Please complete all required fields before submitting'}
                 </p>
               )}
             </CardContent>
@@ -2186,23 +2248,53 @@ function PhotoUpload({
   sectionId,
   formData,
   updateFormData,
+  userId,
+  jobId,
 }: {
   sectionId: string;
   formData: ReportFormData;
   updateFormData: <K extends keyof ReportFormData>(key: K, value: ReportFormData[K]) => void;
+  userId: string;
+  jobId: string;
 }) {
+  const [uploading, setUploading] = useState(false);
   const photos = formData.section_photos[sectionId] || [];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    // For now, just create placeholder URLs (actual upload would use Supabase storage)
-    const newPhotos = Array.from(files).map((file) => URL.createObjectURL(file));
-    const updatedPhotos = { ...formData.section_photos, [sectionId]: [...photos, ...newPhotos] };
-    updateFormData('section_photos', updatedPhotos);
+    // Validate all files first
+    const fileArray = Array.from(files);
+    for (const file of fileArray) {
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error || 'Invalid file');
+        return;
+      }
+    }
 
-    toast.success(`${files.length} photo(s) added`);
+    setUploading(true);
+    try {
+      // Upload all files to Supabase storage
+      const uploadResults = await uploadInspectionPhotos(fileArray, userId, jobId, sectionId);
+
+      // Get the public URLs from the upload results
+      const newPhotoUrls = uploadResults.map(result => result.url);
+
+      // Add new URLs to the existing photos
+      const updatedPhotos = { ...formData.section_photos, [sectionId]: [...photos, ...newPhotoUrls] };
+      updateFormData('section_photos', updatedPhotos);
+
+      toast.success(`${files.length} photo(s) uploaded successfully`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to upload photos');
+    } finally {
+      setUploading(false);
+      // Reset the input
+      e.target.value = '';
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -2223,15 +2315,35 @@ function PhotoUpload({
             <button
               onClick={() => removePhoto(index)}
               className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+              disabled={uploading}
             >
               <X className="h-3 w-3" />
             </button>
           </div>
         ))}
-        <label className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-muted transition-colors">
-          <Upload className="h-5 w-5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground mt-1">Add</span>
-          <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+        <label className={cn(
+          "w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-muted transition-colors",
+          uploading && "opacity-50 cursor-not-allowed"
+        )}>
+          {uploading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-forest border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-muted-foreground mt-1">...</span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground mt-1">Add</span>
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+            disabled={uploading}
+          />
         </label>
       </div>
     </div>

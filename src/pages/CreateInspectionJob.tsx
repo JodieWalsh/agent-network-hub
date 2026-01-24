@@ -784,6 +784,30 @@ export default function CreateInspectionJob() {
                     <li>• Urgent/Express Service: Add 20-50%</li>
                   </ul>
                 </div>
+
+                {/* Fee Breakdown - Live Calculation */}
+                {formData.budget_amount && formData.budget_amount > 0 && (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-sm font-medium text-emerald-900 mb-3">💰 Fee Breakdown</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between text-emerald-800">
+                        <span>Budget you're offering:</span>
+                        <span className="font-semibold">${formData.budget_amount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 pl-4">
+                        <span>├── Inspector receives (90%):</span>
+                        <span className="font-medium">${(formData.budget_amount * 0.90).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 pl-4">
+                        <span>└── Platform fee (10%):</span>
+                        <span className="font-medium">${(formData.budget_amount * 0.10).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-emerald-600 mt-3">
+                      The full budget amount is paid when you approve the completed report. Our 10% platform fee helps us maintain the marketplace and support our community of agents.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
