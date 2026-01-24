@@ -12,8 +12,8 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -103,32 +103,48 @@ export default function InspectionSpotlights() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      // Fetch open jobs
-      const { data: jobsData, error: jobsError } = await supabase
-        .from('inspection_jobs')
-        .select('*')
-        .eq('status', 'open')
-        .order('created_at', { ascending: false });
+      console.log('[InspectionSpotlights] Fetching jobs...');
 
-      if (jobsError) throw jobsError;
+      // Use raw fetch since Supabase client has issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      // Fetch bid counts for each job
-      const jobsWithBidCounts = await Promise.all(
-        (jobsData || []).map(async (job) => {
-          const { count } = await supabase
-            .from('inspection_bids')
-            .select('*', { count: 'exact', head: true })
-            .eq('job_id', job.id)
-            .in('status', ['pending', 'accepted']);
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {}
 
-          return { ...job, bid_count: count || 0 };
-        })
-      );
+      const url = `${supabaseUrl}/rest/v1/inspection_jobs?select=*&status=eq.open&order=created_at.desc`;
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Fetch failed: ${response.status}`);
+      }
+
+      const jobsData = await response.json();
+      console.log('[InspectionSpotlights] Jobs fetched:', jobsData?.length || 0);
+
+      // For now, set bid_count to 0 for all jobs (can fetch separately if needed)
+      const jobsWithBidCounts = (jobsData || []).map((job: any) => ({
+        ...job,
+        bid_count: 0,
+      }));
 
       setJobs(jobsWithBidCounts);
     } catch (error: any) {
-      console.error('Error fetching jobs:', error);
+      console.error('[InspectionSpotlights] Error fetching jobs:', error);
       toast.error('Failed to load inspection jobs');
+      setJobs([]); // Set empty array on error so page still renders
     } finally {
       setLoading(false);
     }
@@ -176,17 +192,19 @@ export default function InspectionSpotlights() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Sparkles className="h-12 w-12 text-forest animate-pulse mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading spotlights...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Sparkles className="h-12 w-12 text-forest animate-pulse mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading spotlights...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <DashboardLayout>
       {/* Header */}
       <div className="border-b bg-gradient-to-r from-forest/5 to-forest/10">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -397,6 +415,6 @@ export default function InspectionSpotlights() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

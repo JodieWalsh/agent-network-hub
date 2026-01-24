@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasPermission, Permission, UserRole } from '@/lib/permissions';
@@ -23,8 +23,22 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, profile, loading } = useAuth();
 
-  // Show loading state while checking authentication or loading profile
-  if (loading || (user && !profile)) {
+  // Only show loading for initial auth check (max 1 second)
+  // Don't wait for profile - we'll use cached profile or render without it
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
+  useEffect(() => {
+    // Give auth check 1 second max
+    const timer = setTimeout(() => setInitialCheckDone(true), 1000);
+    if (!loading) {
+      setInitialCheckDone(true);
+      clearTimeout(timer);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  // Brief loading state - max 1 second
+  if (!initialCheckDone && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Loading...</div>

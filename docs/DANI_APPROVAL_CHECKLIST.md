@@ -123,11 +123,36 @@ This document tracks all business decisions, content, and pricing that Dani need
 ---
 
 ### 8. Email/Notification Copy
-**Location:** All automated communications
+**Location:** All automated communications, NotificationBell component, Profile Settings
+
+**Implementation Status:** In-app notification system is now LIVE
+
+**Current notification types and their theatrical messaging:**
+| Notification Type | Title Example | Message Example |
+|-------------------|---------------|-----------------|
+| Bid Received | "Fresh bid alert!" | "Sarah just threw their hat in the ring for 123 Smith St with a $250 offer" |
+| Bid Accepted | "You've been chosen!" | "Your bid for 123 Smith St was accepted at $250! Time to shine" |
+| Bid Declined | "This one wasn't meant to be" | "Your bid for 123 Smith St wasn't selected. Keep those bids coming!" |
+| Job Assigned | "You're on the case!" | "You've been assigned to inspect 123 Smith St. The clock is ticking!" |
+| Report Submitted | "Report's in!" | "Your inspector has submitted the report for 123 Smith St. Take a look!" |
+| Payment Released | "Cha-ching!" | "$250 has been released for 123 Smith St. Nice work!" |
+| Review Received | "Star quality!" | "You just got a 5-star review! Your reputation is on the rise" |
+| Badge Earned | "Achievement unlocked!" | "You've earned the Trusted Inspector badge! Wear it with pride" |
+| Job Expired | "Time's up" | "The job for 123 Smith St has expired. Better luck next time!" |
+| Job Cancelled | "Plans changed" | "The job for 123 Smith St has been cancelled by the buyer's agent" |
+
+**Notification Preferences (in Profile Settings):**
+- Email Notifications: Master toggle + individual toggles per notification type
+- Weekly Activity Digest: Configurable
+- Quiet Hours: Start/end time configurable
+- Push Notifications: Coming Soon (greyed out)
+- SMS Notifications: Coming Soon (greyed out)
 
 **Questions for Dani:**
-- [ ] Review notification wording (theatrical style)
-- [ ] Review email templates
+- [ ] Review notification wording (theatrical style) - see examples above
+- [ ] Happy with the notification types?
+- [ ] Any additional notification types needed?
+- [ ] Review email templates (when email integration is added)
 - [ ] Approve tone of voice
 
 ---
@@ -234,6 +259,36 @@ This document tracks all business decisions, content, and pricing that Dani need
 
 ---
 
+### 15. Professional Accreditation Verification
+**Location:** User profile setup, admin approval workflow
+
+**Context:** When new users sign up, they can enter their professional accreditation (license numbers, certifications, etc.) in a text field. They're told this will be reviewed within 24 hours. We need to define how this verification happens.
+
+**Questions for Dani:**
+- [ ] How do we verify buyers agent accreditation?
+  - Check license numbers with state/territory bodies?
+  - Require photo ID?
+  - Require license certificate upload?
+- [ ] How do we verify real estate agent accreditation?
+  - Same process as buyers agents?
+  - Different requirements per state?
+- [ ] How do we verify conveyancers and other professionals?
+- [ ] What documentation should be required?
+- [ ] Who on the team will do the verification?
+- [ ] What happens if verification fails?
+  - Automatic rejection?
+  - Request for more info?
+  - Time limit for response?
+- [ ] Should we integrate with any external verification services?
+- [ ] Different requirements per country (AU/UK/US)?
+
+**Current state:**
+- Users can enter accreditation info in a free-text field
+- Admins can see this in the admin panel
+- No automated verification
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -255,4 +310,4 @@ This document tracks all business decisions, content, and pricing that Dani need
 
 ---
 
-*Last updated: January 2026*
+*Last updated: 23 January 2026*

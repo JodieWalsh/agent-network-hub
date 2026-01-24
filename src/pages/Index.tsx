@@ -28,7 +28,7 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Welcome Header */}
-        <WelcomeHeader userName={firstName} />
+        <WelcomeHeader userName={firstName} userId={user?.id} />
 
         {/* Stats Grid */}
         <StatsGrid />

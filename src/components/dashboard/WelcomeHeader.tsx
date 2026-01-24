@@ -1,14 +1,47 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 interface WelcomeHeaderProps {
   userName?: string | null;
+  userId?: string | null;
+  hasAvatar?: boolean;
 }
 
-export function WelcomeHeader({ userName }: WelcomeHeaderProps) {
+export function WelcomeHeader({ userName, userId, hasAvatar }: WelcomeHeaderProps) {
+  const navigate = useNavigate();
+  const [isReturningUser, setIsReturningUser] = useState(true);
+
+  useEffect(() => {
+    if (userId) {
+      const hasVisitedKey = `user_${userId}_has_visited`;
+      const hasVisited = localStorage.getItem(hasVisitedKey);
+
+      if (!hasVisited) {
+        // First time user - redirect to welcome video page
+        setIsReturningUser(false);
+        localStorage.setItem(hasVisitedKey, 'true');
+
+        // Redirect to welcome page for onboarding video
+        navigate('/welcome');
+      } else {
+        setIsReturningUser(true);
+      }
+    }
+  }, [userId, navigate]);
+
+  const getWelcomeMessage = () => {
+    if (!userName) {
+      return "Welcome to Buyers Agent Hub";
+    }
+    return isReturningUser ? `Welcome back, ${userName}` : `Welcome, ${userName}`;
+  };
+
   return (
     <div className="animate-fade-in">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl lg:text-2xl font-sans font-semibold text-foreground">
-            {userName ? `Welcome back, ${userName}` : "Welcome to Buyers Agent Hub"}
+            {getWelcomeMessage()}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {userName ? "Your network is growing" : "Please sign in to access your dashboard"}

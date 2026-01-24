@@ -700,10 +700,7 @@ export function getNotificationLink(notification: Notification): string {
       return '/inspections/spotlights';
 
     case 'report_submitted':
-      // Job poster sees report - go directly to view the report
-      if (notification.job_id) {
-        return `/inspections/jobs/${notification.job_id}/report/view`;
-      }
+      // Job poster sees report - go to My Jobs "Reports Ready" tab
       return '/inspections/my-jobs?tab=reports';
 
     case 'job_expired':

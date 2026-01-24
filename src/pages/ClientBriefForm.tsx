@@ -1,5 +1,5 @@
-import { useState, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, FormEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -256,12 +256,171 @@ const initialFormData: BriefFormData = {
 
 export default function ClientBriefForm() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState<BriefFormData>(initialFormData);
   const [briefLocations, setBriefLocations] = useState<BriefLocation[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["basic", "locations"]));
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(!!id);
+
+  const isEditMode = !!id;
+
+  // Fetch existing brief if editing
+  useEffect(() => {
+    if (id && user) {
+      fetchBrief();
+    }
+  }, [id, user]);
+
+  const fetchBrief = async () => {
+    if (!id || !user) return;
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {}
+
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/client_briefs?select=*&id=eq.${id}&agent_id=eq.${user.id}`,
+        {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/vnd.pgrst.object+json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data) {
+        // Populate form with existing data
+        setFormData({
+          client_name: data.client_name || "",
+          brief_name: data.brief_name || "",
+          description: data.description || "",
+          budget_min: data.budget_min?.toString() || "",
+          budget_max: data.budget_max?.toString() || "",
+          bedrooms_min: data.bedrooms_min?.toString() || "",
+          bedrooms_max: data.bedrooms_max?.toString() || "",
+          bathrooms_min: data.bathrooms_min?.toString() || "",
+          bathrooms_max: data.bathrooms_max?.toString() || "",
+          preferred_suburbs: data.preferred_suburbs || [],
+          expiry_date: data.expiry_date || "",
+          land_size_min_sqm: data.land_size_min_sqm?.toString() || "",
+          land_size_min_priority: data.land_size_min_priority || "dont_care",
+          building_size_min_sqm: data.building_size_min_sqm?.toString() || "",
+          building_size_min_priority: data.building_size_min_priority || "dont_care",
+          pool_required: data.pool_required || false,
+          pool_priority: data.pool_priority || "dont_care",
+          pool_min_length_m: data.pool_min_length_m?.toString() || "",
+          garden_required: data.garden_required || false,
+          garden_priority: data.garden_priority || "dont_care",
+          garden_min_size_sqm: data.garden_min_size_sqm?.toString() || "",
+          architectural_styles: data.architectural_styles || [],
+          architectural_style_priority: data.architectural_style_priority || "dont_care",
+          min_ceiling_height_m: data.min_ceiling_height_m?.toString() || "",
+          ceiling_height_priority: data.ceiling_height_priority || "dont_care",
+          preferred_light_directions: data.preferred_light_directions || [],
+          light_direction_priority: data.light_direction_priority || "dont_care",
+          natural_light_importance: data.natural_light_importance || "dont_care",
+          water_views_required: data.water_views_required || false,
+          water_views_priority: data.water_views_priority || "dont_care",
+          city_views_required: data.city_views_required || false,
+          city_views_priority: data.city_views_priority || "dont_care",
+          mountain_views_required: data.mountain_views_required || false,
+          mountain_views_priority: data.mountain_views_priority || "dont_care",
+          park_views_required: data.park_views_required || false,
+          park_views_priority: data.park_views_priority || "dont_care",
+          min_parking_spaces: data.min_parking_spaces?.toString() || "",
+          parking_priority: data.parking_priority || "dont_care",
+          garage_required: data.garage_required || false,
+          garage_priority: data.garage_priority || "dont_care",
+          storage_required: data.storage_required || false,
+          storage_priority: data.storage_priority || "dont_care",
+          min_storage_size_sqm: data.min_storage_size_sqm?.toString() || "",
+          air_conditioning_required: data.air_conditioning_required || false,
+          air_conditioning_priority: data.air_conditioning_priority || "dont_care",
+          preferred_ac_types: data.preferred_ac_types || [],
+          heating_required: data.heating_required || false,
+          heating_priority: data.heating_priority || "dont_care",
+          preferred_heating_types: data.preferred_heating_types || [],
+          outdoor_entertaining_required: data.outdoor_entertaining_required || false,
+          outdoor_entertaining_priority: data.outdoor_entertaining_priority || "dont_care",
+          min_outdoor_area_sqm: data.min_outdoor_area_sqm?.toString() || "",
+          balcony_terrace_required: data.balcony_terrace_required || false,
+          balcony_priority: data.balcony_priority || "dont_care",
+          security_system_required: data.security_system_required || false,
+          security_priority: data.security_priority || "dont_care",
+          required_security_features: data.required_security_features || [],
+          solar_panels_required: data.solar_panels_required || false,
+          solar_priority: data.solar_priority || "dont_care",
+          min_energy_rating: data.min_energy_rating?.toString() || "",
+          energy_rating_priority: data.energy_rating_priority || "dont_care",
+          required_sustainable_features: data.required_sustainable_features || [],
+          sustainability_priority: data.sustainability_priority || "dont_care",
+          kitchen_styles: data.kitchen_styles || [],
+          kitchen_style_priority: data.kitchen_style_priority || "dont_care",
+          required_kitchen_features: data.required_kitchen_features || [],
+          kitchen_features_priority: data.kitchen_features_priority || "dont_care",
+          min_ensuite_bathrooms: data.min_ensuite_bathrooms?.toString() || "",
+          ensuite_priority: data.ensuite_priority || "dont_care",
+          required_bathroom_features: data.required_bathroom_features || [],
+          bathroom_features_priority: data.bathroom_features_priority || "dont_care",
+          acceptable_conditions: data.acceptable_conditions || [],
+          condition_priority: data.condition_priority || "dont_care",
+          max_year_built: data.max_year_built?.toString() || "",
+          year_built_priority: data.year_built_priority || "dont_care",
+          renovation_acceptable: data.renovation_acceptable || false,
+          smart_home_required: data.smart_home_required || false,
+          smart_home_priority: data.smart_home_priority || "dont_care",
+          required_smart_features: data.required_smart_features || [],
+          walkability_min_score: data.walkability_min_score?.toString() || "",
+          walkability_priority: data.walkability_priority || "dont_care",
+          max_noise_level: data.max_noise_level || "",
+          noise_priority: data.noise_priority || "dont_care",
+          max_street_traffic: data.max_street_traffic || "",
+          traffic_priority: data.traffic_priority || "dont_care",
+          min_privacy_level: data.min_privacy_level || "",
+          privacy_priority: data.privacy_priority || "dont_care",
+          min_rental_yield: data.min_rental_yield?.toString() || "",
+          rental_yield_priority: data.rental_yield_priority || "dont_care",
+          max_council_rates_annual: data.max_council_rates_annual?.toString() || "",
+          max_strata_fees_quarterly: data.max_strata_fees_quarterly?.toString() || "",
+          preferred_flooring_types: data.preferred_flooring_types || [],
+          flooring_priority: data.flooring_priority || "dont_care",
+          flooring_specific_notes: data.flooring_specific_notes || "",
+          additional_notes: data.additional_notes || "",
+          deal_breakers: data.deal_breakers || "",
+          flexibility_notes: data.flexibility_notes || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching brief:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load brief for editing.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -281,6 +440,27 @@ export default function ClientBriefForm() {
 
     setSubmitting(true);
     try {
+      console.log('[ClientBriefForm] Testing database connection...');
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      console.log('[ClientBriefForm] Supabase URL:', supabaseUrl);
+      console.log('[ClientBriefForm] Key exists:', !!supabaseKey);
+      const testStart = Date.now();
+
+      // Get access token from localStorage (bypass broken Supabase client)
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+          console.log('[ClientBriefForm] Got access token from localStorage');
+        }
+      } catch (e) {
+        console.log('[ClientBriefForm] Using anon key (no stored session)');
+      }
+
       // Convert form data to database format
       const briefData = {
         agent_id: user.id,
@@ -382,18 +562,66 @@ export default function ClientBriefForm() {
         flexibility_notes: formData.flexibility_notes || null,
       };
 
-      const { data: createdBrief, error } = await supabase
-        .from("client_briefs")
-        .insert(briefData)
-        .select()
-        .single();
+      // Use raw fetch since Supabase client has issues
+      const startTime = Date.now();
+      let savedBrief;
 
-      if (error) throw error;
+      if (isEditMode && id) {
+        // UPDATE existing brief
+        console.log('[ClientBriefForm] Starting update via fetch...', { id, brief_name: formData.brief_name });
 
-      // Save locations if any were added
-      if (briefLocations.length > 0 && createdBrief) {
+        const updateResponse = await fetch(`${supabaseUrl}/rest/v1/client_briefs?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(briefData),
+        });
+
+        console.log(`[ClientBriefForm] Update completed in ${Date.now() - startTime}ms, status: ${updateResponse.status}`);
+
+        if (!updateResponse.ok) {
+          const errorText = await updateResponse.text();
+          console.error('Update error details:', errorText);
+          throw new Error(`Update failed: ${updateResponse.status} - ${errorText}`);
+        }
+
+        const updatedBriefs = await updateResponse.json();
+        savedBrief = Array.isArray(updatedBriefs) ? updatedBriefs[0] : updatedBriefs;
+      } else {
+        // INSERT new brief
+        console.log('[ClientBriefForm] Starting insert via fetch...', { agent_id: user.id, brief_name: formData.brief_name });
+
+        const insertResponse = await fetch(`${supabaseUrl}/rest/v1/client_briefs`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(briefData),
+        });
+
+        console.log(`[ClientBriefForm] Insert completed in ${Date.now() - startTime}ms, status: ${insertResponse.status}`);
+
+        if (!insertResponse.ok) {
+          const errorText = await insertResponse.text();
+          console.error('Insert error details:', errorText);
+          throw new Error(`Insert failed: ${insertResponse.status} - ${errorText}`);
+        }
+
+        const createdBriefs = await insertResponse.json();
+        savedBrief = Array.isArray(createdBriefs) ? createdBriefs[0] : createdBriefs;
+      }
+
+      // Save locations if any were added (also using raw fetch)
+      if (briefLocations.length > 0 && savedBrief) {
         const locationInserts = briefLocations.map(location => ({
-          brief_id: createdBrief.id,
+          brief_id: savedBrief.id,
           location_name: location.location_name,
           center_point: `POINT(${location.longitude} ${location.latitude})`,
           radius_km: location.radius_km,
@@ -404,12 +632,18 @@ export default function ClientBriefForm() {
           suburb: location.suburb || null,
         }));
 
-        const { error: locationsError } = await supabase
-          .from("client_brief_locations")
-          .insert(locationInserts);
+        const locationsResponse = await fetch(`${supabaseUrl}/rest/v1/client_brief_locations`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(locationInserts),
+        });
 
-        if (locationsError) {
-          console.error("Error saving locations:", locationsError);
+        if (!locationsResponse.ok) {
+          console.error("Error saving locations:", await locationsResponse.text());
           // Don't fail the whole operation, just warn
           toast({
             variant: "destructive",
@@ -420,17 +654,20 @@ export default function ClientBriefForm() {
       }
 
       toast({
-        title: "Brief Created",
+        title: isEditMode ? "Brief Updated" : "Brief Created",
         description: "Client brief has been saved successfully.",
       });
 
       navigate("/briefs");
-    } catch (error) {
-      console.error("Error creating brief:", error);
+    } catch (error: any) {
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} brief:`, error);
+      const isTimeout = error?.message?.includes('timed out');
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to create client brief. Please try again.",
+        title: isTimeout ? "Request Timeout" : "Error",
+        description: isTimeout
+          ? "The database took too long to respond. This can happen if the database was idle. Please try again."
+          : `Failed to ${isEditMode ? 'update' : 'create'} client brief. Please try again.`,
       });
     } finally {
       setSubmitting(false);
@@ -466,9 +703,9 @@ export default function ClientBriefForm() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Create Client Brief</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{isEditMode ? 'Edit Client Brief' : 'Create Client Brief'}</h1>
           <p className="text-sm text-muted-foreground">
-            Define detailed property requirements for your client with priority levels for each attribute.
+            {isEditMode ? 'Update the property requirements for your client.' : 'Define detailed property requirements for your client with priority levels for each attribute.'}
           </p>
         </div>
 

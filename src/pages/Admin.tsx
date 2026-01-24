@@ -14,8 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Users, Home, BarChart3, Settings, Check, X, Clock, Shield, UserCheck, ShieldAlert, Eye } from 'lucide-react';
+import { Users, Home, BarChart3, Settings, Check, X, Clock, Shield, UserCheck, ShieldAlert, Eye, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RoleBadge } from '@/components/ui/role-badge';
@@ -29,11 +30,13 @@ interface PendingUser {
   approval_status: string;
   application_date: string | null;
   city: string | null;
+  professional_accreditation?: string | null;
 }
 
 interface AllUser {
   id: string;
   full_name: string | null;
+  email: string | null;
   user_type: string;
   role: string;
   approval_status: string;
@@ -106,12 +109,13 @@ export default function Admin() {
 
   const fetchPendingUsers = async () => {
     try {
+      // Fetch ALL users with approval_status = 'pending'
+      // This includes guests, pending_professionals, etc. - anyone needing admin review
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, user_type, role, approval_status, application_date, city')
-        .eq('role', 'pending_professional')
+        .select('id, full_name, user_type, role, approval_status, application_date, city, professional_accreditation')
         .eq('approval_status', 'pending')
-        .order('application_date', { ascending: false });
+        .order('application_date', { ascending: false, nullsFirst: false });
 
       if (error) {
         console.error('Error fetching pending users:', error);
@@ -162,7 +166,7 @@ export default function Admin() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, user_type, role, approval_status, city, created_at, is_verified')
+        .select('id, full_name, email, user_type, role, approval_status, city, created_at, is_verified')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -184,10 +188,10 @@ export default function Admin() {
         await Promise.all([
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
           supabase.from('properties').select('id', { count: 'exact', head: true }),
+          // Count all users with approval_status = 'pending'
           supabase
             .from('profiles')
             .select('id', { count: 'exact', head: true })
-            .eq('role', 'pending_professional')
             .eq('approval_status', 'pending'),
           supabase
             .from('properties')
@@ -412,9 +416,20 @@ export default function Admin() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage users, properties, and platform settings</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage users, properties, and platform settings</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchData()}
+            disabled={loading}
+          >
+            <RefreshCw size={16} className={cn("mr-2", loading && "animate-spin")} />
+            Refresh
+          </Button>
         </div>
 
         <Tabs defaultValue="pending-users" className="w-full">
@@ -472,13 +487,20 @@ export default function Admin() {
                             </h3>
                             <Badge variant="outline" className="border-amber-600 text-amber-600">
                               <Clock size={12} className="mr-1" />
-                              Pending
+                              Pending Approval
                             </Badge>
+                            <RoleBadge role={user.role as any} showIcon={false} />
                           </div>
                           <div className="text-sm text-muted-foreground space-y-1">
                             <p>User Type: {getUserTypeLabel(user.user_type)}</p>
                             <p>Location: {user.city || 'Not specified'}</p>
                             <p>Applied: {formatDate(user.application_date)}</p>
+                            {user.professional_accreditation && (
+                              <div className="mt-2 p-2 bg-muted rounded text-foreground">
+                                <strong>Professional Accreditation:</strong>
+                                <p className="mt-1">{user.professional_accreditation}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -690,6 +712,7 @@ export default function Admin() {
                             <RoleBadge role={userItem.role as any} showIcon={false} />
                           </div>
                           <div className="text-sm text-muted-foreground space-y-1">
+                            <p>Email: {userItem.email || 'Not available'}</p>
                             <p>User Type: {getUserTypeLabel(userItem.user_type)}</p>
                             <p>Location: {userItem.city || 'Not specified'}</p>
                             <p>Joined: {formatDate(userItem.created_at)}</p>

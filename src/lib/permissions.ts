@@ -28,7 +28,7 @@ export interface UserPermissionContext {
 }
 
 // Role-based permission matrix
-const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   admin: [
     'CAN_VIEW_ADMIN_DASHBOARD',
     'CAN_APPROVE_USERS',

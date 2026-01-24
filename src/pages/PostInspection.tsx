@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, MapPin, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { mockGeocode, mockAutocomplete } from "@/lib/geocoder";
 import { useAuth } from "@/contexts/AuthContext";
 import { CurrencyCode, CURRENCY_SYMBOLS } from "@/lib/currency";
@@ -28,6 +27,24 @@ const serviceTypes = [
 ];
 
 const currencyOptions: CurrencyCode[] = ['AUD', 'USD', 'GBP', 'EUR', 'NZD', 'CAD'];
+
+// Helper to get auth headers for raw fetch (workaround for Supabase client hanging)
+const getAuthHeaders = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  let accessToken = supabaseKey;
+  try {
+    const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+    const storedSession = localStorage.getItem(storageKey);
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession);
+      accessToken = parsed?.access_token || supabaseKey;
+    }
+  } catch (e) {}
+
+  return { supabaseUrl, supabaseKey, accessToken };
+};
 
 export default function PostInspection() {
   const navigate = useNavigate();
@@ -86,22 +103,36 @@ export default function PostInspection() {
     try {
       // Geocode the address
       const geocodeResult = await mockGeocode(propertyAddress);
-      
-      const { error } = await supabase.from("inspection_requests").insert({
-        requester_id: user.id,
-        title,
-        property_address: propertyAddress,
-        latitude: geocodeResult?.coordinates.lat || null,
-        longitude: geocodeResult?.coordinates.lng || null,
-        service_type: serviceType as "video_walkthrough" | "photo_inspection" | "auction_bidding" | "contract_collection" | "property_assessment" | "open_home_attendance",
-        description: description || null,
-        budget: budgetCents,
-        currency_code: currency,
-        deadline: deadline.toISOString().split("T")[0],
-        status: "open" as const,
+
+      const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/inspection_requests`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          requester_id: user.id,
+          title,
+          property_address: propertyAddress,
+          latitude: geocodeResult?.coordinates.lat || null,
+          longitude: geocodeResult?.coordinates.lng || null,
+          service_type: serviceType,
+          description: description || null,
+          budget: budgetCents,
+          currency_code: currency,
+          deadline: deadline.toISOString().split("T")[0],
+          status: "open",
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Insert failed: ${response.status}`);
+      }
 
       toast.success("Inspection request posted successfully!");
       navigate("/inspections");

@@ -35,7 +35,13 @@
       "Bash(start http://localhost:8087/marketplace/add)",
       "Bash(start http://localhost:8087)",
       "Bash(grep:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=\"sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1\" npx supabase migration:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout:*)",
+      "Bash(npm info:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(if not exist \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\" mkdir \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\")"
     ]
   }
 }

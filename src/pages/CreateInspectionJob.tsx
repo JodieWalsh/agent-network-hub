@@ -13,7 +13,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,10 +67,10 @@ interface JobFormData {
 
 interface ClientBrief {
   id: string;
-  brief_title: string;
+  brief_name: string;
   client_name: string;
-  min_bedrooms: number | null;
-  max_budget: number | null;
+  bedrooms_min: number | null;
+  budget_max: number | null;
 }
 
 const STEPS = [
@@ -161,13 +160,33 @@ export default function CreateInspectionJob() {
 
     setLoadingBriefs(true);
     try {
-      const { data, error } = await supabase
-        .from('client_briefs')
-        .select('id, brief_title, client_name, min_bedrooms, max_budget')
-        .eq('agent_id', user.id)
-        .order('updated_at', { ascending: false });
+      // Use raw fetch since Supabase client has issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      if (error) throw error;
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {}
+
+      const url = `${supabaseUrl}/rest/v1/client_briefs?select=id,brief_name,client_name,bedrooms_min,budget_max&agent_id=eq.${user.id}&order=updated_at.desc`;
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
       setClientBriefs(data || []);
     } catch (error: any) {
       console.error('Error fetching client briefs:', error);
@@ -246,8 +265,23 @@ export default function CreateInspectionJob() {
         ? `Area: ${generalArea}`
         : formData.property_address;
 
-      const { error } = await supabase.from('inspection_jobs').insert({
+      // Use raw fetch since Supabase client has issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {}
+
+      const jobData = {
         creator_id: user.id,
+        requesting_agent_id: user.id,
         property_address: propertyAddress,
         property_location: formData.property_lat && formData.property_lng
           ? `POINT(${formData.property_lng} ${formData.property_lat})`
@@ -261,9 +295,23 @@ export default function CreateInspectionJob() {
         client_brief_id: formData.client_brief_id,
         budget_amount: formData.budget_amount,
         status: 'draft',
+      };
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/inspection_jobs`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(jobData),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Insert failed: ${response.status}`);
+      }
 
       toast.success('Draft saved! You can finish it later.');
       navigate('/inspections');
@@ -292,8 +340,23 @@ export default function CreateInspectionJob() {
         ? `Area: ${generalArea}`
         : formData.property_address;
 
-      const { error } = await supabase.from('inspection_jobs').insert({
+      // Use raw fetch since Supabase client has issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {}
+
+      const jobData = {
         creator_id: user.id,
+        requesting_agent_id: user.id,
         property_address: propertyAddress,
         property_location: formData.property_lat && formData.property_lng
           ? `POINT(${formData.property_lng} ${formData.property_lat})`
@@ -306,10 +369,24 @@ export default function CreateInspectionJob() {
         special_instructions: formData.special_instructions || null,
         client_brief_id: formData.client_brief_id,
         budget_amount: formData.budget_amount,
-        status: 'open', // Posted as open!
+        status: 'open',
+      };
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/inspection_jobs`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(jobData),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Insert failed: ${response.status}`);
+      }
 
       toast.success('🎉 Job posted! Inspectors will start bidding soon.');
       navigate('/inspections/spotlights');
@@ -571,33 +648,39 @@ export default function CreateInspectionJob() {
                 </div>
 
                 {/* Client Brief Option */}
-                {clientBriefs.length > 0 && (
-                  <div className="flex items-start space-x-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <Checkbox
-                      id="use-brief"
-                      checked={useBrief}
-                      onCheckedChange={(checked) => {
-                        setUseBrief(checked as boolean);
-                        if (checked) {
-                          // Clear scope requirements when switching to brief mode
-                          setFormData(prev => ({ ...prev, scope_requirements: '' }));
-                        } else {
-                          // Clear brief when switching to manual mode
-                          setFormData(prev => ({ ...prev, client_brief_id: null }));
-                        }
-                      }}
-                    />
-                    <div className="flex-1">
-                      <Label htmlFor="use-brief" className="font-medium cursor-pointer flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-purple-600" />
-                        Inspect against client brief requirements
-                      </Label>
+                <div className="flex items-start space-x-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <Checkbox
+                    id="use-brief"
+                    checked={useBrief}
+                    disabled={clientBriefs.length === 0}
+                    onCheckedChange={(checked) => {
+                      setUseBrief(checked as boolean);
+                      if (checked) {
+                        // Clear scope requirements when switching to brief mode
+                        setFormData(prev => ({ ...prev, scope_requirements: '' }));
+                      } else {
+                        // Clear brief when switching to manual mode
+                        setFormData(prev => ({ ...prev, client_brief_id: null }));
+                      }
+                    }}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="use-brief" className={`font-medium cursor-pointer flex items-center gap-2 ${clientBriefs.length === 0 ? 'text-muted-foreground' : ''}`}>
+                      <FileText className="h-4 w-4 text-purple-600" />
+                      Inspect against client brief requirements
+                    </Label>
+                    {clientBriefs.length > 0 ? (
                       <p className="text-xs text-muted-foreground mt-1">
                         Link this inspection to a client brief. The inspector will evaluate the property against your client's specific requirements.
                       </p>
-                    </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        You don't have any client briefs yet.{' '}
+                        <a href="/briefs/new" className="text-purple-600 hover:underline">Create one</a> to link inspections to specific client requirements.
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Client Brief Selection */}
                 {useBrief ? (
@@ -614,9 +697,9 @@ export default function CreateInspectionJob() {
                         {clientBriefs.map((brief) => (
                           <SelectItem key={brief.id} value={brief.id}>
                             <div className="flex flex-col">
-                              <span className="font-medium">{brief.brief_title}</span>
+                              <span className="font-medium">{brief.brief_name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {brief.client_name} • {brief.min_bedrooms ? `${brief.min_bedrooms}+ bed` : ''} {brief.max_budget ? `• $${brief.max_budget.toLocaleString()}` : ''}
+                                {brief.client_name} • {brief.bedrooms_min ? `${brief.bedrooms_min}+ bed` : ''} {brief.budget_max ? `• $${brief.budget_max.toLocaleString()}` : ''}
                               </span>
                             </div>
                           </SelectItem>
@@ -777,7 +860,7 @@ export default function CreateInspectionJob() {
                           Evaluate against Client Brief
                         </Badge>
                         <p className="text-sm mt-2">
-                          <strong>{clientBriefs.find(b => b.id === formData.client_brief_id)?.brief_title}</strong>
+                          <strong>{clientBriefs.find(b => b.id === formData.client_brief_id)?.brief_name}</strong>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Inspector will assess property against full brief requirements

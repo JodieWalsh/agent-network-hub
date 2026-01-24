@@ -40,26 +40,51 @@ export default function ClientBriefs() {
   }, [user, profile]);
 
   const fetchBriefs = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Admins see all briefs, verified professionals see only their own
-      let query = supabase
-        .from("client_briefs")
-        .select("*");
+      // Use raw fetch since Supabase client has issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      // If not admin, filter by agent_id
-      if (profile?.role !== 'admin') {
-        query = query.eq("agent_id", user.id);
+      // Get access token from localStorage
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {
+        // Use anon key
       }
 
-      const { data, error } = await query.order("updated_at", { ascending: false });
+      // Build query URL - admins see all, others see only their own
+      let url = `${supabaseUrl}/rest/v1/client_briefs?select=*&order=updated_at.desc`;
+      if (profile?.role !== 'admin') {
+        url += `&agent_id=eq.${user.id}`;
+      }
 
-      if (error) throw error;
+      const response = await fetch(url, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
 
+      if (!response.ok) {
+        throw new Error(`Fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
       setBriefs(data || []);
     } catch (error) {
       console.error("Error fetching briefs:", error);
+      setBriefs([]);
     } finally {
       setLoading(false);
     }
@@ -129,12 +154,31 @@ export default function ClientBriefs() {
     }
 
     try {
-      const { error } = await supabase
-        .from("client_briefs")
-        .delete()
-        .eq("id", briefId);
+      // Use raw fetch since Supabase client has issues
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      if (error) throw error;
+      let accessToken = supabaseKey;
+      try {
+        const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+        const storedSession = localStorage.getItem(storageKey);
+        if (storedSession) {
+          const parsed = JSON.parse(storedSession);
+          accessToken = parsed?.access_token || supabaseKey;
+        }
+      } catch (e) {}
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/client_briefs?id=eq.${briefId}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.status}`);
+      }
 
       toast.success("Client brief deleted successfully");
       fetchBriefs(); // Refresh the list

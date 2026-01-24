@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Mail, Lock, User, Briefcase } from "lucide-react";
+import { Building2, Mail, Lock, User, Briefcase, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -31,12 +32,14 @@ const userTypeLabels = {
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [userType, setUserType] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -146,6 +149,46 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !email.includes('@')) {
+      setErrors({ email: 'Please enter a valid email address' });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
+        });
+      } else {
+        setResetEmailSent(true);
+        toast({
+          title: "Check your email",
+          description: "We've sent you a password reset link.",
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -161,15 +204,94 @@ export default function Auth() {
         <Card className="bg-card border-border shadow-elegant">
           <CardHeader className="text-center">
             <CardTitle className="font-serif text-2xl">
-              {isLogin ? "Welcome Back" : "Join Buyers Agent Hub"}
+              {showForgotPassword
+                ? "Reset Password"
+                : isLogin
+                ? "Welcome Back"
+                : "Join Buyers Agent Hub"}
             </CardTitle>
             <CardDescription>
-              {isLogin
+              {showForgotPassword
+                ? "Enter your email to receive a password reset link"
+                : isLogin
                 ? "Sign in to access your professional network"
                 : "Create your account to connect with buyers agents"}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {showForgotPassword ? (
+              // Forgot Password Form
+              <div className="space-y-4">
+                {resetEmailSent ? (
+                  // Success state
+                  <div className="text-center py-4">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Mail className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">Check your email</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      We've sent a password reset link to <strong>{email}</strong>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Didn't receive the email? Check your spam folder or{" "}
+                      <button
+                        type="button"
+                        onClick={() => setResetEmailSent(false)}
+                        className="text-primary hover:underline"
+                      >
+                        try again
+                      </button>
+                    </p>
+                  </div>
+                ) : (
+                  // Email input form
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="resetEmail" className="flex items-center gap-2">
+                        <Mail size={14} />
+                        Email Address
+                      </Label>
+                      <Input
+                        id="resetEmail"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={errors.email ? "border-destructive" : ""}
+                      />
+                      {errors.email && (
+                        <p className="text-xs text-destructive">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Sending..." : "Send Reset Link"}
+                    </Button>
+                  </form>
+                )}
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmailSent(false);
+                      setErrors({});
+                    }}
+                    className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                  >
+                    <ArrowLeft size={14} />
+                    Back to sign in
+                  </button>
+                </div>
+              </div>
+            ) : (
+            // Login/Signup Form
+            <>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <>
@@ -249,6 +371,21 @@ export default function Auth() {
                 {errors.password && (
                   <p className="text-xs text-destructive">{errors.password}</p>
                 )}
+                {isLogin && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(true);
+                        setErrors({});
+                        setResetEmailSent(false);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
               </div>
 
               <Button
@@ -260,7 +397,7 @@ export default function Auth() {
               </Button>
             </form>
 
-            {/* Divider */}
+            {/* Divider - only show for login/signup form */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border"></div>
@@ -314,6 +451,8 @@ export default function Auth() {
                 </button>
               </p>
             </div>
+            </>
+            )}
           </CardContent>
         </Card>
       </div>
