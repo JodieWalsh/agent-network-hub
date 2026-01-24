@@ -268,6 +268,8 @@ export default function InspectionReportView() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
 
+  console.log('[ReportView] Component mounted, jobId:', jobId, 'user:', user?.id);
+
   const [job, setJob] = useState<InspectionJob | null>(null);
   const [report, setReport] = useState<InspectionReport | null>(null);
   const [clientBrief, setClientBrief] = useState<ClientBrief | null>(null);
@@ -276,19 +278,23 @@ export default function InspectionReportView() {
   const [approving, setApproving] = useState(false);
 
   useEffect(() => {
+    console.log('[ReportView] useEffect triggered, jobId:', jobId, 'user:', !!user);
     if (jobId && user) {
       fetchJobAndReport();
     } else if (!user) {
+      console.log('[ReportView] No user, stopping loading');
       setLoading(false);
     }
   }, [jobId, user]);
 
   const fetchJobAndReport = async () => {
+    console.log('[ReportView] fetchJobAndReport called');
     if (!jobId || !user) return;
     setLoading(true);
 
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+      console.log('[ReportView] Fetching job:', jobId);
 
       // Fetch job
       const jobResponse = await fetch(
