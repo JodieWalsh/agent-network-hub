@@ -308,16 +308,26 @@ export default function InspectionReportView() {
         }
       );
 
-      if (!jobResponse.ok) throw new Error('Failed to fetch job');
+      if (!jobResponse.ok) {
+        const errorText = await jobResponse.text();
+        console.error('[ReportView] Job fetch failed:', jobResponse.status, errorText);
+        throw new Error('Failed to fetch job');
+      }
       const jobData = await jobResponse.json();
+      console.log('[ReportView] Job data:', jobData);
+      console.log('[ReportView] Job requesting_agent_id:', jobData.requesting_agent_id);
+      console.log('[ReportView] Current user.id:', user.id);
+      console.log('[ReportView] Profile role:', profile?.role);
       setJob(jobData);
 
       // Authorization check - only job creator or admin can view
       if (jobData.requesting_agent_id !== user.id && profile?.role !== 'admin') {
+        console.error('[ReportView] AUTH FAILED - user is not job creator or admin');
         toast.error('You are not authorized to view this report');
         navigate('/inspections/my-jobs');
         return;
       }
+      console.log('[ReportView] Auth check passed');
 
       // Fetch report
       const reportResponse = await fetch(
