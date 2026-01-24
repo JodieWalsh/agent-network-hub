@@ -374,13 +374,52 @@ Budget you're offering: $200.00
 ### 18. Stripe & Business Setup
 **Location:** Payment processing
 
-**Questions for Dani:**
+**Context:** Stripe integration has been set up for:
+1. **Subscriptions** - Monthly/annual plans for premium features
+2. **Marketplace Payments** - Paying inspectors via Stripe Connect (90% to inspector, 10% platform)
+3. **Automatic Invoices** - For tax purposes
+4. **Future:** Course payments
+
+**Implementation Status:**
+- ✅ Stripe packages installed (@stripe/stripe-js, stripe)
+- ✅ Frontend Stripe client configured (src/lib/stripe.ts)
+- ✅ Supabase Edge Functions created for all Stripe operations
+- ✅ Database fields added for subscriptions and Connect accounts
+- ⏳ Awaiting Stripe account credentials and subscription pricing decisions
+
+**Questions for Dani - Business Setup:**
 - [ ] Create new Stripe account for "Buyers Agent Hub"? (Recommended - separate from Jodie's other app)
 - [ ] Business structure: ABN? Pty Ltd? Partnership?
-- [ ] Business bank account for receiving payments?
+- [ ] Business bank account for receiving platform fees?
 - [ ] Who is the "responsible person" for Stripe verification?
 - [ ] Business address for invoices?
-- [ ] GST registered? (Affects invoice formatting)
+- [ ] GST registered? (Affects invoice formatting - 10% GST on platform fees)
+
+**Questions for Dani - Subscription Tiers:**
+
+| Tier | Monthly | Annual | What's Included? |
+|------|---------|--------|------------------|
+| Free | $0 | $0 | ??? (needs definition) |
+| Basic | $29? | $290? | ??? (needs definition) |
+| Premium | $79? | $790? | ??? (needs definition) |
+
+- [ ] Confirm subscription pricing above
+- [ ] What features are included in each tier?
+- [ ] Free trial period? (7, 14, or 30 days?)
+- [ ] Founding member discount? (e.g., 50% off first year)
+- [ ] Annual discount percentage? (currently ~17%)
+
+**Questions for Dani - Stripe Connect (Inspector Payouts):**
+- [ ] Confirm 90/10 split (inspector gets 90%, platform keeps 10%)
+- [ ] Minimum payout threshold? (e.g., $50 before payout)
+- [ ] Payout frequency? (daily, weekly, monthly)
+- [ ] What happens if inspector hasn't completed Stripe onboarding?
+
+**Technical Notes:**
+- Edge Functions deployed to: `supabase/functions/stripe-*`
+- Webhook endpoint: `https://[project].supabase.co/functions/v1/stripe-webhook`
+- Test mode: Use `pk_test_xxx` and `sk_test_xxx` keys
+- Live mode: Switch to `pk_live_xxx` and `sk_live_xxx` only in production
 
 ---
 
@@ -405,4 +444,4 @@ Budget you're offering: $200.00
 
 ---
 
-*Last updated: 25 January 2026 - Added #18 Stripe & Business Setup*
+*Last updated: 25 January 2026 - Expanded #18 Stripe & Business Setup with implementation details*

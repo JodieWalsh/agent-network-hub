@@ -17,7 +17,8 @@ Before making changes, please read the documentation:
 
 - **Frontend:** React, TypeScript, Vite
 - **Styling:** Tailwind CSS, shadcn-ui
-- **Backend:** Supabase (Auth, Database, Storage)
+- **Backend:** Supabase (Auth, Database, Storage, Edge Functions)
+- **Payments:** Stripe (Subscriptions, Connect for marketplace payouts)
 - **Location:** Mapbox Geocoding API
 
 ## Getting Started
@@ -62,6 +63,86 @@ Push migrations to Supabase:
 ```sh
 npx supabase db push
 ```
+
+### Stripe Setup (Payments)
+
+Stripe is used for:
+- **Subscriptions:** Monthly/annual plans for premium features
+- **Marketplace Payments:** Paying inspectors via Stripe Connect (90% to inspector, 10% platform fee)
+- **Invoices:** Automatic tax invoices for all transactions
+
+#### 1. Get Stripe API Keys
+
+1. Create a Stripe account at [dashboard.stripe.com](https://dashboard.stripe.com/register)
+2. Go to **Developers > API Keys** (use Test mode for development)
+3. Copy your keys:
+   - **Publishable key:** `pk_test_xxx` (safe for frontend)
+   - **Secret key:** `sk_test_xxx` (backend only!)
+
+#### 2. Add Keys to Environment Variables
+
+Add these to your `.env` file:
+
+```sh
+VITE_STRIPE_PUBLISHABLE_KEY="pk_test_xxx"
+STRIPE_SECRET_KEY="sk_test_xxx"
+STRIPE_WEBHOOK_SECRET="whsec_xxx"
+```
+
+#### 3. Set Up Webhooks for Local Development
+
+Use the Stripe CLI to forward webhooks to your local Edge Functions:
+
+```sh
+# Install Stripe CLI
+# macOS: brew install stripe/stripe-cli/stripe
+# Windows: scoop install stripe
+
+# Login to your Stripe account
+stripe login
+
+# Forward webhooks to your local Supabase
+stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
+
+# Copy the webhook signing secret (whsec_xxx) to your .env
+```
+
+#### 4. Set Up Webhooks for Production
+
+1. Go to **Developers > Webhooks** in Stripe Dashboard
+2. Add endpoint: `https://YOUR_PROJECT.supabase.co/functions/v1/stripe-webhook`
+3. Select events:
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+   - `account.updated` (for Connect)
+4. Copy the signing secret to your Supabase Edge Function environment variables
+
+#### 5. Deploy Edge Functions
+
+```sh
+# Deploy all Stripe functions
+supabase functions deploy stripe-create-checkout
+supabase functions deploy stripe-create-portal
+supabase functions deploy stripe-webhook
+supabase functions deploy stripe-connect-onboarding
+supabase functions deploy stripe-connect-dashboard
+
+# Set secrets for Edge Functions
+supabase secrets set STRIPE_SECRET_KEY=sk_xxx
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+```
+
+#### 6. Create Products & Prices (TODO)
+
+In Stripe Dashboard, create:
+- **Basic Plan:** Monthly ($29) and Annual ($290)
+- **Premium Plan:** Monthly ($79) and Annual ($790)
+
+Update the Price IDs in `src/lib/stripe.ts` → `SUBSCRIPTION_TIERS`.
 
 ## Key Features
 
