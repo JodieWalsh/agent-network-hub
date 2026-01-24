@@ -381,7 +381,6 @@ export default function InspectionReportView() {
         console.log('[ReportView] Could not fetch inspector profile:', e);
       }
 
-      const reportData = reports[0];
       // Parse JSON fields
       reportData.brief_matches = reportData.brief_matches ?
         (typeof reportData.brief_matches === 'string' ? JSON.parse(reportData.brief_matches) : reportData.brief_matches)
