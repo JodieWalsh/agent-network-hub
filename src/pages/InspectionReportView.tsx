@@ -340,18 +340,22 @@ export default function InspectionReportView() {
         }
       );
 
-      console.log('[ReportView] Report response status:', reportResponse.status);
+      const reportStatus = reportResponse.status;
+      const reportText = await reportResponse.text();
+
+      // Show alert with debug info
+      alert(`DEBUG: Report query status: ${reportStatus}\nJob ID: ${jobId}\nResponse: ${reportText.substring(0, 200)}`);
 
       if (!reportResponse.ok) {
-        const errorText = await reportResponse.text();
-        console.error('[ReportView] Report fetch error:', errorText);
-        throw new Error('Failed to fetch report');
+        toast.error('Failed to fetch report: ' + reportStatus);
+        navigate('/inspections/my-jobs?tab=reports');
+        return;
       }
 
-      const reports = await reportResponse.json();
-      console.log('[ReportView] Reports found:', reports?.length || 0, reports);
+      const reports = JSON.parse(reportText);
 
       if (!reports || reports.length === 0) {
+        alert(`DEBUG: No reports found!\nJob ID: ${jobId}\nQuery returned empty array.\nThis could be an RLS policy issue.`);
         toast.error('No report found for this job');
         navigate('/inspections/my-jobs?tab=reports');
         return;
