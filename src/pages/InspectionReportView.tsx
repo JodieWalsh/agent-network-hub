@@ -333,6 +333,41 @@ export default function InspectionReportView() {
       const reports = await reportResponse.json();
 
       if (!reports || reports.length === 0) {
+        // Use diagnostic function to see what's in the database
+        try {
+          const diagResponse = await fetch(
+            `${supabaseUrl}/rest/v1/rpc/check_report_exists`,
+            {
+              method: 'POST',
+              headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ p_job_id: jobId }),
+            }
+          );
+          const diagData = await diagResponse.json();
+          console.log('[ReportView] Diagnostic data:', diagData);
+
+          if (diagData && diagData.length > 0) {
+            const diag = diagData[0];
+            alert(
+              `DIAGNOSTIC INFO:\n` +
+              `Report exists: ${diag.report_exists}\n` +
+              `Report ID: ${diag.report_id || 'N/A'}\n` +
+              `Report inspector_id: ${diag.inspector_id || 'N/A'}\n` +
+              `Job requesting_agent_id: ${diag.job_requesting_agent_id}\n` +
+              `Job assigned_inspector_id: ${diag.job_assigned_inspector_id}\n` +
+              `Job status: ${diag.job_status}\n` +
+              `Your user ID: ${user.id}\n` +
+              `Submitted at: ${diag.submitted_at || 'Not submitted'}`
+            );
+          }
+        } catch (diagError) {
+          console.error('Diagnostic failed:', diagError);
+        }
+
         toast.error('No report found for this job');
         navigate('/inspections/my-jobs?tab=reports');
         return;
