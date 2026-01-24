@@ -2,6 +2,812 @@
 
 ---
 
+## 📋 SESSION CHANGELOG - January 24, 2026
+
+### Session Summary: Complete Inspection Marketplace Workflow - Notifications, Dashboards, Reports & Viewing
+
+This session completed the full inspection marketplace workflow from job posting through to report approval, including a comprehensive notification system, two dashboards, a 16-section inspection report form, and a report viewing page.
+
+---
+
+### ✅ NOTIFICATION SYSTEM (Complete)
+
+**Files Created:**
+- `src/lib/notifications.ts` - Core notification helpers
+- `src/components/notifications/NotificationBell.tsx` - Bell icon with unread count
+- `src/components/notifications/NotificationDropdown.tsx` - Dropdown with notification list
+
+**Database Migration:**
+- `supabase/migrations/20260123020000_add_notification_system.sql`
+- Tables: `notifications`, `notification_preferences`
+- Full RLS policies for user-specific access
+
+**Notification Types Supported:**
+| Type | Recipient | Message Example |
+|------|-----------|-----------------|
+| `bid_received` | Job Poster | "Sarah wants to inspect 123 Main St for $250" |
+| `bid_accepted` | Inspector | "You've got the gig! Time to shine!" |
+| `bid_declined` | Inspector | "Your bid wasn't selected this time. Keep going!" |
+| `bid_edited` | Job Poster | "Sarah updated their bid for 123 Main St" |
+| `job_assigned` | Inspector | "The inspection is officially yours!" |
+| `report_submitted` | Job Poster | "Report Ready! Review & release payment." |
+| `report_approved` | Inspector | "Your report has been approved. Great job!" |
+| `payment_released` | Inspector | "Ka-ching! $250 received for 123 Main St" |
+| `review_received` | Either | "5-Star Review! Marcus says: 'Excellent...'" |
+| `badge_earned` | User | "Achievement Unlocked! You earned 'First Inspection'" |
+| `job_expired` | Job Poster | "Your job has expired. You can repost it." |
+| `job_cancelled` | Inspector | "The job has been cancelled by the requester." |
+
+**Notification Routing (Click Actions):**
+```typescript
+// src/lib/notifications.ts - getNotificationLink()
+bid_received → /inspections/my-jobs?tab=received
+bid_accepted → /inspections/spotlights/{jobId}
+report_submitted → /inspections/jobs/{jobId}/report/view
+report_approved → /inspections/spotlights/{jobId}
+job_cancelled → /inspections/my-jobs?tab=cancelled
+```
+
+**Key Functions:**
+- `createNotification(params)` - Create any notification type
+- `fetchNotifications(limit, unreadOnly)` - Get user's notifications
+- `getUnreadCount()` - Badge count for bell icon
+- `markAsRead(id)` / `markAllAsRead()` - Mark notifications read
+- `notifyBidReceived()`, `notifyBidAccepted()`, etc. - Theatrical helper functions
+
+---
+
+### ✅ MY POSTED JOBS DASHBOARD (For Job Posters)
+
+**File:** `src/pages/inspections/MyPostedJobs.tsx`
+**Route:** `/inspections/my-jobs`
+
+**6 Tabs with Badge Counts:**
+| Tab | Shows | Badge Color |
+|-----|-------|-------------|
+| Awaiting Bids | Open jobs with 0 bids | Gray |
+| Bids Received | Open jobs with 1+ bids | **Red (urgent)** |
+| In Progress | Assigned + in_progress jobs | Gray |
+| Reports Ready | pending_review jobs | **Red (urgent)** |
+| Completed | Completed jobs | Gray |
+| Cancelled/Expired | Cancelled + expired jobs | Gray |
+
+**Key Features:**
+- URL parameter support: `?tab=received` for deep linking from notifications
+- Inline bid display with expand/collapse per job card
+- Accept/Decline bid actions with confirmation dialogs
+- View Report button navigates to read-only report view
+- Quick bid details dialog with inspector profile
+
+---
+
+### ✅ MY INSPECTION WORK DASHBOARD (For Inspectors)
+
+**File:** `src/pages/inspections/MyInspectionWork.tsx`
+**Route:** `/inspections/my-work`
+
+**5 Tabs:**
+| Tab | Shows |
+|-----|-------|
+| My Bids | All bids (pending, shortlisted) |
+| Accepted - Action Required | Accepted bids where report not yet submitted |
+| Reports Submitted | Jobs with pending_review status |
+| Completed | Completed jobs |
+| Declined | Declined bids |
+
+**Key Features:**
+- Quick stats header (Total Bids, Success Rate, Earnings, Avg Rating)
+- "Complete Report" button navigates to InspectionReportBuilder
+- Bid status badges with color coding
+- Links to job details for each bid
+
+**Sidebar Navigation:**
+- Shows "My Inspection Work" for user types: `buyers_agent`, `inspector`, `building_inspector`
+
+---
+
+### ✅ INSPECTION REPORT BUILDER (16 Sections)
+
+**File:** `src/pages/InspectionReportBuilder.tsx`
+**Route:** `/inspections/jobs/:jobId/report`
+
+**Comprehensive 16-Section Form:**
+| # | Section | Key Fields |
+|---|---------|------------|
+| 0 | Inspection Details | Date, time, weather, shown by, duration, areas not accessed |
+| 1 | Client Brief Match | Dynamic requirements from linked brief, status per requirement |
+| 2 | First Impressions | Vibe slider (1-10), matches photos, gut feeling |
+| 3 | Exterior | Street appeal, roof/walls/windows condition, parking, fencing |
+| 4 | Living Areas | Condition, natural light, size accuracy, layout flow |
+| 5 | Kitchen | Condition, age/style, appliances, storage, renovation estimate |
+| 6 | Bathrooms | Count, ensuites, condition, ventilation, renovation estimate |
+| 7 | Bedrooms | Count, master size, other sizes, storage |
+| 8 | Other Spaces | Multi-select: Garage, Laundry, Study, Pool, Granny Flat, etc. |
+| 9 | Neighbourhood | Street feel, traffic, parking, safety rating, amenities checklist |
+| 10 | Red Flags | Multi-select: Structural, damp, smells, pests, noise, etc. |
+| 11 | Standouts | Multi-select features, best single feature, "would you buy?" |
+| 12 | Market Context | Days on market, price guide, pricing opinion, competition |
+| 13 | Final Verdict | Overall score (1-10), recommendation, urgency, summary |
+| 14 | For Agent | Questions to ask, second visit tips, negotiation suggestions |
+| 15 | Review & Submit | Preview all sections, progress summary, submit button |
+
+**Features:**
+- **Auto-save** every 30 seconds with "Last saved" indicator
+- **Progress tracking** with visual percentage bar
+- **Time tracker** showing elapsed time
+- **Photo upload** per section (planned, UI ready)
+- **Client brief matching** with live score calculation
+- **Section navigation** via sidebar with completion indicators
+- **Mobile-friendly** with collapsible navigation
+- **Authorization check** - only assigned inspector can access
+- **Status transitions:**
+  - `assigned` → `in_progress` (on first access)
+  - `in_progress` → `pending_review` (on submit)
+- **Celebration modal** with confetti animation on submit
+- **Notification sent** to job poster on submit
+
+---
+
+### ✅ INSPECTION REPORT VIEW (For Job Posters)
+
+**File:** `src/pages/InspectionReportView.tsx`
+**Route:** `/inspections/jobs/:jobId/report/view`
+
+**Read-Only Report Display:**
+- Beautiful presentation of all 16 sections
+- Final Verdict card at top with:
+  - Overall Score (X/10)
+  - Recommendation badge (Highly Recommend / Worth Considering / Not Recommended)
+  - Urgency indicator (Act Fast / Normal / Take Time)
+  - Brief Match percentage
+- Client Brief Match breakdown with status icons (✓ meets / ⚠ partial / ✗ doesn't)
+- Red Flags and Standouts side-by-side cards
+- Inspector tips section (purple theme)
+- Inspection details (date, time, weather, etc.)
+
+**Approval Workflow:**
+- "Approve Report" button (green, prominent)
+- Confirmation dialog with agreed payment amount
+- On approval:
+  - Job status → `completed`
+  - `completed_at` timestamp set
+  - Inspector receives `report_approved` notification
+- Navigate to `/inspections/my-jobs?tab=completed`
+
+**Authorization:**
+- Only job creator (requesting_agent_id) or admin can view
+- Redirects unauthorized users with error toast
+
+---
+
+### 📁 FILES CREATED THIS SESSION
+
+**New Files:**
+1. `src/lib/notifications.ts` - Notification system core
+2. `src/components/notifications/NotificationBell.tsx` - Bell icon component
+3. `src/components/notifications/NotificationDropdown.tsx` - Dropdown component
+4. `src/pages/inspections/MyPostedJobs.tsx` - Job poster dashboard
+5. `src/pages/inspections/MyInspectionWork.tsx` - Inspector dashboard
+6. `src/pages/InspectionReportBuilder.tsx` - 16-section report form
+7. `src/pages/InspectionReportView.tsx` - Read-only report view
+8. `docs/PROJECT_TODO.md` - Future development task list
+9. `supabase/migrations/20260123020000_add_notification_system.sql` - Notification tables
+
+**Modified Files:**
+- `src/App.tsx` - Added routes for all new pages
+- `src/components/layout/AppSidebar.tsx` - Added My Inspection Work nav item
+- `src/components/layout/TopBar.tsx` - Added NotificationBell
+- `src/pages/InspectionSpotlightDetail.tsx` - Bid submission with notifications
+- `README.md` - Updated with documentation links
+
+---
+
+### 🔄 COMPLETE WORKFLOW (End-to-End)
+
+**1. Job Poster Creates Job:**
+```
+/inspections/jobs/new → Creates inspection_job with status='open'
+```
+
+**2. Inspector Bids on Job:**
+```
+/inspections/spotlights/:id → Submits bid
+→ Notification sent to job poster (bid_received)
+```
+
+**3. Job Poster Reviews & Accepts Bid:**
+```
+Click notification → /inspections/my-jobs?tab=received
+Accept bid → job.status='assigned', job.assigned_inspector_id set
+→ Notification sent to inspector (bid_accepted)
+→ Notifications sent to other bidders (bid_declined)
+```
+
+**4. Inspector Completes Report:**
+```
+Click notification → /inspections/spotlights/:jobId
+Click "Complete Report" → /inspections/jobs/:jobId/report
+First access → job.status='in_progress'
+Submit report → job.status='pending_review'
+→ Notification sent to job poster (report_submitted)
+```
+
+**5. Job Poster Reviews & Approves Report:**
+```
+Click notification → /inspections/jobs/:jobId/report/view
+Click "Approve Report" → job.status='completed'
+→ Notification sent to inspector (report_approved)
+```
+
+---
+
+### 📊 PAYMENT SYSTEM REQUIREMENTS (Documented)
+
+Added to `docs/PROJECT_TODO.md`:
+
+**1. Subscription Billing (Stripe):**
+- Subscription tiers (Free/Basic/Premium)
+- Monthly and annual billing
+- Stripe Checkout integration
+- Customer portal
+- Upgrade/downgrade handling
+- Cancellation flow
+- Webhook handling
+- Grace period for failed payments
+
+**2. Marketplace Payments (Stripe Connect):**
+- Platform takes 10% of each inspection fee
+- Escrow: Hold payment until report approved
+- Release 90% to inspector on approval
+- Transfer 10% to platform account
+- Stripe Connect onboarding for inspectors
+- Refunds and dispute handling
+- Earnings dashboard for inspectors
+- Payout settings (bank account, schedule)
+
+---
+
+### 💡 TECHNICAL NOTES
+
+**Raw Fetch Pattern (Supabase Workaround):**
+All pages use raw `fetch()` instead of Supabase JS client due to client hanging issue:
+```typescript
+const getAuthHeaders = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  let accessToken = supabaseKey;
+  try {
+    const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+    const storedSession = localStorage.getItem(storageKey);
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession);
+      accessToken = parsed?.access_token || supabaseKey;
+    }
+  } catch (e) {}
+  return { supabaseUrl, supabaseKey, accessToken };
+};
+```
+
+**Job Status Workflow:**
+```
+open → assigned → in_progress → pending_review → completed
+                                              ↘ cancelled (any time before completed)
+```
+
+**Bid Status Workflow:**
+```
+pending → shortlisted → accepted
+                     ↘ declined
+       ↘ withdrawn (by inspector)
+```
+
+---
+
+### 🎯 NEXT PRIORITIES
+
+1. **Payment Integration** - Stripe subscriptions + Connect for marketplace
+2. **Email Notifications** - Actually send emails via Resend API
+3. **Review System** - Two-way reviews after job completion
+4. **Photo Upload** - Implement section photos in report builder
+5. **Visual Revamp** - Apply consistent design system across all pages
+
+---
+
+**Last Updated:** January 24, 2026
+**Session Focus:** Complete Inspection Marketplace Workflow
+**Commits This Session:**
+- `3a5241c` feat: add read-only report view for job posters
+- Plus 7 previous commits for notification system, dashboards, and report builder
+
+---
+
+## 📋 SESSION CHANGELOG - January 18, 2026
+
+### Session Summary: Supabase Deadlock Fix, User Onboarding Flow & Profile Enhancements
+
+This session resolved the root cause of the Supabase JS client hanging issue, implemented first-time user onboarding with a welcome video placeholder, and enhanced the profile settings with security information and professional accreditation.
+
+---
+
+### ✅ CRITICAL FIX: Supabase JS Client Deadlock Resolved
+
+**Root Cause Identified:**
+- The Supabase JS client was hanging indefinitely due to a **deadlock in the `onAuthStateChange` callback**
+- When async Supabase methods (like `supabase.from().select()`) were awaited inside the callback, they blocked waiting for an internal auth lock that the callback itself was holding
+- This is a known issue: [GitHub Issue #1620](https://github.com/supabase/supabase-js/issues/1620)
+
+**Solution Applied in `src/contexts/AuthContext.tsx`:**
+```typescript
+const { data: { subscription } } = supabase.auth.onAuthStateChange(
+  (event, session) => {
+    // Defer async operations to avoid Supabase client deadlock
+    setTimeout(async () => {
+      await fetchProfile(session.user.id);
+      // ... other async operations
+      setLoading(false);
+    }, 0);
+  }
+);
+```
+
+**Result:** All Supabase JS client operations now work correctly without hanging.
+
+---
+
+### ✅ USER SIGN-UP FLOW FIXES
+
+**Issues Fixed:**
+1. **Email Confirmation Required** - Disabled via Supabase Management API:
+   ```bash
+   curl -X PATCH "https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/config/auth" \
+     -H "Authorization: Bearer sbp_..." \
+     -d '{"mailer_autoconfirm": true}'
+   ```
+
+2. **RLS Policy Violations** - Fixed by using proper session tokens from signUp response
+
+3. **Profile Creation** - Added `ensureEmailUserProfile()` function for email sign-ups
+
+---
+
+### ✅ FIRST-TIME USER ONBOARDING
+
+**New Welcome Flow:**
+1. First-time users are redirected to `/welcome` page
+2. Welcome page shows onboarding video placeholder (video to be created)
+3. After watching/skipping video, users continue to profile setup
+4. Returning users see "Welcome back, [Name]" on dashboard
+
+**Files Created/Modified:**
+- `src/pages/Welcome.tsx` - New welcome page with video placeholder
+- `src/components/dashboard/WelcomeHeader.tsx` - Added first-time user detection
+- `src/App.tsx` - Added `/welcome` route
+
+**First-Time Detection Logic:**
+```typescript
+// Uses localStorage per-user key
+const hasVisitedKey = `user_${userId}_has_visited`;
+const hasVisited = localStorage.getItem(hasVisitedKey);
+
+if (!hasVisited) {
+  localStorage.setItem(hasVisitedKey, 'true');
+  navigate('/welcome');
+}
+```
+
+---
+
+### ✅ PROFILE EDIT ENHANCEMENTS
+
+**New Sections Added to `src/pages/settings/ProfileEdit.tsx`:**
+
+1. **Security Profile Card** - Shows current role and permissions
+   - Displays role label (Administrator, Verified Professional, Pending Professional, Guest)
+   - Lists all permissions granted by the role
+   - Uses badge components for visual clarity
+
+2. **Professional Accreditation Card** - For credential submission
+   - Text field for entering professional credentials (license numbers, certifications)
+   - Message explaining 24-hour review process
+   - Only shown to Guest and Pending Professional roles
+
+3. **Preferences Card** - Unit system selection
+   - Radio buttons for Metric/Imperial
+   - Updates user preference context
+
+4. **First-Time Setup Banner** - Contextual welcome message
+   - Shown when user arrives from onboarding flow
+   - Uses React Router state: `isFirstTimeSetup`
+
+---
+
+### ✅ DATABASE MIGRATION
+
+**File:** `supabase/migrations/20260118000000_add_professional_accreditation.sql`
+```sql
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS professional_accreditation TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_profiles_accreditation ON public.profiles(professional_accreditation)
+WHERE professional_accreditation IS NOT NULL;
+```
+
+---
+
+### ✅ DANI'S APPROVAL CHECKLIST UPDATED
+
+**New Item #15: Professional Accreditation Verification**
+
+Added comprehensive questions for Dani to review:
+- How do we verify buyers agent accreditation?
+- How do we verify real estate agent accreditation?
+- How do we verify other professionals (conveyancers, etc.)?
+- What documentation should be required?
+- Who on the team will do the verification?
+- What happens if verification fails?
+- Should we integrate with external verification services?
+- Different requirements per country (AU/UK/US)?
+
+---
+
+### 📁 FILES MODIFIED THIS SESSION
+
+1. `src/contexts/AuthContext.tsx` - Deadlock fix, email profile creation
+2. `src/components/dashboard/WelcomeHeader.tsx` - First-time user redirect
+3. `src/pages/settings/ProfileEdit.tsx` - Security profile, accreditation, preferences
+4. `src/pages/Welcome.tsx` - New welcome page (created)
+5. `src/pages/Index.tsx` - Pass userId to WelcomeHeader
+6. `src/App.tsx` - Added /welcome route
+7. `src/lib/permissions.ts` - Exported ROLE_PERMISSIONS
+8. `docs/DANI_APPROVAL_CHECKLIST.md` - Added accreditation verification section
+9. `supabase/migrations/20260118000000_add_professional_accreditation.sql` - New migration
+
+---
+
+**Last Updated:** January 18, 2026
+**Session Focus:** Supabase fix, User onboarding, Profile enhancements
+
+---
+
+## 📋 SESSION CHANGELOG - January 16, 2026 (Evening Session)
+
+### Session Summary: Complete Workflow Fix & Raw Fetch Migration
+
+This evening session completed the migration of all critical pages from Supabase JS client to raw fetch, ensuring the entire inspection workflow functions without hanging.
+
+---
+
+### ✅ PAGES FIXED WITH RAW FETCH
+
+**Core Workflow Pages (All Now Working):**
+
+1. **`src/pages/CreateInspectionJob.tsx`** ✅
+   - `fetchClientBriefs()` - GET briefs for dropdown
+   - `handleSaveDraft()` - POST draft jobs
+   - `handlePostJob()` - POST open jobs
+
+2. **`src/pages/InspectionSpotlights.tsx`** ✅
+   - Added DashboardLayout wrapper (was missing sidebar)
+   - `fetchJobs()` - GET open jobs listing
+
+3. **`src/pages/InspectionSpotlightDetail.tsx`** ✅
+   - `fetchJobDetails()` - GET job, creator, brief, bids
+   - `handleSubmitBid()` - POST new bids
+   - Check for existing user bid
+   - Added DashboardLayout wrapper
+
+4. **`src/pages/InspectionReportBuilder.tsx`** ✅
+   - `handleAutoSave()` - PATCH/POST reports (30-second auto-save)
+   - `fetchJobAndReport()` - GET job, brief, existing report
+   - `handleSaveDraft()` - PATCH/POST draft reports
+   - `handleSubmit()` - PATCH/POST report + PATCH job status
+
+5. **`src/pages/PostInspection.tsx`** ✅
+   - `handleSubmit()` - POST inspection requests
+
+**Previously Fixed (Earlier Session):**
+- `src/pages/ClientBriefForm.tsx` ✅
+- `src/pages/ClientBriefs.tsx` ✅
+- `src/pages/ClientBriefDetail.tsx` ✅
+
+**Not Yet Migrated (Admin Only - Low Priority):**
+- `src/pages/Admin.tsx` - Admin dashboard, not in main workflow
+
+---
+
+### 🔧 RAW FETCH HELPER PATTERN
+
+All pages now use this consistent pattern:
+
+```typescript
+// Helper to get auth headers for raw fetch (workaround for Supabase client hanging)
+const getAuthHeaders = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  let accessToken = supabaseKey;
+  try {
+    const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+    const storedSession = localStorage.getItem(storageKey);
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession);
+      accessToken = parsed?.access_token || supabaseKey;
+    }
+  } catch (e) {}
+
+  return { supabaseUrl, supabaseKey, accessToken };
+};
+```
+
+**Usage Examples:**
+```typescript
+// GET single object
+const response = await fetch(
+  `${supabaseUrl}/rest/v1/table?select=*&id=eq.${id}`,
+  {
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/vnd.pgrst.object+json', // Single object response
+    },
+  }
+);
+
+// POST new record
+const response = await fetch(`${supabaseUrl}/rest/v1/table`, {
+  method: 'POST',
+  headers: {
+    'apikey': supabaseKey,
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation', // Return inserted record
+  },
+  body: JSON.stringify(data),
+});
+
+// PATCH existing record
+const response = await fetch(`${supabaseUrl}/rest/v1/table?id=eq.${id}`, {
+  method: 'PATCH',
+  headers: {
+    'apikey': supabaseKey,
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal',
+  },
+  body: JSON.stringify(data),
+});
+```
+
+---
+
+### 📊 WORKFLOW STATUS
+
+**Complete End-to-End Workflow Now Working:**
+
+1. ✅ **Create Client Brief** → /briefs/new
+2. ✅ **View Client Briefs** → /briefs
+3. ✅ **View Brief Detail** → /briefs/:id
+4. ✅ **Edit Client Brief** → /briefs/:id/edit
+5. ✅ **Create Inspection Job** (linked to brief) → /inspections/jobs/new
+6. ✅ **Browse Job Spotlights** → /inspections/spotlights
+7. ✅ **View Job Detail & Submit Bid** → /inspections/spotlights/:id
+8. ✅ **Submit Inspection Report** → /inspections/jobs/:jobId/report
+
+---
+
+### 📝 OUTSTANDING ISSUES
+
+**Supabase JS Client (Root Cause Unknown):**
+- All `supabase.from()` calls hang indefinitely
+- Raw fetch to REST API works perfectly
+- Issue NOT network, credentials, or database
+- Needs deeper investigation (not blocking with workaround)
+
+**Admin Page (Low Priority):**
+- `Admin.tsx` still uses Supabase client
+- Not critical - admin-only functionality
+- Will be fixed if/when needed
+
+---
+
+**Last Updated:** January 16, 2026 - Evening
+**Session Duration:** ~1 hour
+**Files Changed:** 4 files modified (InspectionReportBuilder, PostInspection, + updates to PROJECT_CONTEXT.md)
+
+---
+
+## 📋 SESSION CHANGELOG - January 16, 2026 (Earlier Session)
+
+### Session Summary: Supabase JS Client Debugging & Raw Fetch Workaround
+
+This session focused on diagnosing and working around a critical Supabase JS client issue that was causing all database queries to hang indefinitely.
+
+---
+
+### 🔴 CRITICAL ISSUE DISCOVERED: Supabase JS Client Hanging
+
+**Problem:**
+- All Supabase JS client database operations (`supabase.from().select()`, `.insert()`, etc.) hang indefinitely
+- Timeout after 5-30 seconds with no response
+- Affects ALL pages using the Supabase client
+
+**Diagnosis Process:**
+1. Initially thought to be slow page loading → Added timeouts to queries
+2. Discovered profile fetches timing out in AuthContext
+3. Added ping test to ClientBriefForm → Ping also timed out
+4. Tested raw `fetch()` to Supabase REST API → **Works perfectly (200 in 406ms)**
+5. Tested `curl` from command line → **Works perfectly (200 response)**
+6. Confirmed: Supabase URL and API key are correct
+7. Confirmed: Database is healthy (SQL Editor in dashboard works)
+
+**Root Cause:**
+- The Supabase JS client library is broken/hanging for unknown reason
+- NOT a database issue, NOT a credentials issue, NOT a network issue
+- Raw HTTP requests work fine; only the JS client is affected
+- Possibly related to: realtime subscriptions, WebSocket connection, or client state
+
+**Status:** UNRESOLVED - Needs deeper investigation later
+
+---
+
+### ✅ WORKAROUND IMPLEMENTED: Raw Fetch for Database Operations
+
+Since the Supabase JS client is broken, we implemented raw `fetch()` calls directly to the Supabase REST API.
+
+**Pattern Used:**
+```typescript
+// Get auth token from localStorage (bypass broken client)
+let accessToken = supabaseKey;
+try {
+  const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+  const storedSession = localStorage.getItem(storageKey);
+  if (storedSession) {
+    const parsed = JSON.parse(storedSession);
+    accessToken = parsed?.access_token || supabaseKey;
+  }
+} catch (e) {}
+
+// Use raw fetch
+const response = await fetch(`${supabaseUrl}/rest/v1/table_name?select=*`, {
+  headers: {
+    'apikey': supabaseKey,
+    'Authorization': `Bearer ${accessToken}`,
+  },
+});
+```
+
+**Files Updated with Raw Fetch Workaround:**
+
+1. **`src/pages/ClientBriefForm.tsx`**
+   - INSERT for creating briefs → `POST /rest/v1/client_briefs`
+   - INSERT for locations → `POST /rest/v1/client_brief_locations`
+   - Auth token retrieved from localStorage
+
+2. **`src/pages/ClientBriefs.tsx`**
+   - SELECT for listing briefs → `GET /rest/v1/client_briefs?select=*&order=updated_at.desc`
+   - DELETE for removing briefs → `DELETE /rest/v1/client_briefs?id=eq.{id}`
+   - Admin check for showing all vs own briefs
+
+3. **`src/pages/ClientBriefDetail.tsx`**
+   - SELECT single brief → `GET /rest/v1/client_briefs?select=*&id=eq.{id}`
+   - Uses `Accept: application/vnd.pgrst.object+json` for single object response
+
+---
+
+### ✅ PAGE LOADING IMPROVEMENTS
+
+**Problem:** Pages were hanging on "Loading..." for extended periods
+
+**Fixes Applied:**
+
+1. **`src/contexts/AuthContext.tsx`**
+   - Implemented cache-first approach for profile loading
+   - Uses localStorage cached profile immediately
+   - Fetches fresh profile in background with 3-second timeout
+   - Falls back to cached data if fetch fails
+
+2. **`src/components/auth/ProtectedRoute.tsx`**
+   - Max 1-second loading state before rendering
+   - Doesn't block on slow profile fetches
+   - Proceeds with cached profile data
+
+3. **`src/pages/InspectionReportBuilder.tsx`**
+   - Added `setLoading(false)` when user is null
+   - Prevents infinite hang if not authenticated
+
+---
+
+### ✅ DATABASE MIGRATIONS
+
+**Migration: `20260116010000_add_expiry_date_to_client_briefs.sql`**
+```sql
+ALTER TABLE public.client_briefs
+ADD COLUMN IF NOT EXISTS expiry_date DATE;
+
+ALTER TABLE public.client_briefs
+ADD COLUMN IF NOT EXISTS must_have_features TEXT[];
+
+CREATE INDEX IF NOT EXISTS idx_client_briefs_expiry ON public.client_briefs(expiry_date);
+```
+
+**Reason:** ClientBriefForm was trying to insert `expiry_date` but column didn't exist.
+
+---
+
+### 📝 KNOWN ISSUES & PENDING WORK
+
+**High Priority (Needs Investigation):**
+1. **Supabase JS Client Hanging** - Root cause unknown
+   - All `supabase.from()` calls hang indefinitely
+   - Raw fetch works, so it's not network/credentials
+   - May need to check Supabase JS version, realtime config, or client initialization
+
+**Medium Priority (More Pages Need Raw Fetch):**
+2. **Update remaining pages to use raw fetch workaround:**
+   - `InspectionSpotlights.tsx`
+   - `InspectionSpotlightDetail.tsx`
+   - `InspectionReportBuilder.tsx`
+   - `AuthContext.tsx` (profile fetch)
+   - `Directory.tsx`
+   - `Marketplace.tsx`
+   - Other pages using Supabase client
+
+**Low Priority (UI Enhancements):**
+3. **ClientBriefDetail page** - Only shows basic requirements
+   - All data IS saved, but detail page needs more UI sections
+   - Should display: pool, garden, architecture, views, parking, etc.
+
+---
+
+### 🔧 DEBUGGING TOOLS ADDED
+
+**ClientBriefForm now logs:**
+```
+[ClientBriefForm] Testing database connection...
+[ClientBriefForm] Supabase URL: https://xxx.supabase.co
+[ClientBriefForm] Key exists: true
+[ClientBriefForm] Got access token from localStorage
+[ClientBriefForm] Starting insert via fetch...
+[ClientBriefForm] Insert completed in Xms, status: 201
+```
+
+---
+
+### 📊 SESSION SUMMARY
+
+| Task | Status |
+|------|--------|
+| Diagnose slow page loading | ✅ Complete |
+| Fix AuthContext profile caching | ✅ Complete |
+| Fix ProtectedRoute timeout | ✅ Complete |
+| Diagnose Supabase client hanging | ✅ Identified (not fixed) |
+| Implement raw fetch workaround | ✅ Complete (3 pages) |
+| Add expiry_date migration | ✅ Complete |
+| Create client brief | ✅ Working |
+| View client briefs list | ✅ Working |
+| View client brief detail | ✅ Working (basic fields) |
+| Delete client brief | ✅ Working |
+
+**What's Working Now:**
+- Creating client briefs (via raw fetch)
+- Listing client briefs (via raw fetch)
+- Viewing brief details (via raw fetch, basic fields only)
+- Deleting briefs (via raw fetch)
+- Page loading is faster (cache-first + timeouts)
+
+**What's NOT Working:**
+- Supabase JS client (ALL operations hang)
+- Pages not yet updated to raw fetch (inspection pages, etc.)
+- Brief detail page missing advanced field display
+
+---
+
+**Last Updated:** January 16, 2026
+**Session Duration:** ~2 hours
+**Files Changed:** 6 files modified, 1 migration created
+
+---
+
 ## 📋 SESSION CHANGELOG - January 7-8, 2026
 
 ### Session Summary: Complete Minimal Luxury Redesign + Database Seeding
@@ -1134,5 +1940,215 @@ This is a key differentiator from other platforms! The script should explain:
 
 ---
 
-**Last Updated:** January 14, 2026
-**Project Status:** Active Development - Core Features Complete, OAuth Implemented, Global Location System Implemented, Client Brief Location System with Priorities Implemented
+**EXPLAINER VIDEO CONTENT - FIRST-TIME USER ONBOARDING FLOW:**
+
+This is a key user experience feature that makes Agent Hub welcoming and professional from the very first interaction. The script should explain:
+
+1. **The Welcome Experience** - What happens when a new user signs up:
+   - **Step 1:** User signs up (via email or Google OAuth)
+   - **Step 2:** Immediately redirected to beautiful Welcome page (`/welcome`)
+   - **Step 3:** Welcome page greets them personally: "Welcome to Buyers Agent Hub, [First Name]!"
+   - **Step 4:** Video placeholder explains the platform (Dani's video goes here!)
+   - **Step 5:** User clicks "Continue to Profile Setup"
+   - **Step 6:** Guided to complete their professional profile
+
+2. **Welcome Page Features:**
+   - **Personalized Greeting:** Uses the user's first name from their account
+   - **Onboarding Video:** Placeholder for Dani's explainer video
+   - **"I've understood the overview" Button:** Acknowledges video content
+   - **What You'll Set Up Preview:** Shows three steps coming next:
+     1. Profile Photo - "Add your professional photo"
+     2. Service Areas - "Define where you operate"
+     3. Credentials - "Verify your professional status"
+   - **Continue Button:** Large, prominent CTA to profile setup
+   - **Skip Option:** Discrete "Skip video and continue" link for eager users
+
+3. **Profile Setup Flow:**
+   - **First-Time Banner:** "Welcome! Let's get your profile set up..."
+   - **Security Profile Display:** Shows their current role (Guest) and what it allows
+   - **Professional Accreditation:** Text field to enter credentials for verification
+   - **24-Hour Review Message:** Sets expectation for credential review
+   - **Service Areas:** Global location system (covered in separate video)
+   - **Preferences:** Metric/Imperial unit selection
+
+4. **Returning User Experience:**
+   - **No Welcome Page:** Returning users go straight to Dashboard
+   - **"Welcome back, [Name]":** Personalized greeting on dashboard
+   - **Full Access:** Based on their verified role and permissions
+
+5. **Why This Matters:**
+   - **Professional First Impression:** Users feel welcomed, not lost
+   - **Guided Setup:** Clear path to completing their profile
+   - **No Overwhelm:** One step at a time, not everything at once
+   - **Trust Building:** Shows we're organized and professional
+   - **Higher Completion Rates:** Guided flows = more complete profiles
+   - **Expectation Setting:** Users know what's coming next
+
+6. **Visual Demo Points:**
+   - Screen recording: New user clicking "Sign Up"
+   - Screen recording: Welcome page appearing with personalized greeting
+   - Screen recording: Video placeholder area (where Dani's video will play)
+   - Screen recording: "What you'll set up" cards with numbered steps
+   - Screen recording: Clicking "Continue to Profile Setup"
+   - Screen recording: Profile page with first-time setup banner
+   - Screen recording: Entering professional accreditation
+   - Screenshot: Dashboard showing "Welcome back, [Name]" for returning user
+
+**Key Messages:**
+- "We guide you every step of the way"
+- "Your professional profile in minutes, not hours"
+- "Watch, learn, set up - it's that simple"
+- "First impressions matter - and so do you"
+
+**Video Placeholder Content (What Dani Should Cover):**
+- Welcome to Buyers Agent Hub
+- What the platform does (network, collaborate, grow)
+- Quick overview of key features:
+  - Agent Directory - Find and connect with professionals
+  - Property Marketplace - Share off-market listings
+  - Inspection Spotlights - Post and bid on inspection jobs
+  - Client Briefs - Manage client requirements
+- What to set up next (profile, service areas, credentials)
+- How verification works (submit credentials → 24hr review → full access)
+- Call to action: "Let's get you set up!"
+
+**Technical Implementation:**
+- Route: `/welcome` - Welcome page with video
+- Route: `/settings/profile` - Profile setup (receives `isFirstTimeSetup` state)
+- Detection: localStorage per-user key (`user_${userId}_has_visited`)
+- Redirect: WelcomeHeader component handles first-time detection
+- Files: `src/pages/Welcome.tsx`, `src/components/dashboard/WelcomeHeader.tsx`
+
+---
+
+## 🎭 PROPERTY SPOTLIGHT - INSPECTION MARKETPLACE
+
+### Feature Overview
+A theatrical inspection marketplace where buyers agents can post inspection jobs and local inspectors can bid on them. Think Airtasker meets property inspections.
+
+### Implementation Status (January 15, 2026)
+
+**✅ COMPLETED PHASES:**
+
+#### Phase 1: Database Foundation
+- `inspection_jobs` - Job postings with property details, budget, status workflow
+- `inspection_bids` - Bids from inspectors with proposed amounts/dates
+- `inspection_reports` - Comprehensive reports with 12+ comment fields
+- `inspection_payments` - 10% platform fee calculations
+- `inspection_reviews` - Two-way rating system (requester ↔ inspector)
+- `inspection_badges` - Gamification achievements (16 badge types)
+- Full RLS policies for all tables
+- Migration: `supabase/migrations/20260114010000_create_inspection_marketplace_tables.sql`
+
+#### Phase 2: Job Posting Form
+- `src/pages/CreateInspectionJob.tsx`
+- Multi-step wizard (Property → Requirements → Budget → Review)
+- Client brief integration (purple theme for brief-linked jobs)
+- General area booking option (address not yet confirmed)
+- Urgency levels: Standard, Urgent, Express
+- Route: `/inspections/jobs/new`
+
+#### Phase 3: Job Board
+- `src/pages/InspectionSpotlights.tsx`
+- Card-based job listing with urgency badges
+- Filter by location, budget, urgency
+- General area bookings shown with blue indicator
+
+#### Phase 4: Job Detail Page
+- `src/pages/InspectionSpotlightDetail.tsx`
+- Full job details with Express Interest button
+- Client brief requirements displayed (if linked)
+- Bid submission dialog
+- Route: `/inspections/spotlights/:id`
+
+#### Phase 5: Bidding System
+- Inspectors submit proposed amount + date + message
+- Job creators see all bids with inspector details
+- Bid status workflow: pending → shortlisted → accepted/declined
+
+#### Phase 6: Inspection Report Builder ✅ (January 15, 2026)
+- `src/pages/InspectionReportBuilder.tsx`
+- **8 sections** covering all property aspects:
+  1. First Impressions (vibe slider, matches photos, gut feeling)
+  2. Exterior (roof, walls, garden condition dropdowns)
+  3. Interior (Living, Kitchen, Bathrooms, Bedrooms, Other Spaces)
+  4. Neighbourhood (street feel, traffic, safety rating, amenities checklist)
+  5. Red Flags & Concerns (6 checkboxes with red highlight when selected)
+  6. Standout Features (12 feature checkboxes, "would you buy?")
+  7. Final Verdict (overall score 1-10, recommendation - REQUIRED)
+  8. Additional Comments (questions for agent, second visit tips)
+- **14 comment textarea fields** (all with rows=5-8 for detailed input)
+- **Auto-save every 30 seconds** with timestamp indicator
+- **Client Brief display** at top when job is linked (purple theme)
+- **Celebration dialog** with party popper animation on submit
+- **Step navigation** with clickable progress bar
+- Route: `/inspections/jobs/:jobId/report`
+
+### Database Schema: inspection_reports
+```sql
+-- Key fields (see full schema in migration file)
+first_impression_vibe INTEGER (1-10)
+matches_photos TEXT ('yes'|'mostly'|'no')
+gut_feeling_rating INTEGER (1-10)
+first_impression_comments TEXT
+
+exterior_roof_condition TEXT
+exterior_walls_condition TEXT
+exterior_garden_condition TEXT
+exterior_comments TEXT
+
+interior_living_condition TEXT
+interior_living_natural_light TEXT ('dark'|'average'|'bright'|'amazing')
+interior_living_comments TEXT
+interior_kitchen_comments TEXT
+interior_bathroom_comments TEXT
+interior_bedroom_comments TEXT
+interior_other_spaces TEXT[] -- array
+interior_other_comments TEXT
+
+neighbourhood_street_feel TEXT ('quiet'|'moderate'|'busy')
+neighbourhood_traffic_noise TEXT
+neighbourhood_safety_rating INTEGER (1-5)
+neighbourhood_amenities TEXT[] -- array
+neighbourhood_comments TEXT
+
+has_structural_concerns BOOLEAN
+has_damp_mold_signs BOOLEAN
+has_unusual_smells BOOLEAN
+has_pest_signs BOOLEAN
+has_noise_issues BOOLEAN
+has_access_issues BOOLEAN
+concerns_comments TEXT
+
+standout_features TEXT[] -- array
+best_feature TEXT
+would_personally_buy TEXT ('yes'|'maybe'|'no')
+standout_comments TEXT
+
+overall_score INTEGER (1-10) NOT NULL
+recommendation TEXT ('highly_recommend'|'worth_considering'|'not_recommended') NOT NULL
+summary_comments TEXT NOT NULL
+
+additional_comments TEXT
+questions_to_ask_agent TEXT
+second_visit_tips TEXT
+```
+
+### Completed Phases
+- **Phase 1-6:** Database, Job Posting, Job Board, Job Detail, Bidding, Report Builder ✅
+- **Phase 7:** Report Viewer - Display submitted reports to job creators ✅ (January 24, 2026)
+  - `src/pages/InspectionReportView.tsx`
+  - Route: `/inspections/jobs/:jobId/report/view`
+  - Read-only beautiful display of all report sections
+  - Approve Report workflow (job → completed, notify inspector)
+
+### Next Phases (To Be Built)
+- **Phase 8:** Payment Integration - Stripe subscriptions + Connect for marketplace escrow
+- **Phase 9:** Review System - Two-way reviews after job completion
+- **Phase 10:** Badge Awards - Automatic badge awarding based on milestones
+- **Phase 11:** Email Notifications - Send actual emails via Resend API
+
+---
+
+**Last Updated:** January 24, 2026
+**Project Status:** Active Development - Core Features Complete, OAuth Implemented, Global Location System Implemented, Client Brief Location System with Priorities Implemented, Inspection Marketplace Phase 7 Complete (Full Workflow Working)
