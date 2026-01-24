@@ -98,12 +98,17 @@ serve(async (req) => {
         const profile = profiles[0];
 
         if (profile) {
-          // Determine tier from price
+          // Determine tier from price ID
           const priceId = subscription.items.data[0]?.price?.id;
           let tier = 'free';
-          // TODO: Map price IDs to tiers once created in Stripe
-          // if (priceId === 'price_xxx_basic_monthly' || priceId === 'price_xxx_basic_annual') tier = 'basic';
-          // if (priceId === 'price_xxx_premium_monthly' || priceId === 'price_xxx_premium_annual') tier = 'premium';
+
+          // Basic tier price IDs
+          if (priceId === 'price_1StGZQCnDmgyQa6dz7mrD80L') tier = 'basic'; // Monthly
+          // TODO: Add annual price ID when created
+
+          // Premium tier price IDs
+          if (priceId === 'price_1StGaACnDmgyQa6dhp2qJsO0') tier = 'premium'; // Monthly
+          // TODO: Add annual price ID when created
 
           await supabase.update('profiles', profile.id, {
             subscription_status: subscription.status,

@@ -272,9 +272,7 @@ export async function createConnectDashboardLink(
 
 /**
  * Subscription tier definitions.
- * Price IDs will be set in Stripe Dashboard.
- *
- * TODO: Replace with actual Stripe Price IDs once created
+ * Price IDs from Stripe Dashboard (Sandbox).
  */
 export const SUBSCRIPTION_TIERS = {
   free: {
@@ -291,10 +289,10 @@ export const SUBSCRIPTION_TIERS = {
   },
   basic: {
     name: 'Basic',
-    priceMonthly: 29, // TODO: Confirm with Dani
-    priceAnnual: 290, // ~17% discount
-    stripePriceIdMonthly: 'price_xxx_basic_monthly', // TODO: Replace with actual
-    stripePriceIdAnnual: 'price_xxx_basic_annual', // TODO: Replace with actual
+    priceMonthly: 29,
+    priceAnnual: 290, // ~17% discount - TODO: Create annual price in Stripe
+    stripePriceIdMonthly: 'price_1StGZQCnDmgyQa6dz7mrD80L',
+    stripePriceIdAnnual: null, // TODO: Add annual price ID when created
     features: [
       'Everything in Free',
       'Unlimited job postings',
@@ -304,10 +302,10 @@ export const SUBSCRIPTION_TIERS = {
   },
   premium: {
     name: 'Premium',
-    priceMonthly: 79, // TODO: Confirm with Dani
-    priceAnnual: 790, // ~17% discount
-    stripePriceIdMonthly: 'price_xxx_premium_monthly', // TODO: Replace with actual
-    stripePriceIdAnnual: 'price_xxx_premium_annual', // TODO: Replace with actual
+    priceMonthly: 79,
+    priceAnnual: 790, // ~17% discount - TODO: Create annual price in Stripe
+    stripePriceIdMonthly: 'price_1StGaACnDmgyQa6dhp2qJsO0',
+    stripePriceIdAnnual: null, // TODO: Add annual price ID when created
     features: [
       'Everything in Basic',
       'Featured profile listing',
