@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -57,6 +57,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { notifyBidAccepted, notifyBidDeclined, notifyJobCancelled } from '@/lib/notifications';
 
 // Types
 type JobStatus = 'open' | 'in_negotiation' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled' | 'expired';
@@ -162,10 +163,16 @@ const getAuthHeaders = () => {
 
 export default function MyPostedJobs() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [jobs, setJobs] = useState<InspectionJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('awaiting');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Initialize from URL param if present, otherwise default to 'awaiting'
+    const tabParam = searchParams.get('tab');
+    const validTabs = ['awaiting', 'received', 'progress', 'reports', 'completed', 'cancelled'];
+    return tabParam && validTabs.includes(tabParam) ? tabParam : 'awaiting';
+  });
 
   // Bid management state
   const [selectedJob, setSelectedJob] = useState<InspectionJob | null>(null);
@@ -175,6 +182,9 @@ export default function MyPostedJobs() {
 
   // Accept/Decline confirmation - now includes job for inline bid actions
   const [confirmAction, setConfirmAction] = useState<{ type: 'accept' | 'decline' | 'cancel'; bid?: InspectionBid; job: InspectionJob } | null>(null);
+
+  // Bid detail view
+  const [viewingBid, setViewingBid] = useState<{ bid: InspectionBid; job: InspectionJob } | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -347,6 +357,33 @@ export default function MyPostedJobs() {
         }
       );
 
+      // 4. Send notifications
+      try {
+        // Notify the accepted inspector
+        await notifyBidAccepted(
+          bid.inspector_id,                              // inspectorId
+          targetJob.property_address,                    // propertyAddress
+          targetJob.id,                                  // jobId
+          bid.id,                                        // bidId
+          user?.id || ''                                 // jobCreatorId
+        );
+
+        // Notify other inspectors whose bids were declined
+        const otherBids = targetJob.bids?.filter(b => b.id !== bid.id && b.status === 'pending') || [];
+        for (const declinedBid of otherBids) {
+          await notifyBidDeclined(
+            declinedBid.inspector_id,
+            targetJob.id,
+            declinedBid.id,
+            targetJob.title || targetJob.property_address,
+            'Another bid was accepted'
+          );
+        }
+      } catch (notifError) {
+        console.error('Failed to send notifications:', notifError);
+        // Don't fail the accept if notifications fail
+      }
+
       toast.success('Bid accepted! The inspector has been assigned.');
       setShowBidsDialog(false);
       setConfirmAction(null);
@@ -373,6 +410,22 @@ export default function MyPostedJobs() {
           body: JSON.stringify({ status: 'declined', updated_at: new Date().toISOString() }),
         }
       );
+
+      // Notify the inspector
+      try {
+        const job = selectedJob || jobs.find(j => j.bids?.some(b => b.id === bid.id));
+        if (job) {
+          await notifyBidDeclined(
+            bid.inspector_id,
+            job.id,
+            bid.id,
+            job.title || job.property_address,
+            'The job creator has chosen to decline your bid'
+          );
+        }
+      } catch (notifError) {
+        console.error('Failed to send notification:', notifError);
+      }
 
       toast.success('Bid declined');
       setConfirmAction(null);
@@ -404,6 +457,20 @@ export default function MyPostedJobs() {
         }
       );
 
+      // Notify any bidders that the job has been cancelled
+      try {
+        const pendingBids = job.bids?.filter(b => b.status === 'pending') || [];
+        for (const bid of pendingBids) {
+          await notifyJobCancelled(
+            bid.inspector_id,
+            job.id,
+            job.title || job.property_address
+          );
+        }
+      } catch (notifError) {
+        console.error('Failed to send cancellation notifications:', notifError);
+      }
+
       toast.success('Job cancelled');
       setConfirmAction(null);
       fetchJobs();
@@ -413,12 +480,12 @@ export default function MyPostedJobs() {
     }
   };
 
-  const formatCurrency = (cents: number) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
       currency: 'AUD',
       minimumFractionDigits: 0,
-    }).format(cents / 100);
+    }).format(amount); // Amount is stored in dollars, not cents
   };
 
   const formatDate = (dateStr: string) => {
@@ -517,7 +584,7 @@ export default function MyPostedJobs() {
                       'ml-2 h-5 min-w-[20px] px-1.5',
                       tab.urgent && tabCounts[tab.id] > 0
                         ? 'bg-red-500 text-white'
-                        : 'bg-muted'
+                        : 'bg-muted text-muted-foreground'
                     )}
                   >
                     {tabCounts[tab.id]}
@@ -555,9 +622,10 @@ export default function MyPostedJobs() {
                       onEdit={() => navigate(`/inspections/jobs/${job.id}/edit`)}
                       onCancel={() => setConfirmAction({ type: 'cancel', job })}
                       onViewDetails={() => navigate(`/inspections/spotlights/${job.id}`)}
-                      onViewReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
+                      onViewReport={() => navigate(`/inspections/jobs/${job.id}/report/view`)}
                       onAcceptBid={(bid, j) => setConfirmAction({ type: 'accept', bid, job: j })}
                       onDeclineBid={(bid, j) => setConfirmAction({ type: 'decline', bid, job: j })}
+                      onViewBidDetails={(bid, j) => setViewingBid({ bid, job: j })}
                       formatCurrency={formatCurrency}
                       formatDate={formatDate}
                       getDaysRemaining={getDaysRemaining}
@@ -662,6 +730,130 @@ export default function MyPostedJobs() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Bid Detail Dialog */}
+        <Dialog open={!!viewingBid} onOpenChange={() => setViewingBid(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Bid Details</DialogTitle>
+              <DialogDescription>
+                {viewingBid?.job.title}
+              </DialogDescription>
+            </DialogHeader>
+
+            {viewingBid && (
+              <div className="space-y-4">
+                {/* Inspector Info */}
+                <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="w-14 h-14 rounded-full bg-forest/10 flex items-center justify-center">
+                    {viewingBid.bid.inspector?.avatar_url ? (
+                      <img
+                        src={viewingBid.bid.inspector.avatar_url}
+                        alt={viewingBid.bid.inspector.full_name || 'Inspector'}
+                        className="w-14 h-14 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User size={28} className="text-forest" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {viewingBid.bid.inspector?.full_name || 'Unknown Inspector'}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{viewingBid.bid.inspector?.user_type?.replace('_', ' ')}</span>
+                      {viewingBid.bid.inspector?.reputation_score && viewingBid.bid.inspector.reputation_score > 0 && (
+                        <span className="flex items-center gap-1 text-amber-600">
+                          <Star size={14} fill="currentColor" />
+                          {viewingBid.bid.inspector.reputation_score}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bid Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-xs text-green-600 font-medium mb-1">Proposed Price</p>
+                    <p className="text-xl font-bold text-green-700">
+                      {formatCurrency(viewingBid.bid.proposed_price)}
+                    </p>
+                  </div>
+                  {viewingBid.bid.proposed_date && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-600 font-medium mb-1">Proposed Date</p>
+                      <p className="text-lg font-semibold text-blue-700">
+                        {formatDate(viewingBid.bid.proposed_date)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Message */}
+                {viewingBid.bid.message && (
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium mb-1 uppercase">Message</p>
+                    <p className="p-3 bg-muted/50 rounded-lg text-sm">
+                      {viewingBid.bid.message}
+                    </p>
+                  </div>
+                )}
+
+                {/* Local Knowledge */}
+                {viewingBid.bid.local_knowledge_note && (
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium mb-1 uppercase">Local Knowledge</p>
+                    <p className="p-3 bg-muted/50 rounded-lg text-sm">
+                      {viewingBid.bid.local_knowledge_note}
+                    </p>
+                  </div>
+                )}
+
+                {/* Years Experience */}
+                {viewingBid.bid.years_experience && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Years of experience:</span>
+                    <span className="font-medium">{viewingBid.bid.years_experience} years</span>
+                  </div>
+                )}
+
+                {/* Submitted Date */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock size={14} />
+                  <span>Submitted {formatDate(viewingBid.bid.created_at)}</span>
+                </div>
+
+                {/* Actions */}
+                {viewingBid.bid.status === 'pending' && (
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        setConfirmAction({ type: 'accept', bid: viewingBid.bid, job: viewingBid.job });
+                        setViewingBid(null);
+                      }}
+                    >
+                      <CheckCircle size={16} className="mr-2" />
+                      Accept Bid
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-red-600"
+                      onClick={() => {
+                        setConfirmAction({ type: 'decline', bid: viewingBid.bid, job: viewingBid.job });
+                        setViewingBid(null);
+                      }}
+                    >
+                      <XCircle size={16} className="mr-2" />
+                      Decline
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
@@ -678,7 +870,8 @@ interface JobCardProps {
   onViewReport: () => void;
   onAcceptBid: (bid: InspectionBid, job: InspectionJob) => void;
   onDeclineBid: (bid: InspectionBid, job: InspectionJob) => void;
-  formatCurrency: (cents: number) => string;
+  onViewBidDetails: (bid: InspectionBid, job: InspectionJob) => void;
+  formatCurrency: (amount: number) => string;
   formatDate: (date: string) => string;
   getDaysRemaining: (expiresAt: string | null, inspectionDateTo: string) => number;
 }
@@ -693,6 +886,7 @@ function JobCard({
   onViewReport,
   onAcceptBid,
   onDeclineBid,
+  onViewBidDetails,
   formatCurrency,
   formatDate,
   getDaysRemaining,
@@ -863,6 +1057,7 @@ function JobCard({
                   job={job}
                   onAccept={() => onAcceptBid(bid, job)}
                   onDecline={() => onDeclineBid(bid, job)}
+                  onViewDetails={() => onViewBidDetails(bid, job)}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
                 />
@@ -881,13 +1076,17 @@ interface InlineBidCardProps {
   job: InspectionJob;
   onAccept: () => void;
   onDecline: () => void;
+  onViewDetails: () => void;
   formatCurrency: (cents: number) => string;
   formatDate: (date: string) => string;
 }
 
-function InlineBidCard({ bid, job, onAccept, onDecline, formatCurrency, formatDate }: InlineBidCardProps) {
+function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, formatCurrency, formatDate }: InlineBidCardProps) {
   return (
-    <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg border border-border/50 hover:border-forest/30 transition-colors">
+    <div
+      className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg border border-border/50 hover:border-forest/30 hover:bg-muted/50 transition-colors cursor-pointer"
+      onClick={onViewDetails}
+    >
       {/* Inspector Avatar */}
       <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center flex-shrink-0">
         {bid.inspector?.avatar_url ? (
@@ -930,11 +1129,20 @@ function InlineBidCard({ bid, job, onAccept, onDecline, formatCurrency, formatDa
 
       {/* Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Button size="sm" onClick={onAccept} className="bg-green-600 hover:bg-green-700 h-8 px-3">
+        <Button
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onAccept(); }}
+          className="bg-green-600 hover:bg-green-700 h-8 px-3"
+        >
           <CheckCircle size={14} className="mr-1" />
           Accept
         </Button>
-        <Button size="sm" variant="outline" onClick={onDecline} className="text-red-600 h-8 px-3">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={(e) => { e.stopPropagation(); onDecline(); }}
+          className="text-red-600 h-8 px-3"
+        >
           <XCircle size={14} className="mr-1" />
           Decline
         </Button>

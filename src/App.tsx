@@ -22,6 +22,7 @@ import CreateInspectionJob from "./pages/CreateInspectionJob";
 import InspectionSpotlights from "./pages/InspectionSpotlights";
 import InspectionSpotlightDetail from "./pages/InspectionSpotlightDetail";
 import InspectionReportBuilder from "./pages/InspectionReportBuilder";
+import InspectionReportView from "./pages/InspectionReportView";
 import MyPostedJobs from "./pages/inspections/MyPostedJobs";
 import MyInspectionWork from "./pages/inspections/MyInspectionWork";
 import Welcome from "./pages/Welcome";
@@ -136,6 +137,14 @@ const App = () => (
               element={
                 <ProtectedRoute showForbidden>
                   <InspectionReportBuilder />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inspections/jobs/:jobId/report/view"
+              element={
+                <ProtectedRoute showForbidden>
+                  <InspectionReportView />
                 </ProtectedRoute>
               }
             />
