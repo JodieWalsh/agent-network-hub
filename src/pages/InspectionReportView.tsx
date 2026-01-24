@@ -60,6 +60,8 @@ import {
   Award,
   Check,
   X,
+  Shield,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -168,6 +170,8 @@ interface InspectionReport {
   };
 }
 
+type PaymentStatus = 'pending' | 'paid' | 'released' | 'refunded';
+
 interface InspectionJob {
   id: string;
   title: string;
@@ -178,6 +182,7 @@ interface InspectionJob {
   requesting_agent_id: string;
   assigned_inspector_id: string | null;
   status: string;
+  payment_status: PaymentStatus | null;
   agreed_price: number | null;
   client_brief_id: string | null;
 }
@@ -481,7 +486,7 @@ export default function InspectionReportView() {
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
 
-      // Update job status to completed
+      // Update job status to completed and release payment
       await fetch(
         `${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${job.id}`,
         {
@@ -493,6 +498,7 @@ export default function InspectionReportView() {
           },
           body: JSON.stringify({
             status: 'completed',
+            payment_status: 'released',
             completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }),
@@ -513,7 +519,7 @@ export default function InspectionReportView() {
         console.error('Failed to send notification:', notifError);
       }
 
-      toast.success('Report approved! The job is now complete.');
+      toast.success('Report approved! Payment released to the inspector.');
       setShowApproveDialog(false);
       navigate('/inspections/my-jobs?tab=completed');
     } catch (error) {
@@ -1263,22 +1269,47 @@ export default function InspectionReportView() {
                     </div>
                   </div>
                   {job.agreed_price && (
-                    <div className="p-3 bg-emerald-50 rounded-lg">
-                      <p className="font-medium text-emerald-800 mb-2">Payment will be processed:</p>
-                      <div className="space-y-1 text-sm text-emerald-700">
-                        <div className="flex justify-between">
-                          <span>├── Total charge to you:</span>
-                          <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>├── {report?.inspector?.full_name || 'Inspector'} receives:</span>
-                          <span>{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>└── Platform fee:</span>
-                          <span>{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
-                        </div>
-                      </div>
+                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                      {job.payment_status === 'paid' ? (
+                        <>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Shield className="h-4 w-4 text-emerald-700" />
+                            <p className="font-medium text-emerald-800">Payment will be released from escrow:</p>
+                          </div>
+                          <div className="space-y-1 text-sm text-emerald-700">
+                            <div className="flex justify-between">
+                              <span>├── Funds held in escrow:</span>
+                              <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>├── {report?.inspector?.full_name || 'Inspector'} receives:</span>
+                              <span>{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>└── Platform fee:</span>
+                              <span>{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-emerald-800 mb-2">Payment will be processed:</p>
+                          <div className="space-y-1 text-sm text-emerald-700">
+                            <div className="flex justify-between">
+                              <span>├── Total charge to you:</span>
+                              <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>├── {report?.inspector?.full_name || 'Inspector'} receives:</span>
+                              <span>{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>└── Platform fee:</span>
+                              <span>{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground">
@@ -1294,7 +1325,11 @@ export default function InspectionReportView() {
                 disabled={approving}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {approving ? 'Approving...' : `Approve & Pay ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`}
+                {approving ? 'Releasing...' : (
+                  job.payment_status === 'paid'
+                    ? `Approve & Release ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`
+                    : `Approve & Pay ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

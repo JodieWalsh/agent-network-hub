@@ -327,6 +327,50 @@ Budget you're offering: $200.00
 
 ---
 
+### 17. Escrow Payment Workflow
+**Location:** Throughout inspection marketplace
+
+**Context:** We've implemented an escrow-based payment system where job posters pay upfront and funds are held securely until the report is approved.
+
+**Payment Flow:**
+| Step | What Happens |
+|------|--------------|
+| 1. Post Job | Job poster pays full amount upfront → Payment secured in escrow |
+| 2. Bid Accepted | Funds already secured → Inspector has confidence to proceed |
+| 3. Report Submitted | Inspector submits report → Poster reviews |
+| 4. Report Approved | Poster approves → Payment RELEASED to inspector |
+
+**Refund Scenarios:**
+| Scenario | Outcome |
+|----------|---------|
+| Job cancelled before bid accepted | Full refund to poster |
+| Job expires with no bids | Full refund to poster |
+| Job expires after bid accepted | Case-by-case review |
+
+**UI Elements Added:**
+- **Post Job (Payment step):** New step 4 with mock payment flow + escrow explanation
+- **Job Cards & Details:** "Payment Secured" badge for funded jobs
+- **Express Interest modal:** Shows "Payment is already secured in escrow"
+- **Accept Bid dialog:** Updated to show "Payment will be released from escrow"
+- **Cancel Job dialog:** Shows "Refund Eligible" message for open jobs
+- **Approve Report dialog:** Button says "Approve & Release" instead of "Approve & Pay"
+
+**Questions for Dani:**
+- [ ] Is the 3-step escrow explanation clear for users?
+- [ ] Are the refund policies reasonable?
+- [ ] Should we add a "How Payments Work" standalone help page?
+- [ ] Review the mock payment button wording - OK until Stripe is integrated?
+- [ ] What happens if a dispute arises after bid is accepted but before report is submitted?
+- [ ] Should there be a time limit for disputes after report approval?
+- [ ] Legal review needed for escrow terms?
+
+**Technical Notes:**
+- payment_status field added to inspection_jobs table: pending → paid → released | refunded
+- Actual Stripe integration will come later (currently mock payment flow)
+- Notifications updated for payment events
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -348,4 +392,4 @@ Budget you're offering: $200.00
 
 ---
 
-*Last updated: 24 January 2026*
+*Last updated: 24 January 2026 - Added #17 Escrow Payment Workflow*

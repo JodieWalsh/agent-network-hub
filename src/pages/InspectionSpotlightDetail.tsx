@@ -44,6 +44,8 @@ import {
   MessageSquare,
   MapPinned,
   ExternalLink,
+  Shield,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -54,6 +56,8 @@ type PropertyType = 'house' | 'apartment' | 'townhouse' | 'land' | 'other';
 type JobStatus = 'draft' | 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
 type BidStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn';
 
+type PaymentStatus = 'pending' | 'paid' | 'released' | 'refunded';
+
 interface InspectionJob {
   id: string;
   creator_id: string;
@@ -63,6 +67,7 @@ interface InspectionJob {
   urgency_level: UrgencyLevel;
   budget_amount: number;
   status: JobStatus;
+  payment_status: PaymentStatus | null;
   created_at: string;
   preferred_inspection_dates: string[] | null;
   scope_requirements: string | null;
@@ -552,7 +557,7 @@ export default function InspectionSpotlightDetail() {
 
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
               <Badge className={cn('flex items-center gap-1', urgencyConfig.bgColor, urgencyConfig.color)}>
                 <UrgencyIcon className="h-3 w-3" />
                 {urgencyConfig.label}
@@ -560,6 +565,12 @@ export default function InspectionSpotlightDetail() {
               <Badge variant="outline">
                 {PROPERTY_TYPE_LABELS[job.property_type]}
               </Badge>
+              {job.payment_status === 'paid' && (
+                <Badge className="flex items-center gap-1 bg-emerald-100 text-emerald-700 border-emerald-300">
+                  <Shield className="h-3 w-3" />
+                  Payment Secured
+                </Badge>
+              )}
               {bids.length > 0 && canViewBids && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Users className="h-3 w-3" />
@@ -631,6 +642,12 @@ export default function InspectionSpotlightDetail() {
               <CardTitle className="flex items-center gap-2 text-base text-emerald-800">
                 <DollarSign className="h-5 w-5 text-emerald-600" />
                 Your Earnings
+                {job.payment_status === 'paid' && (
+                  <Badge className="ml-2 bg-emerald-100 text-emerald-700 border-emerald-300 text-xs">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Funded
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -648,9 +665,20 @@ export default function InspectionSpotlightDetail() {
                   <span className="font-bold">${(job.budget_amount * 0.90).toFixed(2)}</span>
                 </div>
               </div>
-              <p className="text-xs text-emerald-600 mt-3">
-                Payment is released when the job poster approves your report.
-              </p>
+              {job.payment_status === 'paid' ? (
+                <div className="mt-3 p-2 bg-emerald-100 border border-emerald-300 rounded text-xs text-emerald-700">
+                  <div className="flex items-start gap-2">
+                    <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>Payment is secured in escrow.</strong> The funds have been paid by the job poster and will be released to you when they approve your completed report.
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-emerald-600 mt-3">
+                  Payment is released when the job poster approves your report.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -988,9 +1016,16 @@ export default function InspectionSpotlightDetail() {
                     <span className="font-medium">${(proposedAmount * 0.10).toFixed(2)}</span>
                   </div>
                 </div>
-                <p className="text-xs text-emerald-600 mt-2">
-                  This is the amount the job poster will pay. You'll receive your portion when they approve your report.
-                </p>
+                {job.payment_status === 'paid' ? (
+                  <p className="text-xs text-emerald-600 mt-2">
+                    <Lock className="h-3 w-3 inline mr-1" />
+                    <strong>Payment is already secured in escrow.</strong> You'll receive your portion when the job poster approves your report.
+                  </p>
+                ) : (
+                  <p className="text-xs text-emerald-600 mt-2">
+                    You'll receive your portion when the job poster approves your report.
+                  </p>
+                )}
               </div>
             )}
 

@@ -37,6 +37,11 @@ import {
   Zap,
   AlertCircle,
   MapPinned,
+  Shield,
+  Lock,
+  CreditCard,
+  Info,
+  HelpCircle,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -77,7 +82,8 @@ const STEPS = [
   { id: 1, name: 'Property', icon: Home, description: 'Property details & location' },
   { id: 2, name: 'Requirements', icon: FileText, description: 'Inspection scope & timing' },
   { id: 3, name: 'Budget', icon: DollarSign, description: 'Set your budget' },
-  { id: 4, name: 'Review', icon: CheckCircle2, description: 'Review & post' },
+  { id: 4, name: 'Payment', icon: CreditCard, description: 'Secure escrow payment' },
+  { id: 5, name: 'Review', icon: CheckCircle2, description: 'Review & post' },
 ];
 
 const URGENCY_OPTIONS = [
@@ -133,6 +139,8 @@ export default function CreateInspectionJob() {
   const [useBrief, setUseBrief] = useState(false);
   const [clientBriefs, setClientBriefs] = useState<ClientBrief[]>([]);
   const [loadingBriefs, setLoadingBriefs] = useState(false);
+  const [paymentSecured, setPaymentSecured] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const [formData, setFormData] = useState<JobFormData>({
     property_address: '',
@@ -234,6 +242,9 @@ export default function CreateInspectionJob() {
       case 3:
         return formData.budget_amount !== null && formData.budget_amount > 0;
       case 4:
+        // Can only proceed once payment is secured
+        return paymentSecured;
+      case 5:
         return true;
       default:
         return false;
@@ -325,8 +336,8 @@ export default function CreateInspectionJob() {
 
   const handlePostJob = async () => {
     if (!user) return;
-    if (!canProceedFromStep(1) || !canProceedFromStep(2) || !canProceedFromStep(3)) {
-      toast.error('Please complete all required fields');
+    if (!canProceedFromStep(1) || !canProceedFromStep(2) || !canProceedFromStep(3) || !paymentSecured) {
+      toast.error('Please complete all required fields and secure payment');
       return;
     }
 
@@ -370,6 +381,7 @@ export default function CreateInspectionJob() {
         client_brief_id: formData.client_brief_id,
         budget_amount: formData.budget_amount,
         status: 'open',
+        payment_status: 'paid', // Escrow payment secured upfront
       };
 
       const response = await fetch(`${supabaseUrl}/rest/v1/inspection_jobs`, {
@@ -804,7 +816,7 @@ export default function CreateInspectionJob() {
                       </div>
                     </div>
                     <p className="text-xs text-emerald-600 mt-3">
-                      The full budget amount is paid when you approve the completed report. Our 10% platform fee helps us maintain the marketplace and support our community of agents.
+                      Your payment is held securely in escrow and only released to the inspector when you approve their report. If no inspector is found or you cancel before accepting a bid, you'll receive a full refund.
                     </p>
                   </div>
                 )}
@@ -812,8 +824,148 @@ export default function CreateInspectionJob() {
             </Card>
           )}
 
-          {/* STEP 4: Review */}
+          {/* STEP 4: Payment */}
           {currentStep === 4 && (
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-forest" />
+                  Secure Your Payment
+                </CardTitle>
+                <CardDescription>
+                  Your payment is held in escrow until you approve the report
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Escrow Explanation */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Shield className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 mb-2">🔒 How Escrow Payments Work</p>
+                      <ul className="text-sm text-blue-700 space-y-2">
+                        <li className="flex items-start gap-2">
+                          <span className="font-semibold text-blue-800">1.</span>
+                          <span><strong>Pay now</strong> – Your payment is held securely by the platform</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="font-semibold text-blue-800">2.</span>
+                          <span><strong>Inspector works</strong> – Knowing the funds are secured gives them confidence</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="font-semibold text-blue-800">3.</span>
+                          <span><strong>You approve</strong> – Payment is released to the inspector when you're satisfied</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Refund Policy */}
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Lock className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-emerald-900 mb-2">✅ Refund Protection</p>
+                      <ul className="text-sm text-emerald-700 space-y-1">
+                        <li>• <strong>Full refund</strong> if no inspector bids on your job</li>
+                        <li>• <strong>Full refund</strong> if you cancel before accepting a bid</li>
+                        <li>• <strong>Full refund</strong> if the job expires without completion</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Summary */}
+                <div className="p-6 bg-muted/50 border-2 border-forest/20 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-4">Payment Summary</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-base">
+                      <span>Inspection Budget</span>
+                      <span className="font-semibold">${formData.budget_amount?.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t pt-3 space-y-2 text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>├── Inspector receives (90%)</span>
+                        <span>${((formData.budget_amount || 0) * 0.90).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>└── Platform fee (10%)</span>
+                        <span>${((formData.budget_amount || 0) * 0.10).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="border-t pt-3 flex justify-between text-lg font-semibold">
+                      <span>Total to Pay Now</span>
+                      <span className="text-forest">${formData.budget_amount?.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Button or Success State */}
+                {!paymentSecured ? (
+                  <div className="space-y-4">
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        setProcessingPayment(true);
+                        // TODO: Replace with actual Stripe integration
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        setPaymentSecured(true);
+                        setProcessingPayment(false);
+                        toast.success('Payment secured! Funds held in escrow.');
+                      }}
+                      disabled={processingPayment}
+                      className="w-full h-12 bg-forest hover:bg-forest/90 text-lg"
+                    >
+                      {processingPayment ? (
+                        <>
+                          <span className="animate-spin mr-2">⏳</span>
+                          Processing Payment...
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="h-5 w-5 mr-2" />
+                          Pay ${formData.budget_amount?.toFixed(2)} – Secure Escrow
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      <Lock className="h-3 w-3 inline mr-1" />
+                      Payments are processed securely. Your card details are never stored.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-emerald-100 border-2 border-emerald-300 rounded-lg">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+                        <CheckCircle2 className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-emerald-900">Payment Secured!</p>
+                        <p className="text-sm text-emerald-700">${formData.budget_amount?.toFixed(2)} held in escrow</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Help Section */}
+                <details className="text-sm">
+                  <summary className="cursor-pointer flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                    <HelpCircle className="h-4 w-4" />
+                    Questions about payments?
+                  </summary>
+                  <div className="mt-3 pl-6 space-y-2 text-muted-foreground">
+                    <p><strong>When is the inspector paid?</strong><br />The inspector receives payment (minus platform fee) when you approve their completed report.</p>
+                    <p><strong>What if I'm not satisfied?</strong><br />You can request revisions before approving. Contact support if there's a dispute.</p>
+                    <p><strong>Can I get a refund after accepting a bid?</strong><br />Once a bid is accepted, refunds are handled on a case-by-case basis.</p>
+                  </div>
+                </details>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* STEP 5: Review */}
+          {currentStep === 5 && (
             <Card className="animate-fade-in">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -917,14 +1069,35 @@ export default function CreateInspectionJob() {
                   </div>
                 </div>
 
-                {/* Budget Summary */}
+                {/* Budget & Payment Summary */}
                 <div className="space-y-2">
-                  <h3 className="font-medium text-sm text-muted-foreground">BUDGET</h3>
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-semibold text-forest">
-                      ${formData.budget_amount?.toLocaleString('en-AU')}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">Maximum budget for this inspection</p>
+                  <h3 className="font-medium text-sm text-muted-foreground">BUDGET & PAYMENT</h3>
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-2xl font-semibold text-forest">
+                        ${formData.budget_amount?.toLocaleString('en-AU')}
+                      </p>
+                      {paymentSecured && (
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Payment Secured
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm space-y-1 border-t pt-3">
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Inspector receives (90%):</span>
+                        <span>${((formData.budget_amount || 0) * 0.90).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Platform fee (10%):</span>
+                        <span>${((formData.budget_amount || 0) * 0.10).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700">
+                      <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <span>Your payment is held in escrow and will be released to the inspector when you approve their report.</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>

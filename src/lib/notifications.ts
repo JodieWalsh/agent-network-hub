@@ -36,6 +36,7 @@ export type NotificationType =
   | 'report_submitted'
   | 'report_approved'
   | 'payment_released'
+  | 'payment_refunded'
   | 'review_received'
   | 'badge_earned'
   | 'job_expired'
@@ -520,7 +521,7 @@ export async function notifyReportSubmitted(
     userId: jobCreatorId,
     type: 'report_submitted',
     title: 'Report Ready!',
-    message: `Your inspector has submitted findings for ${propertyAddress}. Review & release payment.`,
+    message: `Your inspector has submitted findings for ${propertyAddress}. Approve to release escrow payment.`,
     jobId,
     fromUserId: inspectorId,
   });
@@ -546,7 +547,7 @@ export async function notifyReportApproved(
 }
 
 /**
- * Notify inspector when payment is released
+ * Notify inspector when payment is released from escrow
  */
 export async function notifyPaymentReleased(
   inspectorId: string,
@@ -558,7 +559,32 @@ export async function notifyPaymentReleased(
     userId: inspectorId,
     type: 'payment_released',
     title: 'Ka-ching!',
-    message: `$${amount.toLocaleString()} received for ${propertyAddress}. Great work!`,
+    message: `$${amount.toLocaleString()} released from escrow for ${propertyAddress}. Great work!`,
+    jobId,
+  });
+}
+
+/**
+ * Notify job poster when their escrow payment is refunded
+ */
+export async function notifyPaymentRefunded(
+  jobPosterId: string,
+  amount: number,
+  propertyAddress: string,
+  jobId: string,
+  reason: 'cancelled' | 'expired' | 'no_bids'
+) {
+  const reasonMessages = {
+    cancelled: 'Your payment has been refunded because you cancelled the job.',
+    expired: 'Your payment has been refunded because the job expired without an inspector.',
+    no_bids: 'Your payment has been refunded because no bids were received.',
+  };
+
+  return createNotification({
+    userId: jobPosterId,
+    type: 'payment_refunded',
+    title: 'Refund Processed',
+    message: `$${amount.toLocaleString()} refunded for ${propertyAddress}. ${reasonMessages[reason]}`,
     jobId,
   });
 }
@@ -603,13 +629,18 @@ export async function notifyBadgeEarned(userId: string, badgeName: string) {
 export async function notifyJobExpired(
   jobCreatorId: string,
   propertyAddress: string,
-  jobId: string
+  jobId: string,
+  wasPaymentRefunded: boolean = false
 ) {
+  const message = wasPaymentRefunded
+    ? `Your inspection request for ${propertyAddress} has expired. Your escrowed payment will be refunded.`
+    : `Your inspection request for ${propertyAddress} has expired. You can repost it anytime.`;
+
   return createNotification({
     userId: jobCreatorId,
     type: 'job_expired',
     title: 'Job Expired',
-    message: `Your inspection request for ${propertyAddress} has expired. You can repost it anytime.`,
+    message,
     jobId,
   });
 }
@@ -650,6 +681,7 @@ export function getNotificationIcon(type: NotificationType): string {
     report_submitted: 'FileText',
     report_approved: 'CheckCircle2',
     payment_released: 'DollarSign',
+    payment_refunded: 'RefreshCw',
     review_received: 'Star',
     badge_earned: 'Award',
     job_expired: 'Clock',
@@ -671,6 +703,7 @@ export function getNotificationColor(type: NotificationType): string {
     report_submitted: 'text-indigo-600 bg-indigo-50',
     report_approved: 'text-emerald-600 bg-emerald-50',
     payment_released: 'text-green-600 bg-green-50',
+    payment_refunded: 'text-blue-600 bg-blue-50',
     review_received: 'text-yellow-600 bg-yellow-50',
     badge_earned: 'text-pink-600 bg-pink-50',
     job_expired: 'text-gray-600 bg-gray-50',

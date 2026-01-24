@@ -54,6 +54,9 @@ import {
   Plus,
   ClipboardList,
   ChevronDown,
+  Shield,
+  Lock,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -62,6 +65,7 @@ import { notifyBidAccepted, notifyBidDeclined, notifyJobCancelled } from '@/lib/
 // Types
 type JobStatus = 'open' | 'in_negotiation' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled' | 'expired';
 type BidStatus = 'pending' | 'shortlisted' | 'accepted' | 'declined' | 'withdrawn';
+type PaymentStatus = 'pending' | 'paid' | 'released' | 'refunded';
 
 interface InspectionJob {
   id: string;
@@ -73,6 +77,7 @@ interface InspectionJob {
   budget_min: number;
   budget_max: number;
   status: JobStatus;
+  payment_status: PaymentStatus | null;
   created_at: string;
   inspection_date_from: string;
   inspection_date_to: string;
@@ -444,6 +449,9 @@ export default function MyPostedJobs() {
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
 
+      // Determine if refund is applicable (paid but no bid accepted)
+      const shouldRefund = job.payment_status === 'paid' && job.status === 'open';
+
       await fetch(
         `${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${job.id}`,
         {
@@ -453,7 +461,11 @@ export default function MyPostedJobs() {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ status: 'cancelled', updated_at: new Date().toISOString() }),
+          body: JSON.stringify({
+            status: 'cancelled',
+            payment_status: shouldRefund ? 'refunded' : job.payment_status,
+            updated_at: new Date().toISOString(),
+          }),
         }
       );
 
@@ -471,7 +483,11 @@ export default function MyPostedJobs() {
         console.error('Failed to send cancellation notifications:', notifError);
       }
 
-      toast.success('Job cancelled');
+      if (shouldRefund) {
+        toast.success('Job cancelled. Your escrowed payment will be refunded.');
+      } else {
+        toast.success('Job cancelled');
+      }
       setConfirmAction(null);
       fetchJobs();
     } catch (error) {
@@ -687,11 +703,22 @@ export default function MyPostedJobs() {
                 {confirmAction?.type === 'accept' && confirmAction.bid && (
                   <div className="space-y-4">
                     <p>
-                      You're agreeing to pay <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong> for this inspection.
+                      You're accepting <strong>{confirmAction.bid.inspector?.full_name}</strong>'s bid of <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong> for this inspection.
                     </p>
-                    <div className="p-3 bg-emerald-50 rounded-lg text-sm">
-                      <p className="font-medium text-emerald-800 mb-2">Payment breakdown:</p>
-                      <div className="space-y-1 text-emerald-700">
+                    {confirmAction.job?.payment_status === 'paid' && (
+                      <div className="p-3 bg-emerald-100 rounded-lg text-sm border border-emerald-300">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="h-4 w-4 text-emerald-700" />
+                          <p className="font-medium text-emerald-800">Payment Already Secured</p>
+                        </div>
+                        <p className="text-emerald-700">
+                          Your payment of {formatCurrency(confirmAction.bid.proposed_price)} is held in escrow and will be released to the inspector when you approve their report.
+                        </p>
+                      </div>
+                    )}
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                      <p className="font-medium text-muted-foreground mb-2">Payment breakdown when released:</p>
+                      <div className="space-y-1 text-muted-foreground">
                         <div className="flex justify-between">
                           <span>├── {confirmAction.bid.inspector?.full_name} receives:</span>
                           <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.90))}</span>
@@ -703,7 +730,7 @@ export default function MyPostedJobs() {
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Payment will be collected when you approve the completed report. All other pending bids will be automatically declined.
+                      All other pending bids will be automatically declined.
                     </p>
                   </div>
                 )}
@@ -714,10 +741,25 @@ export default function MyPostedJobs() {
                   </>
                 )}
                 {confirmAction?.type === 'cancel' && (
-                  <>
-                    Are you sure you want to cancel "{confirmAction.job?.title}"?
-                    Any pending bids will be notified. This action cannot be undone.
-                  </>
+                  <div className="space-y-4">
+                    <p>
+                      Are you sure you want to cancel "{confirmAction.job?.title}"?
+                    </p>
+                    {confirmAction.job?.payment_status === 'paid' && (
+                      <div className="p-3 bg-blue-50 rounded-lg text-sm border border-blue-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <RefreshCw className="h-4 w-4 text-blue-600" />
+                          <p className="font-medium text-blue-800">Refund Eligible</p>
+                        </div>
+                        <p className="text-blue-700">
+                          Since no bid has been accepted yet, you will receive a <strong>full refund</strong> of your escrowed payment.
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Any pending bids will be notified. This action cannot be undone.
+                    </p>
+                  </div>
                 )}
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -920,12 +962,24 @@ function JobCard({
         <div className="flex items-start justify-between gap-4">
           {/* Left: Job Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
               <h3 className="font-semibold text-lg truncate">{job.title}</h3>
               <Badge className={cn('border', statusConfig.color)}>
                 <StatusIcon size={12} className="mr-1" />
                 {statusConfig.label}
               </Badge>
+              {job.payment_status === 'paid' && (
+                <Badge className="border-emerald-300 text-emerald-700 bg-emerald-50">
+                  <Lock size={12} className="mr-1" />
+                  Payment Secured
+                </Badge>
+              )}
+              {job.payment_status === 'refunded' && (
+                <Badge className="border-blue-300 text-blue-700 bg-blue-50">
+                  <RefreshCw size={12} className="mr-1" />
+                  Refunded
+                </Badge>
+              )}
               {job.client_brief && (
                 <Badge variant="outline" className="border-purple-300 text-purple-700 bg-purple-50">
                   <FileText size={12} className="mr-1" />
