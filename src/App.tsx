@@ -13,6 +13,7 @@ import Marketplace from "./pages/Marketplace";
 import Inspections from "./pages/Inspections";
 import PostInspection from "./pages/PostInspection";
 import ProfileEdit from "./pages/settings/ProfileEdit";
+import Billing from "./pages/settings/Billing";
 import Admin from "./pages/Admin";
 import AddProperty from "./pages/AddProperty";
 import ClientBriefs from "./pages/ClientBriefs";
@@ -153,6 +154,7 @@ const App = () => (
 
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/settings/profile" element={<ProfileEdit />} />
+            <Route path="/settings/billing" element={<Billing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

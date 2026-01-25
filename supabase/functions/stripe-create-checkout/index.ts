@@ -65,6 +65,14 @@ serve(async (req) => {
     // Determine URLs based on environment
     const origin = req.headers.get('origin') || 'http://localhost:5173';
 
+    // Determine tier from price ID for success URL
+    let tier = 'premium';
+    if (priceId === 'price_1StGZQCnDmgyQa6dz7mrD80L' || priceId === 'price_1StGkDCnDmgyQa6dJOcQ0SDP') {
+      tier = 'basic';
+    } else if (priceId === 'price_1StGaACnDmgyQa6dhp2qJsO0' || priceId === 'price_1StGkpCnDmgyQa6dI4aYmsVQ') {
+      tier = 'premium';
+    }
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -76,8 +84,8 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: `${origin}/settings/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/settings/billing?canceled=true`,
+      success_url: `${origin}/welcome?success=true&plan=${tier}`,
+      cancel_url: `${origin}/pricing?canceled=true`,
       metadata: {
         userId,
       },
