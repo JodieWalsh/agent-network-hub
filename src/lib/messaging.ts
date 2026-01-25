@@ -86,121 +86,101 @@ function getAuthHeaders(): Record<string, string> {
 
 /**
  * Get all conversations for a user with last message and other participant info
+ * Uses the get_user_conversations RPC function for reliable data fetching
  */
 export async function getConversations(userId: string): Promise<ConversationWithOther[]> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const headers = getAuthHeaders();
 
-  // Step 1: Get all conversations the user is part of
-  const participantsResponse = await fetch(
-    `${supabaseUrl}/rest/v1/conversation_participants?user_id=eq.${userId}&select=conversation_id,last_read_at`,
-    { headers }
+  // Use the comprehensive RPC function that fetches everything in one query
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/rpc/get_user_conversations`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({}),
+    }
   );
 
-  if (!participantsResponse.ok) {
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Failed to fetch conversations:', errorText);
     throw new Error('Failed to fetch conversations');
   }
 
-  const userParticipations = await participantsResponse.json();
+  const data = await response.json();
 
-  if (userParticipations.length === 0) {
-    return [];
-  }
+  // Transform the flat response into our ConversationWithOther structure
+  const result: ConversationWithOther[] = data.map((row: any) => {
+    const otherParticipant: Participant = {
+      id: row.other_user_id,
+      full_name: row.other_user_name,
+      avatar_url: row.other_user_avatar,
+      user_type: row.other_user_type,
+    };
 
-  const conversationIds = userParticipations.map((p: any) => p.conversation_id);
-  const lastReadMap = new Map(userParticipations.map((p: any) => [p.conversation_id, p.last_read_at]));
-
-  // Step 2: Get conversation details with all participants
-  const conversationsResponse = await fetch(
-    `${supabaseUrl}/rest/v1/conversations?id=in.(${conversationIds.join(',')})&select=*&order=updated_at.desc`,
-    { headers }
-  );
-
-  if (!conversationsResponse.ok) {
-    throw new Error('Failed to fetch conversation details');
-  }
-
-  const conversations = await conversationsResponse.json();
-
-  // Step 3: Get all participants for these conversations using RPC function
-  // This bypasses RLS to get all participants, not just the current user
-  const participantsMap = new Map<string, Participant[]>();
-
-  for (const convId of conversationIds) {
-    const participantsResponse = await fetch(
-      `${supabaseUrl}/rest/v1/rpc/get_conversation_participants`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ conv_id: convId }),
-      }
-    );
-
-    if (participantsResponse.ok) {
-      const participants = await participantsResponse.json();
-      participantsMap.set(convId, participants.map((p: any) => ({
-        id: p.user_id,
-        full_name: p.full_name,
-        avatar_url: p.avatar_url,
-        user_type: p.user_type,
-      })));
-    }
-  }
-
-  // Step 5: Get last message for each conversation
-  const messagesResponse = await fetch(
-    `${supabaseUrl}/rest/v1/messages?conversation_id=in.(${conversationIds.join(',')})&select=*&order=created_at.desc`,
-    { headers }
-  );
-
-  if (!messagesResponse.ok) {
-    throw new Error('Failed to fetch messages');
-  }
-
-  const allMessages = await messagesResponse.json();
-
-  // Group messages by conversation and get the last one
-  const lastMessageMap = new Map<string, Message>();
-  const unreadCountMap = new Map<string, number>();
-
-  for (const msg of allMessages) {
-    // Track last message
-    if (!lastMessageMap.has(msg.conversation_id)) {
-      lastMessageMap.set(msg.conversation_id, msg);
-    }
-
-    // Count unread messages
-    const lastRead = lastReadMap.get(msg.conversation_id);
-    if (!lastRead || new Date(msg.created_at) > new Date(lastRead)) {
-      if (msg.sender_id !== userId) {
-        const current = unreadCountMap.get(msg.conversation_id) || 0;
-        unreadCountMap.set(msg.conversation_id, current + 1);
-      }
-    }
-  }
-
-  // Step 6: Build the final conversation objects
-  const result: ConversationWithOther[] = conversations.map((conv: any) => {
-    const conversationParticipants = participantsMap.get(conv.id) || [];
-
-    const otherParticipant = conversationParticipants.find(p => p.id !== userId) || conversationParticipants[0];
+    const lastMessage: Message | null = row.last_message_id ? {
+      id: row.last_message_id,
+      conversation_id: row.conversation_id,
+      sender_id: row.last_message_sender_id,
+      content: row.last_message_content,
+      created_at: row.last_message_created_at,
+    } : null;
 
     return {
-      id: conv.id,
-      created_at: conv.created_at,
-      updated_at: conv.updated_at,
-      participants: conversationParticipants,
+      id: row.conversation_id,
+      created_at: row.conversation_created_at,
+      updated_at: row.conversation_updated_at,
+      participants: [otherParticipant], // We mainly need the other participant
       other_participant: otherParticipant,
-      last_message: lastMessageMap.get(conv.id) || null,
-      unread_count: unreadCountMap.get(conv.id) || 0,
-      last_read_at: lastReadMap.get(conv.id) || null,
+      last_message: lastMessage,
+      unread_count: Number(row.unread_count) || 0,
+      last_read_at: row.last_read_at,
     };
   });
 
-  // Sort by updated_at (most recent first)
-  result.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-
   return result;
+}
+
+/**
+ * Get conversation details including other participant info
+ * Useful when opening a conversation directly via URL
+ */
+export async function getConversationDetails(
+  conversationId: string
+): Promise<{ other_participant: Participant } | null> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const headers = getAuthHeaders();
+
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/rpc/get_conversation_details`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ conv_id: conversationId }),
+    }
+  );
+
+  if (!response.ok) {
+    console.error('Failed to fetch conversation details');
+    return null;
+  }
+
+  const data = await response.json();
+
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  const row = data[0];
+  return {
+    other_participant: {
+      id: row.other_user_id,
+      full_name: row.other_user_name,
+      avatar_url: row.other_user_avatar,
+      user_type: row.other_user_type,
+    },
+  };
 }
 
 /**

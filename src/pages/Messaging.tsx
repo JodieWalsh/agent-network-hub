@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   getConversations,
+  getConversationDetails,
   getMessages,
   sendMessage,
   markConversationRead,
@@ -28,6 +29,7 @@ import {
   subscribeToConversationUpdates,
   type ConversationWithOther,
   type Message,
+  type Participant,
 } from "@/lib/messaging";
 import { NewMessageModal } from "@/components/messaging/NewMessageModal";
 import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
@@ -312,6 +314,7 @@ export default function Messaging() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
+  const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -329,10 +332,13 @@ export default function Messaging() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Get selected conversation
+  // Get selected conversation from list or use current participant
   const selectedConversation = conversations.find(
     (c) => c.id === selectedConversationId
   );
+
+  // Use the participant from conversations list or fallback to fetched details
+  const otherParticipant = selectedConversation?.other_participant || currentParticipant;
 
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
@@ -360,8 +366,15 @@ export default function Messaging() {
 
     setLoadingMessages(true);
     try {
+      // Fetch messages
       const data = await getMessages(selectedConversationId);
       setMessages(data);
+
+      // Fetch conversation details to get other participant info
+      const details = await getConversationDetails(selectedConversationId);
+      if (details?.other_participant) {
+        setCurrentParticipant(details.other_participant);
+      }
 
       // Mark as read
       await markConversationRead(selectedConversationId, user.id);
@@ -636,7 +649,7 @@ export default function Messaging() {
                 !showConversation && "hidden md:flex"
               )}
             >
-              {!selectedConversation ? (
+              {!selectedConversationId ? (
                 <EmptyConversation />
               ) : (
                 <>
@@ -653,13 +666,10 @@ export default function Messaging() {
                     </Button>
 
                     {/* Participant info */}
-                    {selectedConversation.other_participant?.avatar_url ? (
+                    {otherParticipant?.avatar_url ? (
                       <img
-                        src={selectedConversation.other_participant.avatar_url}
-                        alt={
-                          selectedConversation.other_participant.full_name ||
-                          "User"
-                        }
+                        src={otherParticipant.avatar_url}
+                        alt={otherParticipant.full_name || "User"}
                         className="w-10 h-10 rounded-full object-cover border border-border"
                       />
                     ) : (
@@ -669,12 +679,11 @@ export default function Messaging() {
                     )}
                     <div className="flex-1 min-w-0">
                       <h2 className="font-semibold truncate">
-                        {selectedConversation.other_participant?.full_name ||
-                          "Unknown User"}
+                        {otherParticipant?.full_name || "Unknown User"}
                       </h2>
-                      {selectedConversation.other_participant?.user_type && (
+                      {otherParticipant?.user_type && (
                         <p className="text-xs text-muted-foreground">
-                          {selectedConversation.other_participant.user_type
+                          {otherParticipant.user_type
                             .replace(/_/g, " ")
                             .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </p>
