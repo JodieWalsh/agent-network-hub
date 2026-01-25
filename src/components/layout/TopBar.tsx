@@ -1,7 +1,15 @@
 import { Search, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { getRoleLabel } from "@/lib/permissions";
+
+const userTypeLabels: Record<string, string> = {
+  buyers_agent: "Buyers Agent",
+  real_estate_agent: "Real Estate Agent",
+  conveyancer: "Conveyancer",
+  mortgage_broker: "Mortgage Broker",
+  stylist: "Stylist",
+  building_inspector: "Building Inspector",
+};
 
 export function TopBar() {
   const { user, profile } = useAuth();
@@ -22,16 +30,25 @@ export function TopBar() {
   };
 
   const getUserRoleDisplay = () => {
-    if (!profile || !profile.role) {
-      return "Member";
+    // Admin gets special label
+    if (profile?.role === 'admin') {
+      return 'Administrator';
     }
 
-    try {
-      return getRoleLabel(profile.role);
-    } catch (error) {
-      console.error("Error getting role label:", error);
-      return "Member";
+    // Get the user type label
+    const type = profile?.user_type || user?.user_metadata?.user_type;
+    const typeLabel = type ? userTypeLabels[type] || type : "Member";
+
+    // Add verification status
+    if (profile?.approval_status === 'approved' || profile?.is_verified) {
+      return `${typeLabel} (Verified)`;
+    } else if (profile?.approval_status === 'pending') {
+      return `${typeLabel} (Unverified)`;
+    } else if (profile?.approval_status === 'rejected') {
+      return `${typeLabel} (Rejected)`;
     }
+
+    return typeLabel;
   };
 
   return (

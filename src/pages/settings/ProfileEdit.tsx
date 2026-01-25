@@ -549,29 +549,44 @@ export default function ProfileEdit() {
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   {role === 'admin' && <Shield className="h-6 w-6 text-purple-600" />}
-                  {role === 'verified_professional' && <CheckCircle2 className="h-6 w-6 text-green-600" />}
-                  {role === 'pending_professional' && <Clock className="h-6 w-6 text-amber-600" />}
-                  {role === 'guest' && <AlertCircle className="h-6 w-6 text-blue-600" />}
+                  {role !== 'admin' && approvalStatus === 'approved' && <CheckCircle2 className="h-6 w-6 text-green-600" />}
+                  {role !== 'admin' && approvalStatus === 'pending' && <Clock className="h-6 w-6 text-amber-600" />}
+                  {role !== 'admin' && approvalStatus === 'rejected' && <AlertCircle className="h-6 w-6 text-red-600" />}
+                  {role !== 'admin' && !approvalStatus && <AlertCircle className="h-6 w-6 text-blue-600" />}
                   <div>
-                    <p className="font-semibold">{getRoleLabel(role)}</p>
+                    <p className="font-semibold">
+                      {role === 'admin'
+                        ? 'Administrator'
+                        : `${userTypeLabels[userType] || userType || 'Member'}${
+                            approvalStatus === 'approved' ? ' (Verified)' :
+                            approvalStatus === 'pending' ? ' (Unverified)' :
+                            approvalStatus === 'rejected' ? ' (Rejected)' : ''
+                          }`
+                      }
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {role === 'admin' && 'Full administrative access'}
-                      {role === 'verified_professional' && 'Full professional features enabled'}
-                      {role === 'pending_professional' && 'Awaiting verification'}
-                      {role === 'guest' && 'Limited access - verification required for full features'}
+                      {role !== 'admin' && approvalStatus === 'approved' && 'Verified professional with full platform access'}
+                      {role !== 'admin' && approvalStatus === 'pending' && 'Awaiting verification - submit credentials below'}
+                      {role !== 'admin' && approvalStatus === 'rejected' && 'Verification rejected - please resubmit credentials'}
+                      {role !== 'admin' && !approvalStatus && 'Submit credentials below to get verified'}
                     </p>
                   </div>
                 </div>
                 <Badge
-                  variant={role === 'verified_professional' || role === 'admin' ? 'default' : 'secondary'}
+                  variant={approvalStatus === 'approved' || role === 'admin' ? 'default' : 'secondary'}
                   className={
                     role === 'admin' ? 'bg-purple-600' :
-                    role === 'verified_professional' ? 'bg-green-600' :
-                    role === 'pending_professional' ? 'bg-amber-500' :
+                    approvalStatus === 'approved' ? 'bg-green-600' :
+                    approvalStatus === 'pending' ? 'bg-amber-500' :
+                    approvalStatus === 'rejected' ? 'bg-red-500' :
                     'bg-blue-500'
                   }
                 >
-                  {getRoleLabel(role)}
+                  {approvalStatus === 'approved' ? 'Verified' :
+                   approvalStatus === 'pending' ? 'Pending' :
+                   approvalStatus === 'rejected' ? 'Rejected' :
+                   role === 'admin' ? 'Admin' : 'Unverified'}
                 </Badge>
               </div>
 
