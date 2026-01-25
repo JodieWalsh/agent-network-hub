@@ -22,7 +22,6 @@ import {
   getDaysUntilRenewal,
   createCheckoutSession,
   createPortalSession,
-  redirectToCheckout,
   redirectToCustomerPortal,
 } from "@/lib/stripe";
 
@@ -160,9 +159,9 @@ export default function Pricing() {
     setLoadingTier(tier);
 
     try {
-      const { sessionId, error } = await createCheckoutSession(priceId, user.id);
+      const { url, error } = await createCheckoutSession(priceId, user.id);
 
-      if (error || !sessionId) {
+      if (error || !url) {
         throw new Error(error || "Failed to create checkout session");
       }
 
@@ -171,17 +170,13 @@ export default function Pricing() {
       sessionStorage.removeItem(PENDING_BILLING_KEY);
       setPendingPlan(null);
 
-      const redirectResult = await redirectToCheckout(sessionId);
-
-      if (redirectResult.error) {
-        throw new Error(redirectResult.error);
-      }
+      // Redirect directly to Stripe Checkout URL
+      window.location.href = url;
     } catch (err) {
       console.error("Checkout error:", err);
       toast.error("Checkout failed", {
         description: err instanceof Error ? err.message : "Please try again",
       });
-    } finally {
       setLoadingTier(null);
     }
   };

@@ -99,7 +99,7 @@ serve(async (req) => {
       },
     });
 
-    return jsonResponse({ sessionId: session.id });
+    return jsonResponse({ sessionId: session.id, url: session.url });
   } catch (error) {
     console.error('Error creating checkout session:', error);
     return errorResponse(error.message || 'Internal server error', 500);

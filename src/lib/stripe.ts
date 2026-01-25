@@ -161,12 +161,12 @@ function getAuthHeaders(): Record<string, string> {
  *
  * @param priceId - The Stripe Price ID for the subscription tier
  * @param userId - The user's ID for associating the subscription
- * @returns The checkout session ID
+ * @returns The checkout session ID and URL
  */
 export async function createCheckoutSession(
   priceId: string,
   userId: string
-): Promise<{ sessionId?: string; error?: string }> {
+): Promise<{ sessionId?: string; url?: string; error?: string }> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -181,8 +181,8 @@ export async function createCheckoutSession(
       return { error: errorData.error || 'Failed to create checkout session' };
     }
 
-    const { sessionId } = await response.json();
-    return { sessionId };
+    const { sessionId, url } = await response.json();
+    return { sessionId, url };
   } catch (err) {
     console.error('[Stripe] Create checkout session error:', err);
     return { error: 'Failed to connect to payment service' };
