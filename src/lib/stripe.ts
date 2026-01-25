@@ -128,6 +128,34 @@ export function redirectToConnectDashboard(dashboardUrl: string): void {
 // ===========================================
 
 /**
+ * Get authentication headers for Supabase Edge Function calls.
+ * Retrieves the access token from localStorage.
+ */
+function getAuthHeaders(): Record<string, string> {
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+
+  // Get access token from stored session
+  let accessToken = supabaseKey;
+  try {
+    const storageKey = `sb-${projectId}-auth-token`;
+    const storedSession = localStorage.getItem(storageKey);
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession);
+      accessToken = parsed?.access_token || supabaseKey;
+    }
+  } catch (e) {
+    console.error('[Stripe] Failed to get auth token:', e);
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`,
+    'apikey': supabaseKey,
+  };
+}
+
+/**
  * Create a checkout session for a subscription.
  * Calls the Supabase Edge Function which uses the secret key.
  *
@@ -144,10 +172,7 @@ export async function createCheckoutSession(
 
     const response = await fetch(`${supabaseUrl}/functions/v1/stripe-create-checkout`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Auth header will be added by the calling component
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ priceId, userId }),
     });
 
@@ -179,9 +204,7 @@ export async function createPortalSession(
 
     const response = await fetch(`${supabaseUrl}/functions/v1/stripe-create-portal`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ customerId }),
     });
 
@@ -213,9 +236,7 @@ export async function createConnectOnboardingLink(
 
     const response = await fetch(`${supabaseUrl}/functions/v1/stripe-connect-onboarding`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ userId }),
     });
 
@@ -247,9 +268,7 @@ export async function createConnectDashboardLink(
 
     const response = await fetch(`${supabaseUrl}/functions/v1/stripe-connect-dashboard`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ connectAccountId }),
     });
 
