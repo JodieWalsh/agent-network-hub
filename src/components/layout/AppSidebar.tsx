@@ -22,6 +22,7 @@ import {
   Plus,
   Briefcase,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -172,6 +173,7 @@ export function AppSidebar() {
     ] : []),
     { label: "Forums", icon: MessagesSquare, path: "/forums" },
     { label: "Messaging", icon: MessageSquare, path: "/messages" },
+    { label: "Pricing", icon: Sparkles, path: "/pricing" },
     {
       label: "Settings",
       icon: Settings,

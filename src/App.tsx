@@ -28,6 +28,7 @@ import MyInspectionWork from "./pages/inspections/MyInspectionWork";
 import Welcome from "./pages/Welcome";
 import ResetPassword from "./pages/ResetPassword";
 import Activity from "./pages/Activity";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/inspections/spotlights" element={<InspectionSpotlights />} />
             <Route path="/inspections/spotlights/:id" element={<InspectionSpotlightDetail />} />
             <Route path="/activity" element={<Activity />} />
+            <Route path="/pricing" element={<Pricing />} />
 
             {/* Protected Routes */}
             <Route
