@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { MapPin, User, Briefcase, Save, Lock, Settings, Shield, Award, CheckCircle2, Clock, AlertCircle, Bell, Mail, Smartphone, MessageSquare, Moon } from "lucide-react";
+import { MapPin, User, Briefcase, Save, Lock, Settings, Shield, Award, CheckCircle2, Clock, AlertCircle, Bell, Mail, Smartphone, MessageSquare, Moon, Crown, Sparkles, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnits } from "@/contexts/UnitsContext";
@@ -20,6 +20,7 @@ import { ServiceAreaManager } from "@/components/profile/ServiceAreaManager";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getRoleLabel, ROLE_PERMISSIONS, type UserRole, type Permission } from "@/lib/permissions";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -43,10 +44,22 @@ const specializationLabels: Record<string, string> = {
   luxury: "Luxury",
 };
 
+const membershipLabels: Record<string, string> = {
+  free: "Free Member",
+  basic: "Basic Member",
+  premium: "Premium Member",
+};
+
+const membershipColors: Record<string, string> = {
+  free: "bg-muted text-muted-foreground",
+  basic: "bg-forest/10 text-forest border-forest/20",
+  premium: "bg-rose-gold/20 text-rose-gold border-rose-gold/30",
+};
+
 export default function ProfileEdit() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile: authProfile, loading: authLoading } = useAuth();
   const { unitSystem, setUnitSystem } = useUnits();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -574,6 +587,71 @@ export default function ProfileEdit() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Membership */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-rose-gold" />
+                <CardTitle>Membership</CardTitle>
+              </div>
+              <CardDescription>
+                Your current subscription plan and benefits
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {(authProfile?.subscription_tier === 'premium') && (
+                    <Crown className="h-6 w-6 text-rose-gold" />
+                  )}
+                  {(authProfile?.subscription_tier === 'basic') && (
+                    <Sparkles className="h-6 w-6 text-forest" />
+                  )}
+                  {(!authProfile?.subscription_tier || authProfile?.subscription_tier === 'free') && (
+                    <Sparkles className="h-6 w-6 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="font-semibold">
+                      {membershipLabels[authProfile?.subscription_tier || 'free']}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {authProfile?.subscription_tier === 'premium' && 'Full access to all premium features'}
+                      {authProfile?.subscription_tier === 'basic' && 'Enhanced features for professionals'}
+                      {(!authProfile?.subscription_tier || authProfile?.subscription_tier === 'free') && 'Limited access - upgrade for more features'}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  className={cn(
+                    "border",
+                    membershipColors[authProfile?.subscription_tier || 'free']
+                  )}
+                >
+                  {(authProfile?.subscription_tier === 'premium') && <Crown className="w-3 h-3 mr-1" />}
+                  {membershipLabels[authProfile?.subscription_tier || 'free']}
+                </Badge>
+              </div>
+
+              <div className="flex gap-2">
+                {authProfile?.subscription_tier && authProfile.subscription_tier !== 'free' ? (
+                  <Link to="/settings/billing" className="flex-1">
+                    <Button variant="outline" className="w-full gap-2">
+                      Manage Subscription
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/pricing" className="flex-1">
+                    <Button className="w-full gap-2 bg-forest hover:bg-forest/90 text-white">
+                      <Sparkles className="h-4 w-4" />
+                      Upgrade Your Plan
+                    </Button>
+                  </Link>
+                )}
               </div>
             </CardContent>
           </Card>

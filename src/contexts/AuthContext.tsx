@@ -34,6 +34,11 @@ interface Profile {
   city: string | null;
   bio: string | null;
   is_verified: boolean;
+  // Subscription fields
+  subscription_tier: string | null;
+  subscription_status: string | null;
+  subscription_current_period_end: string | null;
+  stripe_customer_id: string | null;
 }
 
 interface AuthContextType {

@@ -2,7 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { Star, MapPin, Mail, Phone, Award } from "lucide-react";
+import { Star, MapPin, Mail, Phone, Award, Crown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -17,7 +18,20 @@ interface Profile {
   service_regions: string[] | null;
   home_base_address: string | null;
   points: number | null;
+  subscription_tier?: string | null;
 }
+
+const membershipLabels: Record<string, string> = {
+  free: "Free Member",
+  basic: "Basic Member",
+  premium: "Premium Member",
+};
+
+const membershipColors: Record<string, string> = {
+  free: "bg-muted text-muted-foreground",
+  basic: "bg-forest/10 text-forest border-forest/20",
+  premium: "bg-rose-gold/20 text-rose-gold border-rose-gold/30",
+};
 
 interface ProfileDetailModalProps {
   profile: Profile | null;
@@ -76,10 +90,23 @@ export function ProfileDetailModal({
                 <VerifiedBadge isVerified={profile.is_verified || false} size="lg" />
               </div>
 
-              {/* User Type */}
-              <Badge variant="outline" className="mb-2">
-                {userTypeLabels[profile.user_type] || profile.user_type}
-              </Badge>
+              {/* User Type & Membership */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                <Badge variant="outline">
+                  {userTypeLabels[profile.user_type] || profile.user_type}
+                </Badge>
+                {profile.subscription_tier && profile.subscription_tier !== 'free' && (
+                  <Badge
+                    className={cn(
+                      "border",
+                      membershipColors[profile.subscription_tier] || membershipColors.free
+                    )}
+                  >
+                    {profile.subscription_tier === 'premium' && <Crown className="w-3 h-3 mr-1" />}
+                    {membershipLabels[profile.subscription_tier] || 'Member'}
+                  </Badge>
+                )}
+              </div>
 
               {/* Star Rating */}
               <div className="flex items-center gap-2 mt-2">

@@ -23,11 +23,13 @@ import {
   Briefcase,
   ClipboardList,
   Sparkles,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { Badge } from "@/components/ui/badge";
 
 interface NavItem {
   label: string;
@@ -60,6 +62,20 @@ const userTypeLabels: Record<string, string> = {
   real_estate_agent: "Real Estate Agent",
   conveyancer: "Conveyancer",
   mortgage_broker: "Mortgage Broker",
+  stylist: "Stylist",
+  building_inspector: "Building Inspector",
+};
+
+const membershipLabels: Record<string, string> = {
+  free: "Free Member",
+  basic: "Basic Member",
+  premium: "Premium Member",
+};
+
+const membershipColors: Record<string, string> = {
+  free: "bg-muted text-muted-foreground",
+  basic: "bg-forest/10 text-forest",
+  premium: "bg-rose-gold/20 text-rose-gold",
 };
 
 export function AppSidebar() {
@@ -232,16 +248,34 @@ export function AppSidebar() {
   };
 
   const getUserType = () => {
-    // Show role-based label for guests/pending users
-    if (profile?.role === 'guest' || profile?.approval_status === 'pending') {
-      return 'Guest';
-    }
+    // Admin gets special label
     if (profile?.role === 'admin') {
       return 'Administrator';
     }
-    // For verified professionals, show their user type
+
+    // Get the user type label
     const type = profile?.user_type || user?.user_metadata?.user_type;
-    return type ? userTypeLabels[type] || type : "Member";
+    const typeLabel = type ? userTypeLabels[type] || type : "Member";
+
+    // Add verification status
+    if (profile?.approval_status === 'approved' || profile?.is_verified) {
+      return `${typeLabel} (Verified)`;
+    } else if (profile?.approval_status === 'pending') {
+      return `${typeLabel} (Unverified)`;
+    } else if (profile?.approval_status === 'rejected') {
+      return `${typeLabel} (Rejected)`;
+    }
+
+    return typeLabel;
+  };
+
+  const getMembershipTier = () => {
+    return profile?.subscription_tier || 'free';
+  };
+
+  const getMembershipLabel = () => {
+    const tier = getMembershipTier();
+    return membershipLabels[tier] || 'Free Member';
   };
 
   return (
@@ -371,9 +405,21 @@ export function AppSidebar() {
                   <p className="text-sm font-medium text-foreground truncate">
                     {profile?.full_name || user.user_metadata?.full_name || user.email}
                   </p>
-                  <p className="text-xs text-muted-foreground">{getUserType()}</p>
+                  <p className="text-xs text-muted-foreground truncate">{getUserType()}</p>
                 </div>
                 <NotificationBell />
+              </div>
+              {/* Membership Badge */}
+              <div className="px-3">
+                <Badge
+                  className={cn(
+                    "w-full justify-center text-xs py-1",
+                    membershipColors[getMembershipTier()]
+                  )}
+                >
+                  {getMembershipTier() === 'premium' && <Crown className="w-3 h-3 mr-1" />}
+                  {getMembershipLabel()}
+                </Badge>
               </div>
               <button
                 onClick={handleSignOut}
