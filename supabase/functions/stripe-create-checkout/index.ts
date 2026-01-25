@@ -86,14 +86,17 @@ serve(async (req) => {
           userId,
         },
       },
-      // Enable automatic tax if configured in Stripe
-      // automatic_tax: { enabled: true },
       // Allow promotion codes
       allow_promotion_codes: true,
       // Collect billing address for tax/invoicing
       billing_address_collection: 'required',
       // Show tax ID collection for business customers
       tax_id_collection: { enabled: true },
+      // Required for tax_id_collection with existing customers
+      customer_update: {
+        name: 'auto',
+        address: 'auto',
+      },
     });
 
     return jsonResponse({ sessionId: session.id });
