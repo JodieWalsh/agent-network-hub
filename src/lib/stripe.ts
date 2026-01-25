@@ -290,9 +290,9 @@ export const SUBSCRIPTION_TIERS = {
   basic: {
     name: 'Basic',
     priceMonthly: 29,
-    priceAnnual: 290, // ~17% discount - TODO: Create annual price in Stripe
+    priceAnnual: 290, // ~17% discount
     stripePriceIdMonthly: 'price_1StGZQCnDmgyQa6dz7mrD80L',
-    stripePriceIdAnnual: null, // TODO: Add annual price ID when created
+    stripePriceIdAnnual: 'price_1StGkDCnDmgyQa6dJOcQ0SDP',
     features: [
       'Everything in Free',
       'Unlimited job postings',
@@ -303,9 +303,9 @@ export const SUBSCRIPTION_TIERS = {
   premium: {
     name: 'Premium',
     priceMonthly: 79,
-    priceAnnual: 790, // ~17% discount - TODO: Create annual price in Stripe
+    priceAnnual: 790, // ~17% discount
     stripePriceIdMonthly: 'price_1StGaACnDmgyQa6dhp2qJsO0',
-    stripePriceIdAnnual: null, // TODO: Add annual price ID when created
+    stripePriceIdAnnual: 'price_1StGkpCnDmgyQa6dI4aYmsVQ',
     features: [
       'Everything in Basic',
       'Featured profile listing',

@@ -104,11 +104,11 @@ serve(async (req) => {
 
           // Basic tier price IDs
           if (priceId === 'price_1StGZQCnDmgyQa6dz7mrD80L') tier = 'basic'; // Monthly
-          // TODO: Add annual price ID when created
+          if (priceId === 'price_1StGkDCnDmgyQa6dJOcQ0SDP') tier = 'basic'; // Annual
 
           // Premium tier price IDs
           if (priceId === 'price_1StGaACnDmgyQa6dhp2qJsO0') tier = 'premium'; // Monthly
-          // TODO: Add annual price ID when created
+          if (priceId === 'price_1StGkpCnDmgyQa6dI4aYmsVQ') tier = 'premium'; // Annual
 
           await supabase.update('profiles', profile.id, {
             subscription_status: subscription.status,
