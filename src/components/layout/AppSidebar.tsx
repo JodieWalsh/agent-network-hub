@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Badge } from "@/components/ui/badge";
+import { getUnreadCount, subscribeToConversationUpdates } from "@/lib/messaging";
 
 interface NavItem {
   label: string;
@@ -87,6 +88,7 @@ export function AppSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [hasPostedJobs, setHasPostedJobs] = useState(false);
   const [hasInspectionWork, setHasInspectionWork] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   // Check if user has posted any inspection jobs or has inspection work
   useEffect(() => {
@@ -158,6 +160,33 @@ export function AppSidebar() {
 
     checkInspectionActivity();
   }, [user]);
+
+  // Fetch and subscribe to unread message count
+  useEffect(() => {
+    if (!user?.id) {
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    // Initial fetch
+    const fetchUnread = async () => {
+      try {
+        const count = await getUnreadCount(user.id);
+        setUnreadMessageCount(count);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnread();
+
+    // Subscribe to updates
+    const unsubscribe = subscribeToConversationUpdates(user.id, () => {
+      fetchUnread();
+    });
+
+    return () => unsubscribe();
+  }, [user?.id]);
 
   // Build dynamic nav items based on user role
   const dynamicNavItems = [
@@ -377,7 +406,15 @@ export function AppSidebar() {
                     )}
                   >
                     <item.icon size={16} />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {item.label === "Messaging" && unreadMessageCount > 0 && (
+                      <Badge
+                        variant="default"
+                        className="bg-forest text-white text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
+                      >
+                        {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                      </Badge>
+                    )}
                   </Link>
                 )}
               </li>

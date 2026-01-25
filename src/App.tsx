@@ -30,6 +30,7 @@ import Welcome from "./pages/Welcome";
 import ResetPassword from "./pages/ResetPassword";
 import Activity from "./pages/Activity";
 import Pricing from "./pages/Pricing";
+import Messaging from "./pages/Messaging";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -153,6 +154,14 @@ const App = () => (
             />
 
             <Route path="/welcome" element={<Welcome />} />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute showForbidden>
+                  <Messaging />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/settings/profile" element={<ProfileEdit />} />
             <Route path="/settings/billing" element={<Billing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
