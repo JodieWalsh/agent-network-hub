@@ -122,31 +122,30 @@ export async function getConversations(userId: string): Promise<ConversationWith
 
   const conversations = await conversationsResponse.json();
 
-  // Step 3: Get all participants for these conversations
-  const allParticipantsResponse = await fetch(
-    `${supabaseUrl}/rest/v1/conversation_participants?conversation_id=in.(${conversationIds.join(',')})&select=conversation_id,user_id`,
-    { headers }
-  );
+  // Step 3: Get all participants for these conversations using RPC function
+  // This bypasses RLS to get all participants, not just the current user
+  const participantsMap = new Map<string, Participant[]>();
 
-  if (!allParticipantsResponse.ok) {
-    throw new Error('Failed to fetch participants');
+  for (const convId of conversationIds) {
+    const participantsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/rpc/get_conversation_participants`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ conv_id: convId }),
+      }
+    );
+
+    if (participantsResponse.ok) {
+      const participants = await participantsResponse.json();
+      participantsMap.set(convId, participants.map((p: any) => ({
+        id: p.user_id,
+        full_name: p.full_name,
+        avatar_url: p.avatar_url,
+        user_type: p.user_type,
+      })));
+    }
   }
-
-  const allParticipants = await allParticipantsResponse.json();
-
-  // Step 4: Get profile info for all participants
-  const participantUserIds = [...new Set(allParticipants.map((p: any) => p.user_id))];
-  const profilesResponse = await fetch(
-    `${supabaseUrl}/rest/v1/profiles?id=in.(${participantUserIds.join(',')})&select=id,full_name,avatar_url,user_type`,
-    { headers }
-  );
-
-  if (!profilesResponse.ok) {
-    throw new Error('Failed to fetch profiles');
-  }
-
-  const profiles = await profilesResponse.json();
-  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
 
   // Step 5: Get last message for each conversation
   const messagesResponse = await fetch(
@@ -182,10 +181,7 @@ export async function getConversations(userId: string): Promise<ConversationWith
 
   // Step 6: Build the final conversation objects
   const result: ConversationWithOther[] = conversations.map((conv: any) => {
-    const conversationParticipants = allParticipants
-      .filter((p: any) => p.conversation_id === conv.id)
-      .map((p: any) => profileMap.get(p.user_id))
-      .filter(Boolean) as Participant[];
+    const conversationParticipants = participantsMap.get(conv.id) || [];
 
     const otherParticipant = conversationParticipants.find(p => p.id !== userId) || conversationParticipants[0];
 
