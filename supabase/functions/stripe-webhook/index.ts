@@ -70,12 +70,53 @@ serve(async (req) => {
         const session = event.data.object;
         const userId = session.metadata?.userId;
         const customerId = session.customer;
+        const subscriptionId = session.subscription;
+
+        console.log(`Checkout session completed: userId=${userId}, customerId=${customerId}, subscriptionId=${subscriptionId}`);
 
         if (userId && customerId) {
-          // Update profile with customer ID if not already set
-          await supabase.update('profiles', userId, {
-            stripe_customer_id: customerId,
-          });
+          // If this is a subscription checkout, get the subscription details
+          if (subscriptionId && session.mode === 'subscription') {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
+              const priceId = subscription.items.data[0]?.price?.id;
+
+              console.log(`Retrieved subscription: status=${subscription.status}, priceId=${priceId}`);
+
+              // Determine tier from price ID
+              let tier = 'free';
+              if (priceId === 'price_1StGZQCnDmgyQa6dz7mrD80L' || priceId === 'price_1StGkDCnDmgyQa6dJOcQ0SDP') {
+                tier = 'basic';
+              } else if (priceId === 'price_1StGaACnDmgyQa6dhp2qJsO0' || priceId === 'price_1StGkpCnDmgyQa6dI4aYmsVQ') {
+                tier = 'premium';
+              }
+
+              console.log(`Updating profile ${userId}: tier=${tier}, status=${subscription.status}`);
+
+              // Update profile with full subscription info
+              await supabase.update('profiles', userId, {
+                stripe_customer_id: customerId,
+                subscription_status: subscription.status,
+                subscription_tier: tier,
+                subscription_current_period_end: new Date(
+                  subscription.current_period_end * 1000
+                ).toISOString(),
+              });
+
+              console.log(`Successfully updated profile for user ${userId} to ${tier} tier`);
+            } catch (subError) {
+              console.error('Error retrieving subscription:', subError);
+              // Still save customer ID even if subscription fetch fails
+              await supabase.update('profiles', userId, {
+                stripe_customer_id: customerId,
+              });
+            }
+          } else {
+            // Non-subscription checkout, just save customer ID
+            await supabase.update('profiles', userId, {
+              stripe_customer_id: customerId,
+            });
+          }
         }
 
         console.log(`Checkout completed for user ${userId}`);
