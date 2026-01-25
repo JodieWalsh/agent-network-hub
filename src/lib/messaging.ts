@@ -293,6 +293,7 @@ export async function sendMessage(
 
 /**
  * Get or create a 1:1 conversation between two users
+ * Uses RPC function to bypass RLS restrictions
  */
 export async function getOrCreateConversation(
   userId1: string,
@@ -301,95 +302,29 @@ export async function getOrCreateConversation(
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const headers = getAuthHeaders();
 
-  // Step 1: Find existing conversation between these two users
-  // Get all conversations for user1
-  const user1ConvsResponse = await fetch(
-    `${supabaseUrl}/rest/v1/conversation_participants?user_id=eq.${userId1}&select=conversation_id`,
-    { headers }
-  );
-
-  if (!user1ConvsResponse.ok) {
-    throw new Error('Failed to fetch user conversations');
-  }
-
-  const user1Convs = await user1ConvsResponse.json();
-
-  if (user1Convs.length > 0) {
-    const convIds = user1Convs.map((c: any) => c.conversation_id);
-
-    // Check if user2 is in any of these conversations
-    const user2InConvsResponse = await fetch(
-      `${supabaseUrl}/rest/v1/conversation_participants?user_id=eq.${userId2}&conversation_id=in.(${convIds.join(',')})&select=conversation_id`,
-      { headers }
-    );
-
-    if (!user2InConvsResponse.ok) {
-      throw new Error('Failed to check existing conversations');
-    }
-
-    const sharedConvs = await user2InConvsResponse.json();
-
-    // For each shared conversation, check if it's a 1:1 (only 2 participants)
-    for (const conv of sharedConvs) {
-      const participantCountResponse = await fetch(
-        `${supabaseUrl}/rest/v1/conversation_participants?conversation_id=eq.${conv.conversation_id}&select=id`,
-        { headers }
-      );
-
-      if (participantCountResponse.ok) {
-        const participants = await participantCountResponse.json();
-        if (participants.length === 2) {
-          // Found existing 1:1 conversation
-          return conv.conversation_id;
-        }
-      }
-    }
-  }
-
-  // Step 2: Create new conversation
-  const createConvResponse = await fetch(
-    `${supabaseUrl}/rest/v1/conversations`,
+  // Use the create_conversation RPC function
+  // It handles finding existing conversations or creating new ones
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/rpc/create_conversation`,
     {
       method: 'POST',
-      headers: {
-        ...headers,
-        'Prefer': 'return=representation',
-      },
-      body: JSON.stringify({}),
+      headers,
+      body: JSON.stringify({ other_user_id: userId2 }),
     }
   );
 
-  if (!createConvResponse.ok) {
-    throw new Error('Failed to create conversation');
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create conversation: ${error}`);
   }
 
-  const [newConversation] = await createConvResponse.json();
-
-  // Step 3: Add both participants
-  const addParticipantsResponse = await fetch(
-    `${supabaseUrl}/rest/v1/conversation_participants`,
-    {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Prefer': 'return=minimal',
-      },
-      body: JSON.stringify([
-        { conversation_id: newConversation.id, user_id: userId1 },
-        { conversation_id: newConversation.id, user_id: userId2 },
-      ]),
-    }
-  );
-
-  if (!addParticipantsResponse.ok) {
-    throw new Error('Failed to add participants');
-  }
-
-  return newConversation.id;
+  const conversationId = await response.json();
+  return conversationId;
 }
 
 /**
  * Mark a conversation as read (update last_read_at to now)
+ * Uses RPC function for reliable updates
  */
 export async function markConversationRead(
   conversationId: string,
@@ -399,21 +334,17 @@ export async function markConversationRead(
   const headers = getAuthHeaders();
 
   const response = await fetch(
-    `${supabaseUrl}/rest/v1/conversation_participants?conversation_id=eq.${conversationId}&user_id=eq.${userId}`,
+    `${supabaseUrl}/rest/v1/rpc/mark_conversation_read`,
     {
-      method: 'PATCH',
-      headers: {
-        ...headers,
-        'Prefer': 'return=minimal',
-      },
-      body: JSON.stringify({
-        last_read_at: new Date().toISOString(),
-      }),
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ conv_id: conversationId }),
     }
   );
 
   if (!response.ok) {
-    throw new Error('Failed to mark conversation as read');
+    // Don't throw - marking as read is not critical
+    console.error('Failed to mark conversation as read');
   }
 }
 
