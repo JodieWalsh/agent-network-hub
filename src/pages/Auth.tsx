@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,12 @@ const userTypeLabels = {
 };
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get("mode");
+  const pendingPlan = searchParams.get("plan");
+  const pendingBilling = searchParams.get("billing");
+
+  const [isLogin, setIsLogin] = useState(mode !== "signup");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,11 +50,25 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Update isLogin when URL params change
+  useEffect(() => {
+    if (mode === "signup") {
+      setIsLogin(false);
+    } else if (mode === "signin") {
+      setIsLogin(true);
+    }
+  }, [mode]);
+
   useEffect(() => {
     if (user) {
-      navigate("/");
+      // If there's a pending subscription, redirect to pricing page
+      if (pendingPlan) {
+        navigate("/pricing");
+      } else {
+        navigate("/");
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, pendingPlan]);
 
   const validateForm = () => {
     setErrors({});
@@ -117,7 +136,9 @@ export default function Auth() {
         } else {
           toast({
             title: "Account Created!",
-            description: "Welcome to Buyers Agent Hub. Your professional network awaits.",
+            description: pendingPlan
+              ? "Redirecting you to complete your subscription..."
+              : "Welcome to Buyers Agent Hub. Your professional network awaits.",
           });
         }
       }
@@ -208,13 +229,15 @@ export default function Auth() {
                 ? "Reset Password"
                 : isLogin
                 ? "Welcome Back"
-                : "Join Buyers Agent Hub"}
+                : "Welcome"}
             </CardTitle>
             <CardDescription>
               {showForgotPassword
                 ? "Enter your email to receive a password reset link"
                 : isLogin
                 ? "Sign in to access your professional network"
+                : pendingPlan
+                ? `Create an account to subscribe to ${pendingPlan.charAt(0).toUpperCase() + pendingPlan.slice(1)}`
                 : "Create your account to connect with buyers agents"}
             </CardDescription>
           </CardHeader>
@@ -444,6 +467,13 @@ export default function Auth() {
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setErrors({});
+                    // Update URL to reflect current mode
+                    const newMode = isLogin ? "signup" : "signin";
+                    const params = new URLSearchParams();
+                    params.set("mode", newMode);
+                    if (pendingPlan) params.set("plan", pendingPlan);
+                    if (pendingBilling) params.set("billing", pendingBilling);
+                    navigate(`/auth?${params.toString()}`, { replace: true });
                   }}
                   className="ml-1 text-primary font-medium hover:underline"
                 >

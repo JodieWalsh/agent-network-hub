@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, Sparkles, Shield, Users, Clock, ExternalLink, Loader2 } from "lucide-react";
+import { Check, Sparkles, Shield, Users, Clock, ExternalLink, Loader2, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -24,6 +25,10 @@ import {
   redirectToCheckout,
   redirectToCustomerPortal,
 } from "@/lib/stripe";
+
+// Session storage keys for pending subscription
+const PENDING_PLAN_KEY = "pending_subscription_plan";
+const PENDING_BILLING_KEY = "pending_subscription_billing";
 
 const faqs = [
   {
@@ -59,6 +64,8 @@ export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [managingSubscription, setManagingSubscription] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const hasTriggeredCheckout = useRef(false);
 
   // Handle success/cancel URL params
   useEffect(() => {
@@ -66,6 +73,9 @@ export default function Pricing() {
     const canceled = searchParams.get("canceled");
 
     if (success === "true") {
+      // Clear any pending subscription data
+      sessionStorage.removeItem(PENDING_PLAN_KEY);
+      sessionStorage.removeItem(PENDING_BILLING_KEY);
       toast.success("Welcome aboard!", {
         description: "Your subscription is now active. Thank you for joining!",
       });
@@ -79,6 +89,39 @@ export default function Pricing() {
     }
   }, [searchParams, navigate]);
 
+  // Check for pending subscription after sign up
+  useEffect(() => {
+    const storedPlan = sessionStorage.getItem(PENDING_PLAN_KEY);
+    const storedBilling = sessionStorage.getItem(PENDING_BILLING_KEY);
+
+    if (storedPlan) {
+      setPendingPlan(storedPlan);
+      // Set billing toggle to match what they selected
+      if (storedBilling === "monthly") {
+        setIsAnnual(false);
+      } else {
+        setIsAnnual(true);
+      }
+    }
+  }, []);
+
+  // Auto-trigger checkout if user just signed up with a pending plan
+  useEffect(() => {
+    const storedPlan = sessionStorage.getItem(PENDING_PLAN_KEY);
+
+    if (user && storedPlan && !hasTriggeredCheckout.current) {
+      // User is now logged in and has a pending plan - auto-trigger checkout
+      hasTriggeredCheckout.current = true;
+
+      // Small delay to ensure UI is rendered
+      const timer = setTimeout(() => {
+        handleSelectPlan(storedPlan as keyof typeof SUBSCRIPTION_TIERS);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
   // Get current subscription info
   const currentTier = profile?.subscription_tier || "free";
   const subscriptionStatus = profile?.subscription_status;
@@ -87,14 +130,6 @@ export default function Pricing() {
   const daysRemaining = getDaysUntilRenewal(periodEnd || null);
 
   const handleSelectPlan = async (tier: keyof typeof SUBSCRIPTION_TIERS) => {
-    if (!user) {
-      toast.error("Please sign in", {
-        description: "You need to be signed in to subscribe.",
-      });
-      navigate("/auth");
-      return;
-    }
-
     const selectedTier = SUBSCRIPTION_TIERS[tier];
     const priceId = isAnnual
       ? selectedTier.stripePriceIdAnnual
@@ -108,6 +143,20 @@ export default function Pricing() {
       return;
     }
 
+    if (!user) {
+      // Store the selected plan and redirect to sign up
+      sessionStorage.setItem(PENDING_PLAN_KEY, tier);
+      sessionStorage.setItem(PENDING_BILLING_KEY, isAnnual ? "annual" : "monthly");
+
+      toast.info("Create an account first", {
+        description: `Sign up to subscribe to ${selectedTier.name}.`,
+      });
+
+      // Redirect to sign up page with plan info in URL
+      navigate(`/auth?mode=signup&plan=${tier}&billing=${isAnnual ? "annual" : "monthly"}`);
+      return;
+    }
+
     setLoadingTier(tier);
 
     try {
@@ -116,6 +165,11 @@ export default function Pricing() {
       if (error || !sessionId) {
         throw new Error(error || "Failed to create checkout session");
       }
+
+      // Clear pending subscription data on successful checkout initiation
+      sessionStorage.removeItem(PENDING_PLAN_KEY);
+      sessionStorage.removeItem(PENDING_BILLING_KEY);
+      setPendingPlan(null);
 
       const redirectResult = await redirectToCheckout(sessionId);
 
@@ -130,6 +184,18 @@ export default function Pricing() {
     } finally {
       setLoadingTier(null);
     }
+  };
+
+  const handleContinueSubscription = () => {
+    if (pendingPlan) {
+      handleSelectPlan(pendingPlan as keyof typeof SUBSCRIPTION_TIERS);
+    }
+  };
+
+  const handleDismissPendingPlan = () => {
+    sessionStorage.removeItem(PENDING_PLAN_KEY);
+    sessionStorage.removeItem(PENDING_BILLING_KEY);
+    setPendingPlan(null);
   };
 
   const handleManageSubscription = async () => {
@@ -313,6 +379,36 @@ export default function Pricing() {
             </Badge>
           )}
         </div>
+
+        {/* Pending Subscription Banner */}
+        {pendingPlan && user && !loadingTier && (
+          <Alert className="mb-8 border-forest/20 bg-forest/5">
+            <Sparkles className="h-4 w-4 text-forest" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                You were subscribing to <strong>{SUBSCRIPTION_TIERS[pendingPlan as keyof typeof SUBSCRIPTION_TIERS]?.name}</strong>.
+                Ready to continue?
+              </span>
+              <div className="flex gap-2 ml-4">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDismissPendingPlan}
+                >
+                  Dismiss
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-forest hover:bg-forest/90 text-white"
+                  onClick={handleContinueSubscription}
+                >
+                  Continue
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-16">
