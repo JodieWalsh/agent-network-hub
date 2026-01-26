@@ -330,6 +330,10 @@ export async function getOrCreateConversation(
   }
   if (options?.title) {
     body.p_title = options.title;
+    // Custom-titled conversations without a job always create a new thread
+    if (!options.jobId) {
+      body.p_context_type = options.contextType || 'custom';
+    }
   }
 
   const response = await fetch(

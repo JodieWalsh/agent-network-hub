@@ -261,6 +261,13 @@ function ConversationItem({
             {jobTitle}
           </p>
         )}
+        {/* Custom topic subtitle */}
+        {!isJobLinked && conversation.context_type === 'custom' && conversation.title && (
+          <p className="text-xs text-forest/80 truncate flex items-center gap-1 mb-0.5">
+            <MessageSquare className="w-3 h-3 flex-shrink-0" />
+            {conversation.title}
+          </p>
+        )}
         {lastMessage && (
           <p
             className={cn(
@@ -498,6 +505,9 @@ export default function Messaging() {
   // Lightbox state
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  // New Topic preselected user
+  const [newTopicUser, setNewTopicUser] = useState<Participant | null>(null);
+
   // Mobile view state
   const [showConversation, setShowConversation] = useState(false);
 
@@ -710,8 +720,17 @@ export default function Messaging() {
     setSelectedConversationId(conversationId);
     setShowConversation(true);
     setIsNewMessageModalOpen(false);
+    setNewTopicUser(null);
     fetchConversations();
     setSearchParams({ conversation: conversationId });
+  };
+
+  // Handle "New Topic" button in conversation header
+  const handleNewTopic = () => {
+    if (otherParticipant) {
+      setNewTopicUser(otherParticipant);
+      setIsNewMessageModalOpen(true);
+    }
   };
 
   // Handle back button (mobile)
@@ -1023,6 +1042,13 @@ export default function Messaging() {
                           {activeJobTitle}
                         </button>
                       )}
+                      {/* Custom topic subtitle */}
+                      {activeContext?.context_type === 'custom' && activeContext?.title && (
+                        <p className="text-xs text-forest/80 truncate flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                          {activeContext.title}
+                        </p>
+                      )}
                       {/* Job deleted indicator */}
                       {activeContext?.job_id && !activeJobTitle && (
                         <p className="text-xs text-muted-foreground italic">
@@ -1049,6 +1075,17 @@ export default function Messaging() {
                         </p>
                       )}
                     </div>
+
+                    {/* New Topic button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleNewTopic}
+                      className="flex-shrink-0 text-xs text-forest hover:text-forest/80 hover:bg-forest/10"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      New Topic
+                    </Button>
                   </div>
 
                   {/* Messages Area */}
@@ -1243,9 +1280,13 @@ export default function Messaging() {
       {/* New Message Modal */}
       <NewMessageModal
         open={isNewMessageModalOpen}
-        onOpenChange={setIsNewMessageModalOpen}
+        onOpenChange={(open) => {
+          setIsNewMessageModalOpen(open);
+          if (!open) setNewTopicUser(null);
+        }}
         onConversationStarted={handleNewConversation}
         currentUserId={user.id}
+        preselectedUser={newTopicUser}
       />
     </DashboardLayout>
   );
