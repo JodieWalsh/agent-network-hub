@@ -19,6 +19,13 @@ export interface Participant {
   home_base_address: string | null;
 }
 
+export interface MessageAttachment {
+  url: string;
+  type: string;
+  name: string;
+  size: number;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -26,6 +33,10 @@ export interface Message {
   content: string;
   created_at: string;
   sender?: Participant;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
 }
 
 export interface Conversation {
@@ -234,10 +245,24 @@ export async function getMessages(
 export async function sendMessage(
   conversationId: string,
   senderId: string,
-  content: string
+  content: string,
+  attachment?: MessageAttachment
 ): Promise<Message> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const headers = getAuthHeaders();
+
+  const body: Record<string, unknown> = {
+    conversation_id: conversationId,
+    sender_id: senderId,
+    content: content.trim() || (attachment ? '' : ''),
+  };
+
+  if (attachment) {
+    body.attachment_url = attachment.url;
+    body.attachment_type = attachment.type;
+    body.attachment_name = attachment.name;
+    body.attachment_size = attachment.size;
+  }
 
   const response = await fetch(
     `${supabaseUrl}/rest/v1/messages`,
@@ -247,11 +272,7 @@ export async function sendMessage(
         ...headers,
         'Prefer': 'return=representation',
       },
-      body: JSON.stringify({
-        conversation_id: conversationId,
-        sender_id: senderId,
-        content: content.trim(),
-      }),
+      body: JSON.stringify(body),
     }
   );
 
@@ -485,6 +506,114 @@ export function subscribeToAllNewMessages(
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+// =============================================
+// ATTACHMENTS
+// =============================================
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_DOCUMENT_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+];
+const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+/**
+ * Check if a file is an image type
+ */
+export function isImageFile(mimeType: string): boolean {
+  return ALLOWED_IMAGE_TYPES.includes(mimeType);
+}
+
+/**
+ * Validate a file for upload (type + size)
+ */
+export function validateAttachment(file: File): string | null {
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return 'Unsupported file type. Allowed: images (JPG, PNG, GIF, WebP), documents (PDF, DOC, DOCX, XLS, XLSX, TXT)';
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return 'File is too large. Maximum size is 10MB.';
+  }
+  return null;
+}
+
+/**
+ * Upload a file attachment to Supabase Storage
+ * Returns the public URL of the uploaded file
+ */
+export async function uploadAttachment(
+  file: File,
+  userId: string
+): Promise<MessageAttachment> {
+  // Validate
+  const error = validateAttachment(file);
+  if (error) throw new Error(error);
+
+  // Generate a unique filename
+  const timestamp = Date.now();
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const filePath = `${userId}/${timestamp}_${safeName}`;
+
+  const { data, error: uploadError } = await supabase.storage
+    .from('message-attachments')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Upload failed: ${uploadError.message}`);
+  }
+
+  // Get the URL (signed URL for private bucket)
+  const { data: urlData } = await supabase.storage
+    .from('message-attachments')
+    .createSignedUrl(data.path, 60 * 60 * 24 * 365); // 1 year
+
+  if (!urlData?.signedUrl) {
+    throw new Error('Failed to get file URL');
+  }
+
+  return {
+    url: urlData.signedUrl,
+    type: file.type,
+    name: file.name,
+    size: file.size,
+  };
+}
+
+/**
+ * Get a display-friendly icon name for an attachment type
+ */
+export function getAttachmentIconName(mimeType: string): string {
+  if (ALLOWED_IMAGE_TYPES.includes(mimeType)) return 'image';
+  if (mimeType === 'application/pdf') return 'pdf';
+  if (
+    mimeType === 'application/msword' ||
+    mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) return 'doc';
+  if (
+    mimeType === 'application/vnd.ms-excel' ||
+    mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ) return 'spreadsheet';
+  if (mimeType === 'text/plain') return 'text';
+  return 'file';
+}
+
+/**
+ * Format file size for display
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // =============================================

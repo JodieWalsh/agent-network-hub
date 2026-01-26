@@ -16,6 +16,13 @@ import {
   User,
   MessageCircle,
   CheckCheck,
+  Paperclip,
+  X,
+  FileText,
+  Download,
+  Image as ImageIcon,
+  FileSpreadsheet,
+  File,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,9 +37,15 @@ import {
   subscribeToConversationUpdates,
   setupConversationChannel,
   setupPresenceChannel,
+  uploadAttachment,
+  validateAttachment,
+  isImageFile,
+  getAttachmentIconName,
+  formatFileSize,
   type ConversationWithOther,
   type ConversationChannelHandle,
   type Message,
+  type MessageAttachment,
   type Participant,
 } from "@/lib/messaging";
 import { NewMessageModal } from "@/components/messaging/NewMessageModal";
@@ -248,7 +261,14 @@ function ConversationItem({
             {lastMessage.sender_id === currentUserId && (
               <span className="text-muted-foreground">You: </span>
             )}
-            {truncateMessage(lastMessage.content)}
+            {lastMessage.attachment_url && !lastMessage.content ? (
+              <span className="flex items-center gap-1">
+                <Paperclip className="w-3 h-3 inline" />
+                {lastMessage.attachment_name || 'Attachment'}
+              </span>
+            ) : (
+              truncateMessage(lastMessage.content)
+            )}
           </p>
         )}
       </div>
@@ -265,9 +285,26 @@ interface MessageBubbleProps {
   isSent: boolean;
   showAvatar: boolean;
   isRead?: boolean;
+  onImageClick?: (url: string) => void;
 }
 
-function MessageBubble({ message, isSent, showAvatar, isRead }: MessageBubbleProps) {
+function AttachmentIcon({ type }: { type: string }) {
+  const iconName = getAttachmentIconName(type);
+  switch (iconName) {
+    case 'pdf':
+      return <FileText className="w-5 h-5" />;
+    case 'doc':
+      return <FileText className="w-5 h-5" />;
+    case 'spreadsheet':
+      return <FileSpreadsheet className="w-5 h-5" />;
+    case 'text':
+      return <File className="w-5 h-5" />;
+    default:
+      return <File className="w-5 h-5" />;
+  }
+}
+
+function MessageBubble({ message, isSent, showAvatar, isRead, onImageClick }: MessageBubbleProps) {
   const getInitials = (name: string | null) => {
     if (!name) return "?";
     return name
@@ -277,6 +314,9 @@ function MessageBubble({ message, isSent, showAvatar, isRead }: MessageBubblePro
       .toUpperCase()
       .slice(0, 2);
   };
+
+  const hasAttachment = !!message.attachment_url;
+  const isImage = hasAttachment && message.attachment_type && isImageFile(message.attachment_type);
 
   return (
     <div
@@ -310,37 +350,96 @@ function MessageBubble({ message, isSent, showAvatar, isRead }: MessageBubblePro
       {/* Message bubble */}
       <div
         className={cn(
-          "max-w-[70%] px-4 py-2.5 rounded-2xl",
+          "max-w-[70%] rounded-2xl overflow-hidden",
           isSent
             ? "bg-[#0D9488] text-white rounded-br-md"
             : "bg-[#F3F4F6] text-gray-900 rounded-bl-md"
         )}
       >
-        <p className="text-sm whitespace-pre-wrap break-words">
-          {message.content}
-        </p>
-        <div
-          className={cn(
-            "flex items-center gap-1 mt-1",
-            isSent ? "justify-end" : ""
-          )}
-        >
-          <span
+        {/* Image attachment */}
+        {isImage && message.attachment_url && (
+          <button
+            onClick={() => onImageClick?.(message.attachment_url!)}
+            className="block w-full cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <img
+              src={message.attachment_url}
+              alt={message.attachment_name || 'Image'}
+              className="max-w-full max-h-64 object-cover"
+              loading="lazy"
+            />
+          </button>
+        )}
+
+        {/* Document attachment */}
+        {hasAttachment && !isImage && message.attachment_url && (
+          <a
+            href={message.attachment_url}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
-              "text-xs",
-              isSent ? "text-white/70" : "text-gray-500"
+              "flex items-center gap-3 px-4 py-3 transition-colors",
+              isSent
+                ? "hover:bg-white/10 text-white"
+                : "hover:bg-gray-200 text-gray-900"
             )}
           >
-            {formatMessageTime(message.created_at)}
-          </span>
-          {isSent && (
-            <CheckCheck
-              className={cn(
-                "w-3.5 h-3.5",
-                isRead ? "text-teal-300" : "text-white/50"
+            <div className={cn(
+              "flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center",
+              isSent ? "bg-white/20" : "bg-gray-300/50"
+            )}>
+              <AttachmentIcon type={message.attachment_type || ''} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {message.attachment_name || 'File'}
+              </p>
+              {message.attachment_size && (
+                <p className={cn(
+                  "text-xs",
+                  isSent ? "text-white/70" : "text-gray-500"
+                )}>
+                  {formatFileSize(message.attachment_size)}
+                </p>
               )}
-            />
+            </div>
+            <Download className={cn(
+              "w-4 h-4 flex-shrink-0",
+              isSent ? "text-white/70" : "text-gray-400"
+            )} />
+          </a>
+        )}
+
+        {/* Text content */}
+        <div className="px-4 py-2.5">
+          {message.content && (
+            <p className="text-sm whitespace-pre-wrap break-words">
+              {message.content}
+            </p>
           )}
+          <div
+            className={cn(
+              "flex items-center gap-1 mt-1",
+              isSent ? "justify-end" : ""
+            )}
+          >
+            <span
+              className={cn(
+                "text-xs",
+                isSent ? "text-white/70" : "text-gray-500"
+              )}
+            >
+              {formatMessageTime(message.created_at)}
+            </span>
+            {isSent && (
+              <CheckCheck
+                className={cn(
+                  "w-3.5 h-3.5",
+                  isRead ? "text-teal-300" : "text-white/50"
+                )}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -373,6 +472,14 @@ export default function Messaging() {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+
+  // Attachment state
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Lightbox state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // Mobile view state
   const [showConversation, setShowConversation] = useState(false);
@@ -460,16 +567,55 @@ export default function Messaging() {
     }
   }, [selectedConversationId, user?.id]);
 
+  // Handle file selection for attachment
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const error = validateAttachment(file);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    setPendingFile(file);
+
+    // Create preview for images
+    if (isImageFile(file.type)) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setAttachmentPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setAttachmentPreview(null);
+    }
+
+    // Reset the input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Remove pending attachment
+  const handleRemoveAttachment = () => {
+    setPendingFile(null);
+    setAttachmentPreview(null);
+  };
+
   // Handle sending a message
   const handleSendMessage = async () => {
-    if (!selectedConversationId || !user?.id || !newMessage.trim()) return;
+    if (!selectedConversationId || !user?.id || (!newMessage.trim() && !pendingFile)) return;
 
     setSendingMessage(true);
     try {
+      // Upload attachment if present
+      let attachment: MessageAttachment | undefined;
+      if (pendingFile) {
+        attachment = await uploadAttachment(pendingFile, user.id);
+      }
+
       const message = await sendMessage(
         selectedConversationId,
         user.id,
-        newMessage.trim()
+        newMessage.trim(),
+        attachment
       );
 
       // Add message to local state with sender info
@@ -486,6 +632,8 @@ export default function Messaging() {
 
       setMessages((prev) => [...prev, messageWithSender]);
       setNewMessage("");
+      setPendingFile(null);
+      setAttachmentPreview(null);
 
       // Update conversation list
       setConversations((prev) =>
@@ -510,7 +658,9 @@ export default function Messaging() {
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      if (newMessage.trim() || pendingFile) {
+        handleSendMessage();
+      }
     }
   };
 
@@ -883,6 +1033,7 @@ export default function Messaging() {
                                     isSent={isSent}
                                     showAvatar={showAvatar}
                                     isRead={isRead}
+                                    onImageClick={setLightboxImage}
                                   />
                                 );
                               })}
@@ -896,47 +1047,106 @@ export default function Messaging() {
                   </ScrollArea>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-border">
-                    <div className="flex items-end gap-2">
-                      <textarea
-                        ref={inputRef}
-                        value={newMessage}
-                        onChange={(e) => {
-                          setNewMessage(e.target.value);
-                          // Phase 2: Broadcast typing (debounced to every 2s)
-                          const now = Date.now();
-                          if (now - lastTypingSentRef.current > 2000) {
-                            channelHandleRef.current?.sendTyping();
-                            lastTypingSentRef.current = now;
-                          }
-                        }}
-                        onKeyDown={handleKeyPress}
-                        placeholder="Type a message..."
-                        rows={1}
-                        className={cn(
-                          "flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2",
-                          "text-sm placeholder:text-muted-foreground",
-                          "focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest",
-                          "min-h-[40px] max-h-[120px]"
-                        )}
-                        style={{
-                          height: "auto",
-                          overflowY: newMessage.includes("\n")
-                            ? "auto"
-                            : "hidden",
-                        }}
-                      />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || sendingMessage}
-                        className="bg-forest hover:bg-forest/90 text-white h-10"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
+                  <div className="border-t border-border">
+                    {/* Attachment Preview */}
+                    {pendingFile && (
+                      <div className="px-4 pt-3 pb-0">
+                        <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3 border border-border">
+                          {/* Image thumbnail or file icon */}
+                          {attachmentPreview ? (
+                            <img
+                              src={attachmentPreview}
+                              alt="Preview"
+                              className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                              <AttachmentIcon type={pendingFile.type} />
+                            </div>
+                          )}
+                          {/* File info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{pendingFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(pendingFile.size)}
+                            </p>
+                          </div>
+                          {/* Remove button */}
+                          <button
+                            onClick={handleRemoveAttachment}
+                            className="flex-shrink-0 p-1 rounded-full hover:bg-muted transition-colors"
+                          >
+                            <X className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+
+                    <div className="p-4">
+                      <div className="flex items-end gap-2">
+                        {/* Paperclip button */}
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={sendingMessage}
+                          className={cn(
+                            "flex-shrink-0 p-2 rounded-lg transition-colors",
+                            "text-muted-foreground hover:text-foreground hover:bg-muted",
+                            sendingMessage && "opacity-50 cursor-not-allowed"
+                          )}
+                          title="Attach file"
+                        >
+                          <Paperclip className="w-5 h-5" />
+                        </button>
+
+                        <textarea
+                          ref={inputRef}
+                          value={newMessage}
+                          onChange={(e) => {
+                            setNewMessage(e.target.value);
+                            // Phase 2: Broadcast typing (debounced to every 2s)
+                            const now = Date.now();
+                            if (now - lastTypingSentRef.current > 2000) {
+                              channelHandleRef.current?.sendTyping();
+                              lastTypingSentRef.current = now;
+                            }
+                          }}
+                          onKeyDown={handleKeyPress}
+                          placeholder="Type a message..."
+                          rows={1}
+                          className={cn(
+                            "flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2",
+                            "text-sm placeholder:text-muted-foreground",
+                            "focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest",
+                            "min-h-[40px] max-h-[120px]"
+                          )}
+                          style={{
+                            height: "auto",
+                            overflowY: newMessage.includes("\n")
+                              ? "auto"
+                              : "hidden",
+                          }}
+                        />
+                        <Button
+                          onClick={handleSendMessage}
+                          disabled={(!newMessage.trim() && !pendingFile) || sendingMessage}
+                          className="bg-forest hover:bg-forest/90 text-white h-10"
+                        >
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Press Enter to send, Shift+Enter for new line
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Press Enter to send, Shift+Enter for new line
-                    </p>
                   </div>
                 </>
               )}
@@ -944,6 +1154,27 @@ export default function Messaging() {
           </div>
         </Card>
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxImage}
+            alt="Full size"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* New Message Modal */}
       <NewMessageModal
