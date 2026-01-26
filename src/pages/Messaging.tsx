@@ -32,6 +32,7 @@ import {
   type Participant,
 } from "@/lib/messaging";
 import { NewMessageModal } from "@/components/messaging/NewMessageModal";
+import { useMessageNotifications } from "@/contexts/MessageNotificationContext";
 import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
 
 // =============================================
@@ -306,6 +307,7 @@ function MessageBubble({ message, isSent, showAvatar }: MessageBubbleProps) {
 export default function Messaging() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { setActiveConversationId, refreshUnreadCount } = useMessageNotifications();
 
   // State
   const [conversations, setConversations] = useState<ConversationWithOther[]>(
@@ -385,6 +387,9 @@ export default function Messaging() {
           c.id === selectedConversationId ? { ...c, unread_count: 0 } : c
         )
       );
+
+      // Refresh global unread badge count
+      refreshUnreadCount();
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast.error("Failed to load messages");
@@ -511,6 +516,12 @@ export default function Messaging() {
     }
   }, [selectedConversationId, fetchMessages]);
 
+  // Sync active conversation with notification context (suppresses toasts for active conversation)
+  useEffect(() => {
+    setActiveConversationId(selectedConversationId);
+    return () => setActiveConversationId(null);
+  }, [selectedConversationId, setActiveConversationId]);
+
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
@@ -532,7 +543,9 @@ export default function Messaging() {
           });
 
           // Mark as read since we're viewing this conversation
-          markConversationRead(selectedConversationId, user.id);
+          markConversationRead(selectedConversationId, user.id).then(() => {
+            refreshUnreadCount();
+          });
 
           // Scroll to bottom
           setTimeout(scrollToBottom, 100);

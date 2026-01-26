@@ -437,3 +437,55 @@ export function subscribeToConversationUpdates(
     supabase.removeChannel(channel);
   };
 }
+
+/**
+ * Subscribe to all new messages across all conversations (with payload)
+ * Used by the notification system to show toast/browser notifications
+ * Returns a cleanup function to unsubscribe
+ */
+export function subscribeToAllNewMessages(
+  userId: string,
+  onNewMessage: (message: Message) => void
+): () => void {
+  const channel = supabase
+    .channel(`all_messages_notify:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      },
+      async (payload) => {
+        const newMessage = payload.new as Message;
+
+        // Skip messages from the current user
+        if (newMessage.sender_id === userId) return;
+
+        // Fetch sender info
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const headers = getAuthHeaders();
+
+        try {
+          const response = await fetch(
+            `${supabaseUrl}/rest/v1/profiles?id=eq.${newMessage.sender_id}&select=id,full_name,avatar_url,user_type`,
+            { headers }
+          );
+
+          if (response.ok) {
+            const [sender] = await response.json();
+            newMessage.sender = sender;
+          }
+        } catch (e) {
+          // Continue without sender info
+        }
+
+        onNewMessage(newMessage);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
