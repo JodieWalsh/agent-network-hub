@@ -2,16 +2,7 @@
  * Messaging System - Core Functions
  *
  * Phase 1: Basic messaging functionality
- * - Get conversations with last message and participant info
- * - Get messages with pagination
- * - Send messages
- * - Get or create 1:1 conversations
- * - Mark conversations as read
- *
- * Future phases will add:
- * - Typing indicators (Phase 2)
- * - Online presence (Phase 2)
- * - Read receipts (Phase 2)
+ * Phase 2: Typing indicators, read receipts, online presence
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +36,7 @@ export interface Conversation {
   last_message: Message | null;
   unread_count: number;
   last_read_at: string | null;
+  other_last_read_at: string | null;
 }
 
 export interface ConversationWithOther extends Conversation {
@@ -133,11 +125,12 @@ export async function getConversations(userId: string): Promise<ConversationWith
       id: row.conversation_id,
       created_at: row.conversation_created_at,
       updated_at: row.conversation_updated_at,
-      participants: [otherParticipant], // We mainly need the other participant
+      participants: [otherParticipant],
       other_participant: otherParticipant,
       last_message: lastMessage,
       unread_count: Number(row.unread_count) || 0,
       last_read_at: row.last_read_at,
+      other_last_read_at: row.other_last_read_at || null,
     };
   });
 
@@ -150,7 +143,7 @@ export async function getConversations(userId: string): Promise<ConversationWith
  */
 export async function getConversationDetails(
   conversationId: string
-): Promise<{ other_participant: Participant } | null> {
+): Promise<{ other_participant: Participant; other_last_read_at: string | null } | null> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const headers = getAuthHeaders();
 
@@ -183,6 +176,7 @@ export async function getConversationDetails(
       user_type: row.other_user_type,
       home_base_address: row.other_user_suburb || null,
     },
+    other_last_read_at: row.other_last_read_at || null,
   };
 }
 
@@ -487,6 +481,102 @@ export function subscribeToAllNewMessages(
       }
     )
     .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+// =============================================
+// PHASE 2: TYPING INDICATORS & READ RECEIPTS
+// =============================================
+
+export interface ConversationChannelHandle {
+  sendTyping: () => void;
+  sendReadReceipt: (readAt: string) => void;
+  cleanup: () => void;
+}
+
+/**
+ * Set up a conversation channel for typing indicators and read receipt broadcasts.
+ * Uses Supabase Broadcast (ephemeral, not stored in DB).
+ */
+export function setupConversationChannel(
+  conversationId: string,
+  userId: string,
+  callbacks: {
+    onTyping?: (typingUserId: string) => void;
+    onReadReceipt?: (readAt: string) => void;
+  }
+): ConversationChannelHandle {
+  const channel = supabase
+    .channel(`conv-live:${conversationId}`)
+    .on('broadcast', { event: 'typing' }, (payload) => {
+      const senderId = payload.payload?.user_id;
+      if (senderId && senderId !== userId) {
+        callbacks.onTyping?.(senderId);
+      }
+    })
+    .on('broadcast', { event: 'read' }, (payload) => {
+      const readAt = payload.payload?.read_at;
+      const readBy = payload.payload?.user_id;
+      if (readBy && readBy !== userId && readAt) {
+        callbacks.onReadReceipt?.(readAt);
+      }
+    })
+    .subscribe();
+
+  return {
+    sendTyping: () => {
+      channel.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { user_id: userId },
+      });
+    },
+    sendReadReceipt: (readAt: string) => {
+      channel.send({
+        type: 'broadcast',
+        event: 'read',
+        payload: { user_id: userId, read_at: readAt },
+      });
+    },
+    cleanup: () => {
+      supabase.removeChannel(channel);
+    },
+  };
+}
+
+// =============================================
+// PHASE 2: ONLINE PRESENCE
+// =============================================
+
+/**
+ * Set up a presence channel to track which users are online.
+ * Uses Supabase Presence (ephemeral, auto-removed on disconnect).
+ */
+export function setupPresenceChannel(
+  userId: string,
+  onSync: (onlineUserIds: string[]) => void
+): () => void {
+  const channel = supabase.channel('messaging-presence', {
+    config: { presence: { key: userId } },
+  });
+
+  channel
+    .on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const onlineIds = Object.keys(state);
+      onSync(onlineIds);
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({
+          user_id: userId,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
 
   return () => {
     supabase.removeChannel(channel);

@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   User,
   MessageCircle,
+  CheckCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +28,10 @@ import {
   markConversationRead,
   subscribeToMessages,
   subscribeToConversationUpdates,
+  setupConversationChannel,
+  setupPresenceChannel,
   type ConversationWithOther,
+  type ConversationChannelHandle,
   type Message,
   type Participant,
 } from "@/lib/messaging";
@@ -97,6 +101,28 @@ function EmptyConversation() {
   );
 }
 
+function TypingIndicator() {
+  return (
+    <div className="flex items-end gap-2 justify-start">
+      <div className="w-8" />
+      <div className="bg-[#F3F4F6] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+          style={{ animationDelay: "0ms", animationDuration: "1s" }}
+        />
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+          style={{ animationDelay: "200ms", animationDuration: "1s" }}
+        />
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
+          style={{ animationDelay: "400ms", animationDuration: "1s" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function formatMessageDate(dateString: string): string {
   const date = new Date(dateString);
   if (isToday(date)) return "Today";
@@ -133,6 +159,7 @@ interface ConversationItemProps {
   isActive: boolean;
   onClick: () => void;
   currentUserId: string;
+  isOnline?: boolean;
 }
 
 function ConversationItem({
@@ -140,6 +167,7 @@ function ConversationItem({
   isActive,
   onClick,
   currentUserId,
+  isOnline,
 }: ConversationItemProps) {
   const other = conversation.other_participant;
   const lastMessage = conversation.last_message;
@@ -188,6 +216,9 @@ function ConversationItem({
         {hasUnread && (
           <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-forest rounded-full border-2 border-background" />
         )}
+        {isOnline && (
+          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+        )}
       </div>
 
       {/* Content */}
@@ -233,9 +264,10 @@ interface MessageBubbleProps {
   message: Message;
   isSent: boolean;
   showAvatar: boolean;
+  isRead?: boolean;
 }
 
-function MessageBubble({ message, isSent, showAvatar }: MessageBubbleProps) {
+function MessageBubble({ message, isSent, showAvatar, isRead }: MessageBubbleProps) {
   const getInitials = (name: string | null) => {
     if (!name) return "?";
     return name
@@ -287,14 +319,29 @@ function MessageBubble({ message, isSent, showAvatar }: MessageBubbleProps) {
         <p className="text-sm whitespace-pre-wrap break-words">
           {message.content}
         </p>
-        <p
+        <div
           className={cn(
-            "text-xs mt-1",
-            isSent ? "text-white/70" : "text-gray-500"
+            "flex items-center gap-1 mt-1",
+            isSent ? "justify-end" : ""
           )}
         >
-          {formatMessageTime(message.created_at)}
-        </p>
+          <span
+            className={cn(
+              "text-xs",
+              isSent ? "text-white/70" : "text-gray-500"
+            )}
+          >
+            {formatMessageTime(message.created_at)}
+          </span>
+          {isSent && (
+            <CheckCheck
+              className={cn(
+                "w-3.5 h-3.5",
+                isRead ? "text-teal-300" : "text-white/50"
+              )}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -329,6 +376,18 @@ export default function Messaging() {
 
   // Mobile view state
   const [showConversation, setShowConversation] = useState(false);
+
+  // Phase 2: Typing indicator
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef<number>(0);
+  const channelHandleRef = useRef<ConversationChannelHandle | null>(null);
+
+  // Phase 2: Read receipts
+  const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(null);
+
+  // Phase 2: Online presence
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -372,14 +431,17 @@ export default function Messaging() {
       const data = await getMessages(selectedConversationId);
       setMessages(data);
 
-      // Fetch conversation details to get other participant info
+      // Fetch conversation details to get other participant info + read receipt data
       const details = await getConversationDetails(selectedConversationId);
       if (details?.other_participant) {
         setCurrentParticipant(details.other_participant);
       }
+      setOtherLastReadAt(details?.other_last_read_at || null);
 
-      // Mark as read
+      // Mark as read and broadcast read receipt
       await markConversationRead(selectedConversationId, user.id);
+      const readAt = new Date().toISOString();
+      channelHandleRef.current?.sendReadReceipt(readAt);
 
       // Update unread count in local state
       setConversations((prev) =>
@@ -418,6 +480,7 @@ export default function Messaging() {
           full_name: user.user_metadata?.full_name || user.email || "You",
           avatar_url: null,
           user_type: null,
+          home_base_address: null,
         },
       };
 
@@ -545,6 +608,8 @@ export default function Messaging() {
           // Mark as read since we're viewing this conversation
           markConversationRead(selectedConversationId, user.id).then(() => {
             refreshUnreadCount();
+            const readAt = new Date().toISOString();
+            channelHandleRef.current?.sendReadReceipt(readAt);
           });
 
           // Scroll to bottom
@@ -573,6 +638,56 @@ export default function Messaging() {
       inputRef.current.focus();
     }
   }, [selectedConversationId]);
+
+  // Phase 2: Set up conversation channel for typing + read receipts
+  useEffect(() => {
+    if (!selectedConversationId || !user?.id) return;
+
+    // Reset typing state
+    setIsOtherTyping(false);
+
+    // Initialize other_last_read_at from conversation data
+    const conv = conversations.find((c) => c.id === selectedConversationId);
+    if (conv?.other_last_read_at) {
+      setOtherLastReadAt(conv.other_last_read_at);
+    }
+
+    const handle = setupConversationChannel(
+      selectedConversationId,
+      user.id,
+      {
+        onTyping: () => {
+          setIsOtherTyping(true);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => {
+            setIsOtherTyping(false);
+          }, 3000);
+        },
+        onReadReceipt: (readAt) => {
+          setOtherLastReadAt(readAt);
+        },
+      }
+    );
+
+    channelHandleRef.current = handle;
+
+    return () => {
+      handle.cleanup();
+      channelHandleRef.current = null;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [selectedConversationId, user?.id]);
+
+  // Phase 2: Set up presence channel for online status
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const cleanup = setupPresenceChannel(user.id, (onlineIds) => {
+      setOnlineUserIds(new Set(onlineIds));
+    });
+
+    return cleanup;
+  }, [user?.id]);
 
   if (!user) {
     return (
@@ -648,6 +763,7 @@ export default function Messaging() {
                           handleSelectConversation(conversation.id)
                         }
                         currentUserId={user.id}
+                        isOnline={onlineUserIds.has(conversation.other_participant?.id)}
                       />
                     ))
                   )}
@@ -678,31 +794,43 @@ export default function Messaging() {
                       <ArrowLeft className="w-5 h-5" />
                     </Button>
 
-                    {/* Participant info */}
-                    {otherParticipant?.avatar_url ? (
-                      <img
-                        src={otherParticipant.avatar_url}
-                        alt={otherParticipant.full_name || "User"}
-                        className="w-10 h-10 rounded-full object-cover border border-border"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center border border-border">
-                        <User className="w-5 h-5 text-forest" />
-                      </div>
-                    )}
+                    {/* Participant info with online dot */}
+                    <div className="relative flex-shrink-0">
+                      {otherParticipant?.avatar_url ? (
+                        <img
+                          src={otherParticipant.avatar_url}
+                          alt={otherParticipant.full_name || "User"}
+                          className="w-10 h-10 rounded-full object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center border border-border">
+                          <User className="w-5 h-5 text-forest" />
+                        </div>
+                      )}
+                      {otherParticipant?.id && onlineUserIds.has(otherParticipant.id) && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="font-semibold truncate">
                         {otherParticipant?.full_name || "Unknown User"}
                       </h2>
-                      {(otherParticipant?.user_type || otherParticipant?.home_base_address) && (
+                      {isOtherTyping ? (
+                        <p className="text-xs text-emerald-600 font-medium">
+                          typing...
+                        </p>
+                      ) : (
                         <p className="text-xs text-muted-foreground truncate">
                           {[
-                            otherParticipant.user_type
+                            otherParticipant?.id && onlineUserIds.has(otherParticipant.id)
+                              ? "Online"
+                              : null,
+                            otherParticipant?.user_type
                               ? otherParticipant.user_type
                                   .replace(/_/g, " ")
                                   .replace(/\b\w/g, (l: string) => l.toUpperCase())
                               : null,
-                            otherParticipant.home_base_address,
+                            otherParticipant?.home_base_address,
                           ].filter(Boolean).join(' · ')}
                         </p>
                       )}
@@ -745,18 +873,23 @@ export default function Messaging() {
                                   !prevMessage ||
                                   prevMessage.sender_id !== message.sender_id;
 
+                                const isRead = isSent && !!otherLastReadAt &&
+                                  new Date(otherLastReadAt) >= new Date(message.created_at);
+
                                 return (
                                   <MessageBubble
                                     key={message.id}
                                     message={message}
                                     isSent={isSent}
                                     showAvatar={showAvatar}
+                                    isRead={isRead}
                                   />
                                 );
                               })}
                             </div>
                           </div>
                         ))}
+                        {isOtherTyping && <TypingIndicator />}
                         <div ref={messagesEndRef} />
                       </div>
                     )}
@@ -768,7 +901,15 @@ export default function Messaging() {
                       <textarea
                         ref={inputRef}
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => {
+                          setNewMessage(e.target.value);
+                          // Phase 2: Broadcast typing (debounced to every 2s)
+                          const now = Date.now();
+                          if (now - lastTypingSentRef.current > 2000) {
+                            channelHandleRef.current?.sendTyping();
+                            lastTypingSentRef.current = now;
+                          }
+                        }}
                         onKeyDown={handleKeyPress}
                         placeholder="Type a message..."
                         rows={1}
