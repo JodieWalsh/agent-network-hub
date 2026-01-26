@@ -48,6 +48,10 @@ export interface Conversation {
   unread_count: number;
   last_read_at: string | null;
   other_last_read_at: string | null;
+  job_id: string | null;
+  title: string | null;
+  context_type: string;
+  job_address: string | null;
 }
 
 export interface ConversationWithOther extends Conversation {
@@ -142,6 +146,10 @@ export async function getConversations(userId: string): Promise<ConversationWith
       unread_count: Number(row.unread_count) || 0,
       last_read_at: row.last_read_at,
       other_last_read_at: row.other_last_read_at || null,
+      job_id: row.conv_job_id || null,
+      title: row.conv_title || null,
+      context_type: row.conv_context_type || 'general',
+      job_address: row.job_address || null,
     };
   });
 
@@ -154,7 +162,14 @@ export async function getConversations(userId: string): Promise<ConversationWith
  */
 export async function getConversationDetails(
   conversationId: string
-): Promise<{ other_participant: Participant; other_last_read_at: string | null } | null> {
+): Promise<{
+  other_participant: Participant;
+  other_last_read_at: string | null;
+  job_id: string | null;
+  title: string | null;
+  context_type: string;
+  job_address: string | null;
+} | null> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const headers = getAuthHeaders();
 
@@ -188,6 +203,10 @@ export async function getConversationDetails(
       home_base_address: row.other_user_suburb || null,
     },
     other_last_read_at: row.other_last_read_at || null,
+    job_id: row.conv_job_id || null,
+    title: row.conv_title || null,
+    context_type: row.conv_context_type || 'general',
+    job_address: row.job_address || null,
   };
 }
 
@@ -285,25 +304,40 @@ export async function sendMessage(
   return message;
 }
 
+export interface ConversationOptions {
+  jobId?: string;
+  title?: string;
+  contextType?: string;
+}
+
 /**
- * Get or create a 1:1 conversation between two users
- * Uses RPC function to bypass RLS restrictions
+ * Get or create a 1:1 conversation between two users.
+ * If jobId is provided, finds/creates a job-specific conversation.
+ * If no jobId, finds/creates a general conversation (job_id IS NULL).
  */
 export async function getOrCreateConversation(
   userId1: string,
-  userId2: string
+  userId2: string,
+  options?: ConversationOptions
 ): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const headers = getAuthHeaders();
 
-  // Use the create_conversation RPC function
-  // It handles finding existing conversations or creating new ones
+  const body: Record<string, unknown> = { other_user_id: userId2 };
+  if (options?.jobId) {
+    body.p_job_id = options.jobId;
+    body.p_context_type = options.contextType || 'inspection_job';
+  }
+  if (options?.title) {
+    body.p_title = options.title;
+  }
+
   const response = await fetch(
     `${supabaseUrl}/rest/v1/rpc/create_conversation`,
     {
       method: 'POST',
       headers,
-      body: JSON.stringify({ other_user_id: userId2 }),
+      body: JSON.stringify(body),
     }
   );
 

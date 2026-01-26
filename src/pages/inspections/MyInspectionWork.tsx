@@ -367,11 +367,18 @@ export default function MyInspectionWork() {
     }
   };
 
-  const handleSendMessage = async (recipientId: string) => {
+  const handleSendMessage = async (recipientId: string, jobId?: string, jobAddress?: string) => {
     if (!user) return;
     try {
-      const conversationId = await getOrCreateConversation(user.id, recipientId);
-      navigate(`/messages?conversation=${conversationId}`);
+      const conversationId = await getOrCreateConversation(user.id, recipientId, jobId ? {
+        jobId,
+        contextType: 'inspection_job',
+      } : undefined);
+      const prefill = jobAddress
+        ? encodeURIComponent(`Hi! I'm reaching out about the inspection job at ${jobAddress}.`)
+        : '';
+      const url = `/messages?conversation=${conversationId}${prefill ? `&prefill=${prefill}` : ''}`;
+      navigate(url);
     } catch (error) {
       console.error('Failed to start conversation:', error);
       toast.error('Failed to start conversation');
@@ -523,7 +530,7 @@ export default function MyInspectionWork() {
                 onViewJob={() => navigate(`/inspections/spotlights/${bid.job_id}`)}
                 onEditBid={() => navigate(`/inspections/spotlights/${bid.job_id}`)}
                 onWithdraw={() => setWithdrawBid(bid)}
-                onMessage={bid.job?.creator_id ? () => handleSendMessage(bid.job!.creator_id) : undefined}
+                onMessage={bid.job?.creator_id ? () => handleSendMessage(bid.job!.creator_id, bid.job_id, bid.job?.property_address) : undefined}
               />
             ))
           )}
@@ -540,7 +547,7 @@ export default function MyInspectionWork() {
                 job={job}
                 onViewJob={() => navigate(`/inspections/spotlights/${job.id}`)}
                 onCompleteReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
-                onMessage={() => handleSendMessage(job.creator_id)}
+                onMessage={() => handleSendMessage(job.creator_id, job.id, job.property_address)}
               />
             ))
           )}

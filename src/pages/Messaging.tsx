@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   FileSpreadsheet,
   File,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -185,6 +186,8 @@ function ConversationItem({
   const other = conversation.other_participant;
   const lastMessage = conversation.last_message;
   const hasUnread = conversation.unread_count > 0;
+  const jobTitle = conversation.title || conversation.job_address;
+  const isJobLinked = !!conversation.job_id;
 
   const getInitials = (name: string | null) => {
     if (!name) return "?";
@@ -251,6 +254,13 @@ function ConversationItem({
             </span>
           )}
         </div>
+        {/* Job context subtitle */}
+        {isJobLinked && jobTitle && (
+          <p className="text-xs text-forest/80 truncate flex items-center gap-1 mb-0.5">
+            <Briefcase className="w-3 h-3 flex-shrink-0" />
+            {jobTitle}
+          </p>
+        )}
         {lastMessage && (
           <p
             className={cn(
@@ -452,6 +462,7 @@ function MessageBubble({ message, isSent, showAvatar, isRead, onImageClick }: Me
 
 export default function Messaging() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { setActiveConversationId, refreshUnreadCount } = useMessageNotifications();
 
@@ -463,6 +474,12 @@ export default function Messaging() {
     string | null
   >(null);
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
+  const [conversationContext, setConversationContext] = useState<{
+    job_id: string | null;
+    title: string | null;
+    context_type: string;
+    job_address: string | null;
+  } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -508,6 +525,17 @@ export default function Messaging() {
   // Use the participant from conversations list or fallback to fetched details
   const otherParticipant = selectedConversation?.other_participant || currentParticipant;
 
+  // Derive conversation context (from list or fetched details)
+  const activeContext = selectedConversation
+    ? {
+        job_id: selectedConversation.job_id,
+        title: selectedConversation.title,
+        context_type: selectedConversation.context_type,
+        job_address: selectedConversation.job_address,
+      }
+    : conversationContext;
+  const activeJobTitle = activeContext?.title || activeContext?.job_address;
+
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -544,6 +572,12 @@ export default function Messaging() {
         setCurrentParticipant(details.other_participant);
       }
       setOtherLastReadAt(details?.other_last_read_at || null);
+      setConversationContext(details ? {
+        job_id: details.job_id,
+        title: details.title,
+        context_type: details.context_type,
+        job_address: details.job_address,
+      } : null);
 
       // Mark as read and broadcast read receipt
       await markConversationRead(selectedConversationId, user.id);
@@ -687,12 +721,15 @@ export default function Messaging() {
     setSearchParams({});
   };
 
-  // Filter conversations by search
-  const filteredConversations = conversations.filter((c) =>
-    c.other_participant?.full_name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+  // Filter conversations by search (name, job title, or job address)
+  const filteredConversations = conversations.filter((c) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      c.other_participant?.full_name?.toLowerCase().includes(q) ||
+      c.title?.toLowerCase().includes(q) ||
+      c.job_address?.toLowerCase().includes(q)
+    );
+  });
 
   // Group messages by date
   const groupedMessages: { date: string; messages: Message[] }[] = [];
@@ -719,6 +756,14 @@ export default function Messaging() {
     if (conversationId && !selectedConversationId) {
       setSelectedConversationId(conversationId);
       setShowConversation(true);
+
+      // Pre-fill message if provided (e.g. from job context)
+      const prefill = searchParams.get("prefill");
+      if (prefill) {
+        setNewMessage(prefill);
+        // Clear the prefill param so it doesn't re-apply
+        setSearchParams({ conversation: conversationId }, { replace: true });
+      }
     }
   }, [searchParams, selectedConversationId]);
 
@@ -965,6 +1010,25 @@ export default function Messaging() {
                       <h2 className="font-semibold truncate">
                         {otherParticipant?.full_name || "Unknown User"}
                       </h2>
+                      {/* Job context subtitle */}
+                      {activeContext?.job_id && activeJobTitle && (
+                        <button
+                          onClick={() => {
+                            const jobId = activeContext.job_id;
+                            if (jobId) navigate(`/inspections/spotlights/${jobId}`);
+                          }}
+                          className="text-xs text-forest hover:text-forest/80 truncate flex items-center gap-1 transition-colors"
+                        >
+                          <Briefcase className="w-3 h-3 flex-shrink-0" />
+                          {activeJobTitle}
+                        </button>
+                      )}
+                      {/* Job deleted indicator */}
+                      {activeContext?.job_id && !activeJobTitle && (
+                        <p className="text-xs text-muted-foreground italic">
+                          Job no longer available
+                        </p>
+                      )}
                       {isOtherTyping ? (
                         <p className="text-xs text-emerald-600 font-medium">
                           typing...

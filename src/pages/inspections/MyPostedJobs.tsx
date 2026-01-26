@@ -496,11 +496,18 @@ export default function MyPostedJobs() {
     }
   };
 
-  const handleSendMessage = async (recipientId: string) => {
+  const handleSendMessage = async (recipientId: string, jobId?: string, jobAddress?: string) => {
     if (!user) return;
     try {
-      const conversationId = await getOrCreateConversation(user.id, recipientId);
-      navigate(`/messages?conversation=${conversationId}`);
+      const conversationId = await getOrCreateConversation(user.id, recipientId, jobId ? {
+        jobId,
+        contextType: 'inspection_job',
+      } : undefined);
+      const prefill = jobAddress
+        ? encodeURIComponent(`Hi! I'm reaching out about the inspection job at ${jobAddress}.`)
+        : '';
+      const url = `/messages?conversation=${conversationId}${prefill ? `&prefill=${prefill}` : ''}`;
+      navigate(url);
     } catch (error) {
       console.error('Failed to start conversation:', error);
       toast.error('Failed to start conversation');
@@ -693,7 +700,7 @@ export default function MyPostedJobs() {
                     bid={bid}
                     onAccept={() => setConfirmAction({ type: 'accept', bid })}
                     onDecline={() => setConfirmAction({ type: 'decline', bid })}
-                    onMessage={() => handleSendMessage(bid.inspector_id)}
+                    onMessage={() => handleSendMessage(bid.inspector_id, selectedJob?.id, selectedJob?.property_address)}
                     formatCurrency={formatCurrency}
                     formatDate={formatDate}
                   />
@@ -898,7 +905,7 @@ export default function MyPostedJobs() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSendMessage(viewingBid.bid.inspector_id)}
+                    onClick={() => handleSendMessage(viewingBid.bid.inspector_id, viewingBid.job?.id, viewingBid.job?.property_address)}
                     className="text-forest border-forest/30 hover:bg-forest/5"
                   >
                     <MessageSquare size={14} className="mr-1" />
@@ -953,7 +960,7 @@ interface JobCardProps {
   onAcceptBid: (bid: InspectionBid, job: InspectionJob) => void;
   onDeclineBid: (bid: InspectionBid, job: InspectionJob) => void;
   onViewBidDetails: (bid: InspectionBid, job: InspectionJob) => void;
-  onMessage: (recipientId: string) => void;
+  onMessage: (recipientId: string, jobId: string, jobAddress: string) => void;
   formatCurrency: (amount: number) => string;
   formatDate: (date: string) => string;
   getDaysRemaining: (expiresAt: string | null, inspectionDateTo: string) => number;
@@ -1101,7 +1108,7 @@ function JobCard({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onMessage(job.assigned_inspector_id!)}
+                    onClick={() => onMessage(job.assigned_inspector_id!, job.id, job.property_address)}
                     className="text-forest border-forest/30 hover:bg-forest/5"
                   >
                     <MessageSquare size={14} className="mr-1" />
@@ -1161,7 +1168,7 @@ function JobCard({
                   onAccept={() => onAcceptBid(bid, job)}
                   onDecline={() => onDeclineBid(bid, job)}
                   onViewDetails={() => onViewBidDetails(bid, job)}
-                  onMessage={() => onMessage(bid.inspector_id)}
+                  onMessage={() => onMessage(bid.inspector_id, job.id, job.property_address)}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
                 />

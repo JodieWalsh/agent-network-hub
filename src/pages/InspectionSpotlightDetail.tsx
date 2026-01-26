@@ -428,8 +428,15 @@ export default function InspectionSpotlightDetail() {
       return;
     }
     try {
-      const conversationId = await getOrCreateConversation(user.id, recipientId);
-      navigate(`/messages?conversation=${conversationId}`);
+      const conversationId = await getOrCreateConversation(user.id, recipientId, job ? {
+        jobId: job.id,
+        contextType: 'inspection_job',
+      } : undefined);
+      const prefill = job
+        ? encodeURIComponent(`Hi! I'm reaching out about the inspection job at ${job.property_address}.`)
+        : '';
+      const url = `/messages?conversation=${conversationId}${prefill ? `&prefill=${prefill}` : ''}`;
+      navigate(url);
     } catch (error) {
       console.error('Failed to start conversation:', error);
       toast.error('Failed to start conversation');
