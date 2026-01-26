@@ -8,6 +8,7 @@ import {
   subscribeToAllNewMessages,
   type Message,
 } from '@/lib/messaging';
+import { notifyNewMessage } from '@/lib/notifications';
 
 interface MessageNotificationContextType {
   unreadCount: number;
@@ -131,6 +132,15 @@ export function MessageNotificationProvider({ children }: { children: React.Reac
         // Auto-close after 5 seconds
         setTimeout(() => notification.close(), 5000);
       }
+
+      // Create in-app notification in the notifications table
+      notifyNewMessage(
+        user.id,
+        senderName,
+        message.content,
+        message.conversation_id,
+        message.sender_id
+      ).catch((err) => console.error('Failed to create message notification:', err));
     });
 
     return () => unsubscribe();

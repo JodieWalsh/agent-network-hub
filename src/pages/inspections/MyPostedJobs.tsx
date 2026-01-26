@@ -49,7 +49,6 @@ import {
   Trash2,
   Star,
   User,
-  ExternalLink,
   History,
   Plus,
   ClipboardList,
@@ -61,6 +60,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyBidAccepted, notifyBidDeclined, notifyJobCancelled } from '@/lib/notifications';
+import { getOrCreateConversation } from '@/lib/messaging';
 
 // Types
 type JobStatus = 'open' | 'in_negotiation' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled' | 'expired';
@@ -496,6 +496,17 @@ export default function MyPostedJobs() {
     }
   };
 
+  const handleSendMessage = async (recipientId: string) => {
+    if (!user) return;
+    try {
+      const conversationId = await getOrCreateConversation(user.id, recipientId);
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      toast.error('Failed to start conversation');
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
@@ -642,6 +653,7 @@ export default function MyPostedJobs() {
                       onAcceptBid={(bid, j) => setConfirmAction({ type: 'accept', bid, job: j })}
                       onDeclineBid={(bid, j) => setConfirmAction({ type: 'decline', bid, job: j })}
                       onViewBidDetails={(bid, j) => setViewingBid({ bid, job: j })}
+                      onMessage={handleSendMessage}
                       formatCurrency={formatCurrency}
                       formatDate={formatDate}
                       getDaysRemaining={getDaysRemaining}
@@ -681,6 +693,7 @@ export default function MyPostedJobs() {
                     bid={bid}
                     onAccept={() => setConfirmAction({ type: 'accept', bid })}
                     onDecline={() => setConfirmAction({ type: 'decline', bid })}
+                    onMessage={() => handleSendMessage(bid.inspector_id)}
                     formatCurrency={formatCurrency}
                     formatDate={formatDate}
                   />
@@ -877,9 +890,20 @@ export default function MyPostedJobs() {
                 )}
 
                 {/* Submitted Date */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock size={14} />
-                  <span>Submitted {formatDate(viewingBid.bid.created_at)}</span>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} />
+                    <span>Submitted {formatDate(viewingBid.bid.created_at)}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSendMessage(viewingBid.bid.inspector_id)}
+                    className="text-forest border-forest/30 hover:bg-forest/5"
+                  >
+                    <MessageSquare size={14} className="mr-1" />
+                    Message
+                  </Button>
                 </div>
 
                 {/* Actions */}
@@ -929,6 +953,7 @@ interface JobCardProps {
   onAcceptBid: (bid: InspectionBid, job: InspectionJob) => void;
   onDeclineBid: (bid: InspectionBid, job: InspectionJob) => void;
   onViewBidDetails: (bid: InspectionBid, job: InspectionJob) => void;
+  onMessage: (recipientId: string) => void;
   formatCurrency: (amount: number) => string;
   formatDate: (date: string) => string;
   getDaysRemaining: (expiresAt: string | null, inspectionDateTo: string) => number;
@@ -945,6 +970,7 @@ function JobCard({
   onAcceptBid,
   onDeclineBid,
   onViewBidDetails,
+  onMessage,
   formatCurrency,
   formatDate,
   getDaysRemaining,
@@ -1071,10 +1097,17 @@ function JobCard({
                   <Eye size={14} className="mr-1" />
                   View Details
                 </Button>
-                <Button variant="outline" size="sm">
-                  <MessageSquare size={14} className="mr-1" />
-                  Contact
-                </Button>
+                {job.assigned_inspector_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onMessage(job.assigned_inspector_id!)}
+                    className="text-forest border-forest/30 hover:bg-forest/5"
+                  >
+                    <MessageSquare size={14} className="mr-1" />
+                    Contact
+                  </Button>
+                )}
               </>
             )}
 
@@ -1128,6 +1161,7 @@ function JobCard({
                   onAccept={() => onAcceptBid(bid, job)}
                   onDecline={() => onDeclineBid(bid, job)}
                   onViewDetails={() => onViewBidDetails(bid, job)}
+                  onMessage={() => onMessage(bid.inspector_id)}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
                 />
@@ -1147,11 +1181,12 @@ interface InlineBidCardProps {
   onAccept: () => void;
   onDecline: () => void;
   onViewDetails: () => void;
+  onMessage: () => void;
   formatCurrency: (cents: number) => string;
   formatDate: (date: string) => string;
 }
 
-function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, formatCurrency, formatDate }: InlineBidCardProps) {
+function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, onMessage, formatCurrency, formatDate }: InlineBidCardProps) {
   return (
     <div
       className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg border border-border/50 hover:border-forest/30 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -1199,6 +1234,15 @@ function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, formatCur
       <div className="flex items-center gap-2 flex-shrink-0">
         <Button
           size="sm"
+          variant="outline"
+          onClick={(e) => { e.stopPropagation(); onMessage(); }}
+          className="text-forest border-forest/30 hover:bg-forest/5 h-8 px-2"
+          title="Message Inspector"
+        >
+          <MessageSquare size={14} />
+        </Button>
+        <Button
+          size="sm"
           onClick={(e) => { e.stopPropagation(); onAccept(); }}
           className="bg-green-600 hover:bg-green-700 h-8 px-3"
         >
@@ -1224,11 +1268,12 @@ interface BidCardProps {
   bid: InspectionBid;
   onAccept: () => void;
   onDecline: () => void;
+  onMessage?: () => void;
   formatCurrency: (cents: number) => string;
   formatDate: (date: string) => string;
 }
 
-function BidCard({ bid, onAccept, onDecline, formatCurrency, formatDate }: BidCardProps) {
+function BidCard({ bid, onAccept, onDecline, onMessage, formatCurrency, formatDate }: BidCardProps) {
   const [showHistory, setShowHistory] = useState(false);
   const hasHistory = bid.history && bid.history.length > 1;
 
@@ -1361,10 +1406,12 @@ function BidCard({ bid, onAccept, onDecline, formatCurrency, formatDate }: BidCa
                 <XCircle size={14} className="mr-1" />
                 Decline
               </Button>
-              <Button size="sm" variant="ghost">
-                <ExternalLink size={14} className="mr-1" />
-                Profile
-              </Button>
+              {onMessage && (
+                <Button size="sm" variant="ghost" onClick={onMessage} className="text-forest">
+                  <MessageSquare size={14} className="mr-1" />
+                  Message
+                </Button>
+              )}
             </div>
           )}
         </div>

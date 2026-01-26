@@ -40,7 +40,8 @@ export type NotificationType =
   | 'review_received'
   | 'badge_earned'
   | 'job_expired'
-  | 'job_cancelled';
+  | 'job_cancelled'
+  | 'new_message';
 
 export interface Notification {
   id: string;
@@ -51,6 +52,7 @@ export interface Notification {
   job_id: string | null;
   bid_id: string | null;
   from_user_id: string | null;
+  conversation_id: string | null;
   delivered_in_app: boolean;
   delivered_email: boolean;
   delivered_push: boolean;
@@ -110,6 +112,7 @@ export interface CreateNotificationParams {
   jobId?: string;
   bidId?: string;
   fromUserId?: string;
+  conversationId?: string;
 }
 
 // ===========================================
@@ -132,6 +135,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
       job_id: params.jobId || null,
       bid_id: params.bidId || null,
       from_user_id: params.fromUserId || null,
+      conversation_id: params.conversationId || null,
       delivered_in_app: true,
       delivered_email: false, // Will be set when email is sent
       delivered_push: false,
@@ -664,6 +668,30 @@ export async function notifyJobCancelled(
   });
 }
 
+/**
+ * Notify user when they receive a new message
+ */
+export async function notifyNewMessage(
+  recipientId: string,
+  senderName: string,
+  messagePreview: string,
+  conversationId: string,
+  senderId: string
+) {
+  const preview = messagePreview.length > 60
+    ? messagePreview.substring(0, 60) + '...'
+    : messagePreview;
+
+  return createNotification({
+    userId: recipientId,
+    type: 'new_message',
+    title: `${senderName} sent you a message`,
+    message: preview,
+    fromUserId: senderId,
+    conversationId,
+  });
+}
+
 // ===========================================
 // UTILITY FUNCTIONS
 // ===========================================
@@ -686,6 +714,7 @@ export function getNotificationIcon(type: NotificationType): string {
     badge_earned: 'Award',
     job_expired: 'Clock',
     job_cancelled: 'XCircle',
+    new_message: 'MessageSquare',
   };
   return icons[type] || 'Bell';
 }
@@ -708,6 +737,7 @@ export function getNotificationColor(type: NotificationType): string {
     badge_earned: 'text-pink-600 bg-pink-50',
     job_expired: 'text-gray-600 bg-gray-50',
     job_cancelled: 'text-red-600 bg-red-50',
+    new_message: 'text-forest bg-forest/10',
   };
   return colors[type] || 'text-gray-600 bg-gray-50';
 }
@@ -718,6 +748,13 @@ export function getNotificationColor(type: NotificationType): string {
 export function getNotificationLink(notification: Notification): string {
   // Route based on notification type
   switch (notification.type) {
+    case 'new_message':
+      // Go to the messages page with the conversation selected
+      if (notification.conversation_id) {
+        return `/messages?conversation=${notification.conversation_id}`;
+      }
+      return '/messages';
+
     case 'bid_received':
       // Job poster sees bids received - go to My Jobs "Bids Received" tab
       return '/inspections/my-jobs?tab=received';

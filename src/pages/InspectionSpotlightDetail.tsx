@@ -50,6 +50,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyBidReceived } from '@/lib/notifications';
+import { getOrCreateConversation } from '@/lib/messaging';
 
 type UrgencyLevel = 'standard' | 'urgent' | 'express';
 type PropertyType = 'house' | 'apartment' | 'townhouse' | 'land' | 'other';
@@ -420,6 +421,21 @@ export default function InspectionSpotlightDetail() {
     }
   };
 
+  const handleSendMessage = async (recipientId: string) => {
+    if (!user) {
+      toast.error('Please sign in to send messages');
+      navigate('/auth');
+      return;
+    }
+    try {
+      const conversationId = await getOrCreateConversation(user.id, recipientId);
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      toast.error('Failed to start conversation');
+    }
+  };
+
   const handleOpenEditBid = () => {
     if (!existingBid) return;
     setEditProposedAmount(existingBid.proposed_price);
@@ -627,10 +643,25 @@ export default function InspectionSpotlightDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-medium">{creator.full_name || 'Anonymous'}</p>
-              <p className="text-sm text-muted-foreground capitalize">
-                {creator.user_type.replace('_', ' ')}
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{creator.full_name || 'Anonymous'}</p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {creator.user_type.replace('_', ' ')}
+                  </p>
+                </div>
+                {!isJobCreator && job.creator_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSendMessage(job.creator_id)}
+                    className="text-forest border-forest/30 hover:bg-forest/5"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Message
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -897,9 +928,20 @@ export default function InspectionSpotlightDetail() {
                     </div>
                   )}
 
-                  <p className="text-xs text-muted-foreground">
-                    Submitted {new Date(bid.created_at).toLocaleDateString('en-AU')}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Submitted {new Date(bid.created_at).toLocaleDateString('en-AU')}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSendMessage(bid.inspector_id)}
+                      className="text-forest hover:bg-forest/5 h-7 px-2"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                      Message
+                    </Button>
+                  </div>
                 </div>
               ))}
             </CardContent>

@@ -58,9 +58,11 @@ import {
   ClipboardList,
   Send,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getOrCreateConversation } from '@/lib/messaging';
 
 // Types
 type JobStatus = 'open' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled';
@@ -365,6 +367,17 @@ export default function MyInspectionWork() {
     }
   };
 
+  const handleSendMessage = async (recipientId: string) => {
+    if (!user) return;
+    try {
+      const conversationId = await getOrCreateConversation(user.id, recipientId);
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      toast.error('Failed to start conversation');
+    }
+  };
+
   // Tab counts
   const tabCounts: Record<string, number> = {
     bids: myBids.length,
@@ -510,6 +523,7 @@ export default function MyInspectionWork() {
                 onViewJob={() => navigate(`/inspections/spotlights/${bid.job_id}`)}
                 onEditBid={() => navigate(`/inspections/spotlights/${bid.job_id}`)}
                 onWithdraw={() => setWithdrawBid(bid)}
+                onMessage={bid.job?.creator_id ? () => handleSendMessage(bid.job!.creator_id) : undefined}
               />
             ))
           )}
@@ -526,6 +540,7 @@ export default function MyInspectionWork() {
                 job={job}
                 onViewJob={() => navigate(`/inspections/spotlights/${job.id}`)}
                 onCompleteReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
+                onMessage={() => handleSendMessage(job.creator_id)}
               />
             ))
           )}
@@ -639,11 +654,13 @@ function BidCard({
   onViewJob,
   onEditBid,
   onWithdraw,
+  onMessage,
 }: {
   bid: InspectionBid;
   onViewJob: () => void;
   onEditBid: () => void;
   onWithdraw: () => void;
+  onMessage?: () => void;
 }) {
   const daysSinceBid = getDaysDiff(bid.created_at);
   const isShortlisted = bid.status === 'shortlisted';
@@ -732,6 +749,12 @@ function BidCard({
               <Edit className="h-4 w-4 mr-1" />
               Edit Bid
             </Button>
+            {onMessage && (
+              <Button variant="outline" size="sm" onClick={onMessage} className="text-forest border-forest/30 hover:bg-forest/5">
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Message
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={onWithdraw} className="text-red-600 hover:text-red-700 hover:bg-red-50">
               <Trash2 className="h-4 w-4 mr-1" />
               Withdraw
@@ -747,10 +770,12 @@ function AcceptedJobCard({
   job,
   onViewJob,
   onCompleteReport,
+  onMessage,
 }: {
   job: InspectionJob;
   onViewJob: () => void;
   onCompleteReport: () => void;
+  onMessage?: () => void;
 }) {
   const inspectionDate = job.agreed_date ? new Date(job.agreed_date) : null;
   const now = new Date();
@@ -846,6 +871,12 @@ function AcceptedJobCard({
               <ClipboardList className="h-4 w-4 mr-2" />
               Complete Report
             </Button>
+            {onMessage && (
+              <Button variant="outline" size="sm" onClick={onMessage} className="text-forest border-forest/30 hover:bg-forest/5">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Message Client
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={onViewJob} className="text-muted-foreground">
               View Job Details
             </Button>

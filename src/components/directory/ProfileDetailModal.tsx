@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
-import { Star, MapPin, Mail, Phone, Award, Crown } from "lucide-react";
+import { Star, MapPin, MessageSquare, Phone, Award, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -39,6 +39,8 @@ interface ProfileDetailModalProps {
   onOpenChange: (open: boolean) => void;
   userTypeLabels: Record<string, string>;
   specializationLabels: Record<string, string>;
+  onSendMessage?: (profileId: string) => void;
+  isSendingMessage?: boolean;
 }
 
 export function ProfileDetailModal({
@@ -47,6 +49,8 @@ export function ProfileDetailModal({
   onOpenChange,
   userTypeLabels,
   specializationLabels,
+  onSendMessage,
+  isSendingMessage,
 }: ProfileDetailModalProps) {
   if (!profile) return null;
 
@@ -207,9 +211,11 @@ export function ProfileDetailModal({
               <Button
                 variant="default"
                 className="flex-1 bg-forest hover:bg-forest/90 text-white"
+                onClick={() => onSendMessage?.(profile.id)}
+                disabled={isSendingMessage}
               >
-                <Mail size={16} className="mr-2" />
-                Send Message
+                <MessageSquare size={16} className="mr-2" />
+                {isSendingMessage ? 'Opening...' : 'Send Message'}
               </Button>
               <Button variant="outline" className="flex-1">
                 <Phone size={16} className="mr-2" />

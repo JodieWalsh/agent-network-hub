@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,14 +7,17 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Star, Filter, X } from "lucide-react";
+import { Search, Star, Filter, X, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LocationSearchFilter } from "@/components/filters/LocationSearchFilter";
 import { Coordinates, calculateDistance } from "@/lib/geocoder";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { useUnits } from "@/contexts/UnitsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatDistance } from "@/lib/currency";
 import { ProfileDetailModal } from "@/components/directory/ProfileDetailModal";
+import { getOrCreateConversation } from "@/lib/messaging";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -47,6 +51,8 @@ const specializationLabels: Record<string, string> = {
 };
 
 export default function Directory() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { unitSystem } = useUnits();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +65,30 @@ export default function Directory() {
   const [radiusFilter, setRadiusFilter] = useState(25);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+  const handleSendMessage = async (recipientId: string) => {
+    if (!user) {
+      toast.error("Please sign in to send messages");
+      navigate("/auth");
+      return;
+    }
+    if (recipientId === user.id) {
+      toast.error("You can't message yourself");
+      return;
+    }
+    setIsSendingMessage(true);
+    try {
+      const conversationId = await getOrCreateConversation(user.id, recipientId);
+      setProfileModalOpen(false);
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error) {
+      console.error("Failed to start conversation:", error);
+      toast.error("Failed to start conversation");
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfiles();
@@ -378,19 +408,35 @@ export default function Directory() {
                             )}
                           </div>
 
-                          {/* View Profile Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full mt-3 text-forest hover:bg-forest/5"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent double-trigger from card click
-                              setSelectedProfile(profile);
-                              setProfileModalOpen(true);
-                            }}
-                          >
-                            View Profile
-                          </Button>
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex-1 text-forest hover:bg-forest/5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProfile(profile);
+                                setProfileModalOpen(true);
+                              }}
+                            >
+                              View Profile
+                            </Button>
+                            {user && user.id !== profile.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-forest hover:bg-forest/5 px-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSendMessage(profile.id);
+                                }}
+                                title="Send Message"
+                              >
+                                <MessageSquare size={16} />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -409,6 +455,8 @@ export default function Directory() {
         onOpenChange={setProfileModalOpen}
         userTypeLabels={userTypeLabels}
         specializationLabels={specializationLabels}
+        onSendMessage={handleSendMessage}
+        isSendingMessage={isSendingMessage}
       />
     </DashboardLayout>
   );

@@ -21,6 +21,8 @@ import {
   Award,
   Clock,
   Check,
+  MessageSquare,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -46,10 +48,12 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   report_submitted: FileText,
   report_approved: CheckCircle,
   payment_released: DollarSign,
+  payment_refunded: RefreshCw,
   review_received: Star,
   badge_earned: Award,
   job_expired: Clock,
   job_cancelled: XCircle,
+  new_message: MessageSquare,
 };
 
 export function NotificationBell() {
