@@ -198,9 +198,12 @@ export function NewMessageModal({
                       <p className="font-medium truncate">
                         {user.full_name || "Unknown User"}
                       </p>
-                      {user.user_type && (
-                        <p className="text-xs text-muted-foreground">
-                          {userTypeLabels[user.user_type] || user.user_type}
+                      {(user.user_type || user.home_base_address) && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {[
+                            user.user_type ? (userTypeLabels[user.user_type] || user.user_type) : null,
+                            user.home_base_address,
+                          ].filter(Boolean).join(' · ')}
                         </p>
                       )}
                     </div>

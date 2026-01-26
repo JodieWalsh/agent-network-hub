@@ -70,7 +70,6 @@ export default function ProfileEdit() {
   // Profile state
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
-  const [city, setCity] = useState("");
   const [userType, setUserType] = useState("");
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -144,7 +143,6 @@ export default function ProfileEdit() {
         console.log('✅ [ProfileEdit] Profile loaded successfully');
         setFullName(data.full_name || "");
         setBio(data.bio || "");
-        setCity(data.city || "");
         setUserType(data.user_type || "");
         setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
         // Reconstruct LocationSuggestion from stored data
@@ -175,7 +173,6 @@ export default function ProfileEdit() {
           const data = JSON.parse(cachedProfile);
           setFullName(data.full_name || "");
           setBio(data.bio || "");
-          setCity(data.city || "");
           setUserType(data.user_type || "");
           setSpecializations(Array.isArray(data.specializations) ? data.specializations : []);
           // Reconstruct LocationSuggestion from cached data
@@ -235,7 +232,6 @@ export default function ProfileEdit() {
       const updateData: Record<string, any> = {
         full_name: fullName || null,
         bio: bio || null,
-        city: city || null,
         specializations: specializations.length > 0 ? specializations : null,
         home_base_address: suburbName,
         latitude,
@@ -440,15 +436,6 @@ export default function ProfileEdit() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <LocationSearch
-                  value={city ? { id: 'city', name: city, fullName: city, coordinates: { lat: 0, lng: 0 }, placeType: ['place'] } : null}
-                  onChange={(location) => setCity(location?.name || '')}
-                  placeholder="Search for your city..."
-                  types={['place', 'region']}
-                />
-              </div>
             </CardContent>
           </Card>
 

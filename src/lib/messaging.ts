@@ -25,6 +25,7 @@ export interface Participant {
   full_name: string | null;
   avatar_url: string | null;
   user_type: string | null;
+  home_base_address: string | null;
 }
 
 export interface Message {
@@ -117,6 +118,7 @@ export async function getConversations(userId: string): Promise<ConversationWith
       full_name: row.other_user_name,
       avatar_url: row.other_user_avatar,
       user_type: row.other_user_type,
+      home_base_address: row.other_user_suburb || null,
     };
 
     const lastMessage: Message | null = row.last_message_id ? {
@@ -179,6 +181,7 @@ export async function getConversationDetails(
       full_name: row.other_user_name,
       avatar_url: row.other_user_avatar,
       user_type: row.other_user_type,
+      home_base_address: row.other_user_suburb || null,
     },
   };
 }
@@ -336,7 +339,7 @@ export async function searchUsers(
   const headers = getAuthHeaders();
 
   const response = await fetch(
-    `${supabaseUrl}/rest/v1/profiles?full_name=ilike.*${encodeURIComponent(query)}*&id=neq.${currentUserId}&select=id,full_name,avatar_url,user_type&limit=${limit}`,
+    `${supabaseUrl}/rest/v1/profiles?full_name=ilike.*${encodeURIComponent(query)}*&id=neq.${currentUserId}&select=id,full_name,avatar_url,user_type,home_base_address&limit=${limit}`,
     { headers }
   );
 

@@ -41,7 +41,8 @@
       "Bash(timeout:*)",
       "Bash(npm info:*)",
       "WebFetch(domain:github.com)",
-      "Bash(if not exist \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\" mkdir \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\")"
+      "Bash(if not exist \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\" mkdir \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\")",
+      "Bash(npx vite build)"
     ]
   }
 }

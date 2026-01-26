@@ -694,11 +694,16 @@ export default function Messaging() {
                       <h2 className="font-semibold truncate">
                         {otherParticipant?.full_name || "Unknown User"}
                       </h2>
-                      {otherParticipant?.user_type && (
-                        <p className="text-xs text-muted-foreground">
-                          {otherParticipant.user_type
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      {(otherParticipant?.user_type || otherParticipant?.home_base_address) && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {[
+                            otherParticipant.user_type
+                              ? otherParticipant.user_type
+                                  .replace(/_/g, " ")
+                                  .replace(/\b\w/g, (l: string) => l.toUpperCase())
+                              : null,
+                            otherParticipant.home_base_address,
+                          ].filter(Boolean).join(' · ')}
                         </p>
                       )}
                     </div>
