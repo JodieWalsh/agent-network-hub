@@ -69,6 +69,7 @@ interface InspectionJob {
   budget_amount: number;
   status: JobStatus;
   payment_status: PaymentStatus | null;
+  assigned_inspector_id: string | null;
   created_at: string;
   preferred_inspection_dates: string[] | null;
   scope_requirements: string | null;
@@ -673,6 +674,49 @@ export default function InspectionSpotlightDetail() {
           </Card>
         )}
 
+        {/* Payment Status - For Job Creator */}
+        {isJobCreator && (
+          <Card className={cn(
+            'border',
+            job.status === 'completed' ? 'border-green-200 bg-green-50/50' : 'border-amber-200 bg-amber-50/50'
+          )}>
+            <CardContent className="pt-5 pb-5">
+              {job.status === 'completed' ? (
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">
+                      Payment complete &mdash; ${Math.round(job.budget_amount * 0.90).toLocaleString('en-AU')} sent to inspector
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Platform fee: ${Math.round(job.budget_amount * 0.10).toLocaleString('en-AU')} (10%)
+                    </p>
+                  </div>
+                </div>
+              ) : job.payment_status === 'paid' ? (
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">
+                      ${job.budget_amount.toLocaleString('en-AU')} held in escrow
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Released when you approve the inspection report
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <DollarSign className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm font-medium text-amber-800">
+                    Payment required to publish job
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Your Earnings - For Inspectors */}
         {!isJobCreator && job.status === 'open' && (
           <Card className="border-emerald-200 bg-emerald-50/50">
@@ -717,6 +761,46 @@ export default function InspectionSpotlightDetail() {
                   Payment is released when the job poster approves your report.
                 </p>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Your Earnings - Inspector Assigned/In-Progress */}
+        {!isJobCreator && (job.status === 'assigned' || job.status === 'in_progress' || job.status === 'pending_review') && job.assigned_inspector_id === user?.id && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base text-amber-800">
+                <DollarSign className="h-5 w-5 text-amber-600" />
+                Earnings Pending
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-amber-800 font-medium">
+                ${Math.round((job.budget_amount) * 0.90).toLocaleString('en-AU')} will be released when your report is approved
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                10% platform fee applies &middot; Job total: ${job.budget_amount.toLocaleString('en-AU')}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Your Earnings - Inspector Completed */}
+        {!isJobCreator && job.status === 'completed' && job.assigned_inspector_id === user?.id && (
+          <Card className="border-green-200 bg-green-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base text-green-800">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Payment Complete
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-green-800 font-medium">
+                ${Math.round((job.budget_amount) * 0.90).toLocaleString('en-AU')} has been sent to your account
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                10% platform fee: ${Math.round(job.budget_amount * 0.10).toLocaleString('en-AU')} &middot; Job total: ${job.budget_amount.toLocaleString('en-AU')}
+              </p>
             </CardContent>
           </Card>
         )}

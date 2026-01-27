@@ -1075,6 +1075,21 @@ function JobCard({
                 </span>
               )}
             </div>
+
+            {/* Escrow / Payment Status Line */}
+            {tabId !== 'completed' && tabId !== 'cancelled' && job.payment_status === 'paid' && job.agreed_price && (
+              <div className="flex items-center gap-1.5 mt-2 text-sm text-amber-700">
+                <DollarSign size={14} className="text-amber-600" />
+                <span className="font-medium">{formatCurrency(job.agreed_price)} in escrow</span>
+                <span className="text-amber-600 text-xs">&middot; Released when you approve the report</span>
+              </div>
+            )}
+            {tabId === 'completed' && job.agreed_price && job.payout_status === 'paid' && (
+              <div className="flex items-center gap-1.5 mt-2 text-sm text-green-700">
+                <CheckCircle size={14} className="text-green-600" />
+                <span className="font-medium">Inspector paid {formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+              </div>
+            )}
           </div>
 
           {/* Right: Actions */}

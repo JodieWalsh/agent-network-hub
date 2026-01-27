@@ -320,8 +320,8 @@ export default function MyInspectionWork() {
         setSubmittedJobs(submitted);
         setCompletedJobs(completed);
 
-        // Calculate stats
-        const totalEarned = completed.reduce((sum: number, j: InspectionJob) => sum + (j.agreed_price || 0), 0);
+        // Calculate stats (90% of agreed price after platform fee)
+        const totalEarned = completed.reduce((sum: number, j: InspectionJob) => sum + Math.round((j.agreed_price || 0) * 0.90), 0);
         setStats({
           completedJobs: completed.length,
           averageRating: 4.8, // TODO: Calculate from actual reviews
@@ -739,8 +739,15 @@ function BidCard({
               </Badge>
             </div>
 
+            {/* Earnings Preview */}
+            <div className="flex items-center gap-1.5 mt-2 text-sm text-emerald-700">
+              <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+              <span>You'll earn <strong>{formatCurrency(Math.round(bid.proposed_price * 0.90))}</strong> if selected</span>
+              <span className="text-emerald-600 text-xs">(10% platform fee)</span>
+            </div>
+
             {/* Status Message */}
-            <p className={cn('text-sm mt-2', isShortlisted ? 'text-amber-700 font-medium' : 'text-muted-foreground')}>
+            <p className={cn('text-sm mt-1', isShortlisted ? 'text-amber-700 font-medium' : 'text-muted-foreground')}>
               {isShortlisted ? "You're being considered!" : 'Waiting for response'}
               <span className="text-muted-foreground font-normal"> · {daysSinceBid} day{daysSinceBid !== 1 ? 's' : ''} ago</span>
             </p>
@@ -921,11 +928,16 @@ function SubmittedJobCard({
             {/* Earnings */}
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-amber-600" />
-              <span className="font-semibold text-amber-700">{formatCurrency(job.agreed_price || 0)}</span>
+              <span className="font-semibold text-amber-700">
+                {formatCurrency(Math.round((job.agreed_price || 0) * 0.90))} pending
+              </span>
               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                Pending
+                Awaiting Approval
               </Badge>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Job total: {formatCurrency(job.agreed_price || 0)} &middot; 10% platform fee applies
+            </p>
           </div>
 
           <Button variant="outline" onClick={onViewReport}>
@@ -968,10 +980,15 @@ function CompletedJobCard({
             </p>
 
             {/* Earnings */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="font-semibold text-green-700">{formatCurrency(job.agreed_price || 0)}</span>
+              <span className="font-semibold text-green-700">
+                {formatCurrency(Math.round((job.agreed_price || 0) * 0.90))} earned
+              </span>
             </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Job total: {formatCurrency(job.agreed_price || 0)} &middot; Platform fee: {formatCurrency(Math.round((job.agreed_price || 0) * 0.10))}
+            </p>
 
             {/* Review (if any) */}
             {hasReview && review && (
