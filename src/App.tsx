@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { UnitsProvider } from "@/contexts/UnitsContext";
 import { MessageNotificationProvider } from "@/contexts/MessageNotificationContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Directory from "./pages/Directory";
@@ -45,6 +46,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <MessageNotificationProvider>
           <Routes>
             <Route path="/" element={<Index />} />
