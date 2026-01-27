@@ -14,7 +14,7 @@ Read this first before doing any work on this project.
 - **UI:** shadcn/ui component library + Tailwind CSS (custom `forest` green theme colour)
 - **Backend:** Supabase (Auth, PostgreSQL, Real-time, Storage, Edge Functions)
 - **Geospatial:** PostGIS + Mapbox Geocoding API
-- **Payments:** Stripe (subscriptions + marketplace escrow)
+- **Payments:** Stripe (subscriptions + Connect for inspector payouts + marketplace escrow)
 - **Hosting:** Deployed via Supabase
 
 ### Key User Types (stored as `user_type` on profiles)
@@ -41,7 +41,7 @@ src/
     property/          ImageUpload, PropertyAddressSearch, PriceInput
     ui/                shadcn components + custom (currency-badge, role-badge, verified-badge, trust-tip-banner, unit-toggle)
   contexts/
-    AuthContext.tsx                    Auth state provider
+    AuthContext.tsx                    Auth state provider (includes stripe_connect fields on Profile)
     UnitsContext.tsx                   Imperial/metric unit preferences
     MessageNotificationContext.tsx     Unread count, toast/browser notifications
   lib/
@@ -52,7 +52,7 @@ src/
     notifications.ts     Notification system (811 lines) - see Notifications section
     permissions.ts       Role-based permission system
     storage.ts           Supabase storage helpers
-    stripe.ts            Stripe client, checkout, portal, Connect
+    stripe.ts            Stripe client, checkout, portal, Connect onboarding, payouts
     utils.ts             Tailwind cn() utility
   pages/
     Index.tsx                    Dashboard home
@@ -70,22 +70,30 @@ src/
     ClientBriefDetail.tsx        Client brief detail view
     Inspections.tsx              Inspection hub/router
     InspectionSpotlights.tsx     Job board for inspectors
-    InspectionSpotlightDetail.tsx  Single job detail with bidding
+    InspectionSpotlightDetail.tsx  Single job detail with bidding + fee transparency
     PostInspection.tsx           Post-inspection job form
-    CreateInspectionJob.tsx      Create inspection job
+    CreateInspectionJob.tsx      Create inspection job (multi-step with escrow payment)
     InspectionReportBuilder.tsx  Inspector report submission
-    InspectionReportView.tsx     Report viewer
+    InspectionReportView.tsx     Report viewer + approval triggers payout
     ResetPassword.tsx            Password reset
     NotFound.tsx                 404
     settings/
       ProfileEdit.tsx            Profile settings
-      Billing.tsx                Billing/subscription management
+      Billing.tsx                Subscription management + Inspector payout setup + My Earnings
+      ConnectReturn.tsx          Stripe Connect onboarding return handler
     inspections/
-      MyPostedJobs.tsx           Jobs I've posted (buyer agent view)
-      MyInspectionWork.tsx       Jobs I'm working on (inspector view)
+      MyPostedJobs.tsx           Jobs I've posted (buyer agent view) + payment breakdown
+      MyInspectionWork.tsx       Jobs I'm working on (inspector view) + earnings tracking
 supabase/
-  functions/                     Stripe Edge Functions (5 functions + shared)
-  migrations/                    56 migration files (see Database section)
+  functions/
+    stripe-create-checkout/      Creates Stripe Checkout sessions
+    stripe-create-portal/        Customer portal (manage subscription)
+    stripe-webhook/              Handles all webhook events (subscriptions + Connect)
+    stripe-connect-onboarding/   Inspector payout account setup via Connect Express
+    stripe-connect-dashboard/    Inspector earnings dashboard (Express Dashboard link)
+    stripe-connect-payout/       Trigger payout to inspector after report approval
+    _shared/stripe.ts            Shared Stripe client + CORS + calculateFees() + helpers
+  migrations/                    ~58 migration files (see Database section)
 docs/
   TECHNICAL_DOCUMENTATION.md     Architecture reference
   KEY_FEATURES.md                Feature list
@@ -96,9 +104,111 @@ docs/
 
 ---
 
+## Stripe Connect - Inspector Payouts (Built 27 Jan 2026)
+
+### How Inspector Payouts Work
+
+The platform takes a 10% fee on every inspection job. When a buyer's agent approves an inspection report, the inspector receives 90% of the agreed price via Stripe Connect.
+
+```
+Job Posted (escrow payment) -> Inspector Completes Report -> Agent Approves Report
+  -> createConnectPayout(jobId) Edge Function fires
+  -> Stripe Transfer to inspector's Connect account (90%)
+  -> Platform retains 10% fee
+  -> Webhook creates notification for inspector
+```
+
+### Inspector Onboarding Flow
+
+1. Inspector visits `/settings/billing` -> "Set Up Payouts" card
+2. `createConnectOnboardingLink(userId)` -> Stripe Connect Express onboarding
+3. Stripe redirects to `/settings/connect-return?success=true`
+4. `ConnectReturn.tsx` checks `stripe_connect_onboarding_complete` on profile
+5. Redirects to `/settings/billing` with success toast
+
+### Payout States on `inspection_jobs`
+- `payout_status`: `null` -> `pending` (inspector not onboarded) | `processing` -> `paid` | `failed`
+- `payout_amount`: Amount in cents sent to inspector
+- `payout_transfer_id`: Stripe Transfer ID
+- `payout_completed_at`: Timestamp
+
+### Edge Functions for Connect
+| Function | Purpose |
+|----------|---------|
+| `stripe-connect-onboarding` | Creates Express account + onboarding link, redirects to `/settings/connect-return` |
+| `stripe-connect-dashboard` | Generates Express Dashboard login link |
+| `stripe-connect-payout` | Creates Stripe Transfer after report approval. Validates job state, calculates 90%, creates transfer, updates DB |
+
+### Fee Calculation (`_shared/stripe.ts`)
+```typescript
+PLATFORM_FEE_PERCENT = 10;
+calculateFees(amount) -> { platformFee, inspectorPayout, totalAmount }
+// amount=500 -> platformFee=50, inspectorPayout=450
+```
+
+### Billing Page Sections (for inspectors)
+1. **Payout Setup Card** - Three states:
+   - Not started: "Set Up Payouts" button
+   - Incomplete: "Continue Setup" button
+   - Connected: green badge + "Manage Payouts" -> Express Dashboard
+2. **My Earnings Card** - Fetches completed jobs, shows:
+   - Total earned (all time, 90% amounts)
+   - Pending payouts count
+   - Recent jobs with payout status badges
+
+### Profile Fields for Connect
+```typescript
+stripe_connect_account_id: string | null;
+stripe_connect_onboarding_complete: boolean;
+```
+
+### ConnectReturn Page (`/settings/connect-return`)
+Handles Stripe redirect after onboarding:
+- `?success=true` -> Refresh profile, check onboarding complete, auto-redirect to billing
+- `?refresh=true` -> Session expired, show "Continue Setup" button
+- Pending verification -> "Stripe is verifying your account" message
+
+### Payout Trigger on Report Approval
+In `InspectionReportView.tsx`, `handleApproveReport()` calls `createConnectPayout(job.id)` after updating job status. Three outcomes:
+- `paid` -> "Payment released to inspector!"
+- `pending_onboarding` -> "Inspector will be paid once they complete payout setup"
+- Error -> Non-blocking toast (approval still succeeds)
+
+---
+
+## Fee Transparency Messaging (Built 27 Jan 2026)
+
+The 90%/10% fee split is shown at every stage of the payment flow:
+
+| Location | What's Shown | File |
+|----------|-------------|------|
+| **Job posting (Step 3: Budget)** | Live breakdown as poster types budget: "Inspector receives (90%): $X / Platform fee (10%): $X" | `CreateInspectionJob.tsx` |
+| **Job posting (Step 4: Payment)** | Payment summary with fee breakdown + "Pay $X - Secure Escrow" button | `CreateInspectionJob.tsx` |
+| **Job posting (Step 5: Review)** | Final summary with fee breakdown + escrow info | `CreateInspectionJob.tsx` |
+| **Bid submission dialog** | Live earnings breakdown: "You receive (90%): $X / Platform fee (10%): $X" | `InspectionSpotlightDetail.tsx` |
+| **Job detail (poster view)** | Status card: "Payment required" / "$X in escrow" / "Payment complete - $X sent to inspector" | `InspectionSpotlightDetail.tsx` |
+| **Job detail (inspector view - open)** | "Your Earnings" card: budget, fee %, "You'll receive: $X" | `InspectionSpotlightDetail.tsx` |
+| **Job detail (inspector view - assigned)** | "$X will be released when your report is approved" (amber) | `InspectionSpotlightDetail.tsx` |
+| **Job detail (inspector view - completed)** | "$X has been sent to your account" (green) | `InspectionSpotlightDetail.tsx` |
+| **My Posted Jobs cards** | Active: "$X in escrow" / Completed: "Inspector paid $X" | `MyPostedJobs.tsx` |
+| **My Posted Jobs completed tab** | Full breakdown: Job Total, Inspector Payment (90%), Platform Fee (10%), payout status badge | `MyPostedJobs.tsx` |
+| **My Inspection Work - Bids** | "You'll earn $X if selected (10% platform fee)" | `MyInspectionWork.tsx` |
+| **My Inspection Work - Submitted** | "$X pending" (90% net) + "Awaiting Approval" badge | `MyInspectionWork.tsx` |
+| **My Inspection Work - Completed** | "$X earned" (90% net) + fee breakdown | `MyInspectionWork.tsx` |
+| **My Inspection Work - Stats** | Total earned calculated at 90% net | `MyInspectionWork.tsx` |
+| **Accepted jobs** | "Your earnings: $X (after 10% platform fee)" | `MyInspectionWork.tsx` |
+
+### Styling Convention
+- **Green** (`text-green-700`, `bg-green-50`) for completed/paid states
+- **Amber** (`text-amber-700`, `bg-amber-50`) for pending/escrow states
+- **Subtle secondary text** for fee details (never overwhelming)
+- `DollarSign` icon from lucide-react for payment indicators
+
+---
+
 ## Messaging System (Built 25-26 Jan 2026)
 
-The messaging system is the most complex feature in the codebase. It was built in 4 phases across multiple sessions.
+The messaging system is the most complex feature in the codebase. It was built in 6 phases across multiple sessions.
 
 ### Architecture Overview
 
@@ -271,7 +381,7 @@ formatFileSize(bytes)                                  Human-readable file size
 
 ---
 
-## Stripe Integration (Built 25 Jan 2026)
+## Stripe Integration (Built 25-27 Jan 2026)
 
 ### Subscription Tiers
 | Tier | Monthly | Annual (17% off) |
@@ -286,15 +396,16 @@ formatFileSize(bytes)                                  Human-readable file size
 | Basic | `price_1StGZQCnDmgyQa6dz7mrD80L` | `price_1StGkDCnDmgyQa6dJOcQ0SDP` |
 | Premium | `price_1StGaACnDmgyQa6dhp2qJsO0` | `price_1StGkpCnDmgyQa6dI4aYmsVQ` |
 
-### Edge Functions
+### Edge Functions (6 total + shared)
 | Function | Purpose |
 |----------|---------|
 | `stripe-create-checkout` | Creates Stripe Checkout sessions |
 | `stripe-create-portal` | Customer portal (manage subscription) |
-| `stripe-webhook` | Handles all webhook events |
-| `stripe-connect-onboarding` | Inspector payout account setup |
-| `stripe-connect-dashboard` | Inspector earnings dashboard |
-| `_shared/stripe.ts` | Shared Stripe client + CORS + helpers |
+| `stripe-webhook` | Handles all webhook events (subscriptions + Connect) |
+| `stripe-connect-onboarding` | Inspector payout account setup (Connect Express) |
+| `stripe-connect-dashboard` | Inspector earnings dashboard (Express Dashboard link) |
+| `stripe-connect-payout` | Trigger payout to inspector after report approval |
+| `_shared/stripe.ts` | Shared Stripe client + CORS + `calculateFees()` + `getSupabaseClient()` |
 
 ### Profile columns for Stripe
 `stripe_customer_id`, `subscription_status`, `subscription_tier`, `subscription_current_period_end`, `stripe_connect_account_id`, `stripe_connect_onboarding_complete`
@@ -304,7 +415,15 @@ Non-logged-in user clicks Subscribe -> stores plan in sessionStorage -> redirect
 
 ### Platform Fees
 - Inspection marketplace: 10% platform fee (inspector gets 90%)
-- Subscriptions: Stripe handles billing directly
+- `_shared/stripe.ts` has `PLATFORM_FEE_PERCENT = 10` and `calculateFees(amount)` helper
+- All amounts stored in cents in Stripe, displayed in dollars in UI
+
+### Webhook Events Handled
+- `checkout.session.completed` - Update subscription status
+- `customer.subscription.updated` - Sync subscription changes
+- `customer.subscription.deleted` - Mark subscription cancelled
+- `account.updated` - Set `stripe_connect_onboarding_complete` on profiles
+- `transfer.created` - Create notification for inspector about payment received
 
 ---
 
@@ -312,30 +431,50 @@ Non-logged-in user clicks Subscribe -> stores plan in sessionStorage -> redirect
 
 ### How It Works
 1. **Buyer's agent** posts an inspection job (property address, requirements, budget, deadline)
-2. Job appears on **Inspection Spotlights** board for inspectors
-3. **Building inspectors** submit bids with price and availability
-4. Buyer's agent reviews bids, accepts one
-5. Inspector performs inspection, submits report via **InspectionReportBuilder**
-6. Agent reviews report, approves it
-7. Payment released from escrow
+2. **Escrow payment** is secured upfront (full budget amount held by platform)
+3. Job appears on **Inspection Spotlights** board for inspectors
+4. **Building inspectors** submit bids with price and availability
+5. Buyer's agent reviews bids, accepts one -> job assigned
+6. Inspector performs inspection, submits report via **InspectionReportBuilder**
+7. Agent reviews report via **InspectionReportView**, approves it
+8. `createConnectPayout()` fires -> Stripe Transfer sends 90% to inspector's Connect account
+9. Platform retains 10% fee
+
+### Job Status Workflow
+```
+draft -> open -> assigned -> in_progress -> pending_review -> completed
+                                                           -> cancelled
+```
+
+### Payment Status Workflow
+```
+pending -> paid (escrow secured) -> released (report approved) -> refunded (if cancelled)
+```
+
+### Payout Status Workflow
+```
+null -> pending (inspector not onboarded) -> processing -> paid
+                                                        -> failed
+```
 
 ### Key Pages
-- `PostInspection.tsx` / `CreateInspectionJob.tsx` - Create jobs
+- `CreateInspectionJob.tsx` - 5-step form: Property -> Requirements -> Budget (with fee breakdown) -> Payment (escrow) -> Review
 - `InspectionSpotlights.tsx` - Job board (browse/filter)
-- `InspectionSpotlightDetail.tsx` - Single job with bid submission
-- `MyPostedJobs.tsx` - Agent's posted jobs with bid management
-- `MyInspectionWork.tsx` - Inspector's active/completed work
+- `InspectionSpotlightDetail.tsx` - Single job with bid submission, fee transparency for both poster and inspector
+- `MyPostedJobs.tsx` - Agent's posted jobs with bid management, escrow status, payment breakdown on completed
+- `MyInspectionWork.tsx` - Inspector's bids/active/completed work with net earnings (90%)
 - `InspectionReportBuilder.tsx` - Submit inspection reports
-- `InspectionReportView.tsx` - View completed reports
+- `InspectionReportView.tsx` - View reports, approve -> triggers payout
 
 ### Database Tables
-- `inspection_jobs` - Job postings with status workflow
+- `inspection_jobs` - Job postings with status/payment/payout workflow columns
 - `inspection_bids` - Bids from inspectors
 - `inspection_reports` - Completed inspection reports
 - `inspection_bid_history` - Bid edit audit trail
+- `inspection_payments` - Payment records with `stripe_transfer_id`, `gross_amount`, `platform_fee`, `net_amount`
 
 ### Client Brief Linking
-Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client briefs define a buyer's search criteria (location, property type, budget).
+Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client briefs define a buyer's search criteria (location, property type, budget). Inspector then evaluates property against those criteria.
 
 ---
 
@@ -347,6 +486,7 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 - **PropertyAddressSearch** component with autocomplete
 - **LocationSearch** component for service area management
 - Properties have geography columns for spatial indexing
+- General area bookings: Jobs can be posted without exact addresses (`property_address` starts with `"Area: "`)
 
 ---
 
@@ -354,10 +494,13 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 
 ### `src/contexts/AuthContext.tsx`
 - Supabase Auth with session management
+- Profile interface includes all Stripe fields
+- `refreshProfile()` function for post-webhook checks
 - User metadata includes `full_name`, `user_type`, `is_approved`
 
 ### `src/lib/permissions.ts`
 - Role-based permission checks
+- Key permissions: `CAN_POST_INSPECTIONS`, `CAN_SUBMIT_PROPERTY`, `CAN_MANAGE_CLIENT_BRIEFS`
 - Professional roles require admin approval
 - Admin panel for user management
 
@@ -374,9 +517,22 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 
 ### Supabase API Calls
 - **RPC functions** for complex multi-table operations (SECURITY DEFINER)
-- **REST API** for simple CRUD (direct table access via `supabase.from()`)
+- **REST API** for simple CRUD (direct table access via `supabase.from()` or raw fetch)
+- **Raw fetch pattern:** Many pages use direct `fetch()` to Supabase REST API with manually constructed auth headers (see `getAuthHeaders()` pattern in multiple files)
 - **Real-time:** `postgres_changes` for persistent data, `broadcast` for ephemeral data, `presence` for online status
 - **Auth headers:** Extracted from `localStorage` for REST calls (`sb-{ref}-auth-token`)
+
+### Edge Function Pattern
+```typescript
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { getStripe, corsHeaders, getSupabaseClient } from '../_shared/stripe.ts';
+
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  // ... business logic
+  return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+});
+```
 
 ### UI Patterns
 - **DashboardLayout** wraps all authenticated pages (sidebar + topbar)
@@ -385,29 +541,29 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 - **Toast notifications** via `sonner`
 - **Loading states** with Skeleton components throughout
 - **Mobile responsive** with show/hide panels and bottom nav
+- **Fee amounts** always shown in AUD with `toFixed(2)` or `toLocaleString('en-AU')`
 
 ### State Management
 - React Context for global state (Auth, Units, MessageNotifications)
 - Local state + URL params for page-level state
-- `useSearchParams` for deep-linking (conversations, filters)
+- `useSearchParams` for deep-linking (conversations, filters, tabs)
 - `sessionStorage` for cross-page flows (subscription redirect)
 
 ---
 
 ## Environment Variables
 ```
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_SUPABASE_URL=https://yrjtdunljzxasyohjdnw.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
+VITE_SUPABASE_PROJECT_ID=yrjtdunljzxasyohjdnw
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 VITE_MAPBOX_ACCESS_TOKEN=pk.xxx
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
 ```
 
-For Supabase Edge Functions:
-```sh
-supabase secrets set STRIPE_SECRET_KEY=sk_xxx
-supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+For Supabase Edge Functions (set via `supabase secrets set`):
+```
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
 ```
 
 ---
@@ -423,35 +579,66 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
 
 ---
 
-## Session History
+## Complete Commit History (Chronological)
 
-### Session: 25 January 2026
-1. `47992e1` - feat: add clean subscription pricing page with Stripe Checkout
-2. `a71562e` - chore: add Stripe environment variable placeholders to .env
-3. `6410fbc` - fix: redirect to sign up page when subscribing as guest
-4. Previous session: escrow payment workflow, fee transparency, approval checklist items #17-18
-
-### Session: 25-26 January 2026 (Messaging)
-5. `c9473c6` - feat: add core messaging system with real-time updates (Phase 1)
-6. `8566c0e` through `0598b4b` - Multiple RLS and RPC fixes for messaging
-7. `659d0af` - fix: remove city field, show suburb in messaging
-8. `e282b18` - feat: add unread badge and toast notifications for new messages
-9. `17d0479` - feat: add typing indicator, read receipts, and online presence (Phase 2)
-10. `35723bb` - feat: add message buttons throughout app and notification integration (Phase 3)
-11. `12e09ee` - feat: add image and document attachments to messaging (Phase 4)
-12. `d20aa4c` - feat: add job-linked contextual conversations
-13. `aec41bc` - feat: add custom-titled conversations and New Topic button
-
-### Earlier Sessions (pre-Claude notes)
-- Initial project setup, auth, profiles
-- Property marketplace with gallery and map
-- Client briefs system
-- Inspection marketplace with bidding
-- Inspection report builder
+### Early Sessions (pre-Claude notes)
+- Initial project setup, auth, profiles, property marketplace
+- Client briefs system with smart location preferences
+- PostGIS geospatial system, service area management
+- Welcome/onboarding wizard
 - Admin panel with approval workflows
 - Professional directory
-- PostGIS geospatial system
-- Service area management
-- Notification system foundation
-- Welcome/onboarding wizard
-- Billing settings page
+
+### Session: ~24 January 2026 (Inspection Marketplace)
+- `9c1ad08` - feat: add inspection marketplace database tables
+- `d12521c` - feat: add CreateInspectionJob multi-step form
+- `4d06bc7` - feat: add InspectionSpotlights job board
+- `16b27d1` - feat: add InspectionSpotlightDetail single job view
+- `f75ee94` - fix: improve property address search and add general area booking
+- `6f5294d` - feat: display general area bookings with visual indicators
+- `aa71a2e` - feat: link inspection jobs to client briefs
+- `3223879` - feat: add My Posted Jobs dashboard with bid management
+- `167c4fc` - feat: show bids inline on My Posted Jobs dashboard
+- `705330b` - feat: add My Inspection Work dashboard for inspectors
+- `de3b3d7` - feat: build comprehensive inspection report form
+- `3a5241c` - feat: add read-only report view for job posters
+- Various debug/fix commits for report viewing
+
+### Session: 25 January 2026 (Escrow + Stripe + Fee Transparency)
+- `c188585` - feat: add transparent fee breakdowns and opinion disclaimers throughout inspection workflow
+- `af093df` - feat: implement escrow payment workflow with upfront payment and refund protection
+- `47992e1` - feat: add clean subscription pricing page with Stripe Checkout
+- `a71562e` - chore: add Stripe environment variable placeholders to .env
+- `6410fbc` - fix: redirect to sign up page when subscribing as guest
+- Various Stripe checkout fixes (`8490fd9`, `50e211f`, `0b77a03`)
+- `54bf5ae` - feat: add welcome onboarding page and billing management
+- `3221b26` - fix: update subscription tier in checkout.session.completed webhook
+
+### Session: 25-26 January 2026 (Messaging System - 6 Phases)
+- `c9473c6` - feat: add core messaging system with real-time updates (Phase 1)
+- `8566c0e` through `0598b4b` - Multiple RLS and RPC fixes for messaging
+- `659d0af` - fix: remove city field, show suburb in messaging
+- `e282b18` - feat: add unread badge and toast notifications for new messages
+- `17d0479` - feat: add typing indicator, read receipts, and online presence (Phase 2)
+- `35723bb` - feat: add message buttons throughout app and notification integration (Phase 3)
+- `12e09ee` - feat: add image and document attachments to messaging (Phase 4)
+- `d20aa4c` - feat: add job-linked contextual conversations (Phase 5)
+- `aec41bc` - feat: add custom-titled conversations and New Topic button (Phase 6)
+
+### Session: 27 January 2026 (Stripe Connect + Fee Transparency)
+- `264516e` - feat: implement Stripe Connect for inspector payouts
+  - New: `stripe-connect-payout` Edge Function
+  - New: `ConnectReturn.tsx` page + route
+  - New: `20260127010000_add_payout_tracking.sql` migration
+  - Updated: Billing page with payout setup + earnings sections
+  - Updated: InspectionReportView to trigger payout on approval
+  - Updated: MyPostedJobs with payment breakdown on completed jobs
+  - Updated: AuthContext Profile with `stripe_connect_*` fields
+  - Updated: `stripe.ts` with `createConnectPayout()`
+  - Updated: `stripe-connect-onboarding` URLs
+  - Updated: `stripe-webhook` for transfer.created notifications
+- `e2fa1f0` - feat: add fee transparency messaging throughout payment flow
+  - Job detail page: poster sees escrow status, inspector sees earnings at every job state
+  - MyPostedJobs: "$X in escrow" / "Inspector paid $X" per card
+  - MyInspectionWork: net earnings (90%) on bids, submitted, and completed
+  - Stats card correctly shows 90% net totals
