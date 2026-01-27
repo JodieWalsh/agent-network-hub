@@ -28,8 +28,9 @@ import { SUBSCRIPTION_TIERS } from "@/lib/stripe";
 export default function Welcome() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [showConfetti, setShowConfetti] = useState(false);
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
 
   // Get plan from URL params
   const isPostPayment = searchParams.get("success") === "true";
@@ -46,6 +47,7 @@ export default function Welcome() {
   useEffect(() => {
     if (isPostPayment) {
       setShowConfetti(true);
+      setRefreshingSubscription(true);
       // Clear URL params after showing
       const timer = setTimeout(() => {
         navigate("/welcome", { replace: true });
@@ -53,6 +55,24 @@ export default function Welcome() {
       return () => clearTimeout(timer);
     }
   }, [isPostPayment, navigate]);
+
+  // Poll for profile updates after checkout (webhook may be delayed)
+  useEffect(() => {
+    if (!refreshingSubscription) return;
+
+    refreshProfile();
+    let attempts = 0;
+    const pollId = setInterval(async () => {
+      attempts++;
+      await refreshProfile();
+      if (attempts >= 5) {
+        clearInterval(pollId);
+        setRefreshingSubscription(false);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollId);
+  }, [refreshingSubscription, refreshProfile]);
 
   // Profile completion checks
   const hasPhoto = !!profile?.avatar_url;

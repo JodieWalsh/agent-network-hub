@@ -59,11 +59,12 @@ const faqs = [
 export default function Pricing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [isAnnual, setIsAnnual] = useState(true);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [managingSubscription, setManagingSubscription] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [refreshingSubscription, setRefreshingSubscription] = useState(false);
   const hasTriggeredCheckout = useRef(false);
 
   // Handle success/cancel URL params
@@ -78,6 +79,7 @@ export default function Pricing() {
       toast.success("Welcome aboard!", {
         description: "Your subscription is now active. Thank you for joining!",
       });
+      setRefreshingSubscription(true);
       // Clear the URL params
       navigate("/pricing", { replace: true });
     } else if (canceled === "true") {
@@ -120,6 +122,24 @@ export default function Pricing() {
       return () => clearTimeout(timer);
     }
   }, [user]);
+
+  // Poll for profile updates after checkout (webhook may be delayed)
+  useEffect(() => {
+    if (!refreshingSubscription) return;
+
+    refreshProfile();
+    let attempts = 0;
+    const pollId = setInterval(async () => {
+      attempts++;
+      await refreshProfile();
+      if (attempts >= 5) {
+        clearInterval(pollId);
+        setRefreshingSubscription(false);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollId);
+  }, [refreshingSubscription, refreshProfile]);
 
   // Get current subscription info
   const currentTier = profile?.subscription_tier || "free";
