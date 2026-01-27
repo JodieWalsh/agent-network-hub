@@ -4,6 +4,7 @@
  * Handles all Stripe webhook events for:
  * - Subscription lifecycle (created, updated, deleted)
  * - Payment events (succeeded, failed)
+ * - Inspection escrow payments (checkout completion, refunds)
  * - Connect account events (payout status)
  *
  * IMPORTANT: This endpoint must be registered in Stripe Dashboard:
@@ -18,6 +19,7 @@
  * - invoice.payment_failed
  * - account.updated (for Connect)
  * - transfer.created (for Connect payouts)
+ * - charge.refunded (for escrow refunds)
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -28,6 +30,7 @@ import {
   jsonResponse,
   errorResponse,
   getSupabaseClient,
+  calculateFees,
 } from '../_shared/stripe.ts';
 
 serve(async (req) => {
@@ -68,6 +71,155 @@ serve(async (req) => {
       // ===========================================
       case 'checkout.session.completed': {
         const session = event.data.object;
+
+        // -----------------------------------------------
+        // INSPECTION ESCROW PAYMENT
+        // -----------------------------------------------
+        if (session.metadata?.type === 'inspection_escrow') {
+          const { jobId, bidId, userId: posterId, inspectorId } = session.metadata;
+          const paymentIntentId = session.payment_intent;
+
+          console.log(`Escrow checkout completed: job=${jobId}, bid=${bidId}, poster=${posterId}, inspector=${inspectorId}`);
+
+          // Re-validate job is still open
+          const escrowJobs = await supabase.query(
+            'inspection_jobs',
+            `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address`
+          );
+          const escrowJob = escrowJobs[0];
+
+          if (!escrowJob || escrowJob.status !== 'open') {
+            console.error(`Escrow webhook: Job ${jobId} is not open (status: ${escrowJob?.status}). Refund may be needed.`);
+            break;
+          }
+
+          // Re-validate bid is still pending
+          const escrowBids = await supabase.query(
+            'inspection_bids',
+            `id=eq.${bidId}&select=id,status,proposed_price,proposed_date,inspector_id`
+          );
+          const escrowBid = escrowBids[0];
+
+          if (!escrowBid || escrowBid.status !== 'pending') {
+            console.error(`Escrow webhook: Bid ${bidId} is not pending (status: ${escrowBid?.status}). Refund may be needed.`);
+            break;
+          }
+
+          const agreedPrice = escrowBid.proposed_price;
+          const amountInCents = Math.round(agreedPrice * 100);
+          const { platformFee, inspectorPayout } = calculateFees(amountInCents);
+          const now = new Date().toISOString();
+
+          // 1. Accept the bid
+          await supabase.update('inspection_bids', bidId, { status: 'accepted' });
+
+          // 2. Decline all other pending bids for this job
+          const declineUrl = `${supabase.url}/rest/v1/inspection_bids?job_id=eq.${jobId}&id=neq.${bidId}&status=eq.pending`;
+          await fetch(declineUrl, {
+            method: 'PATCH',
+            headers: {
+              apikey: supabase.key,
+              Authorization: `Bearer ${supabase.key}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({ status: 'declined' }),
+          });
+
+          // 3. Assign inspector to the job
+          await supabase.update('inspection_jobs', jobId, {
+            status: 'assigned',
+            payment_status: 'in_escrow',
+            stripe_payment_intent_id: paymentIntentId,
+            agreed_price: agreedPrice,
+            agreed_date: escrowBid.proposed_date,
+            assigned_inspector_id: inspectorId,
+          });
+
+          // 4. Create inspection_payments record (amounts in cents)
+          const paymentInsertUrl = `${supabase.url}/rest/v1/inspection_payments`;
+          await fetch(paymentInsertUrl, {
+            method: 'POST',
+            headers: {
+              apikey: supabase.key,
+              Authorization: `Bearer ${supabase.key}`,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify({
+              job_id: jobId,
+              payer_id: posterId,
+              payee_id: inspectorId,
+              gross_amount: amountInCents,
+              platform_fee: platformFee,
+              net_amount: inspectorPayout,
+              currency: 'AUD',
+              status: 'held',
+              stripe_payment_intent_id: paymentIntentId,
+              paid_at: now,
+            }),
+          });
+
+          // 5. Notify accepted inspector
+          const notifUrl = `${supabase.url}/rest/v1/notifications`;
+          try {
+            await fetch(notifUrl, {
+              method: 'POST',
+              headers: {
+                apikey: supabase.key,
+                Authorization: `Bearer ${supabase.key}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                user_id: inspectorId,
+                type: 'bid_accepted',
+                title: 'Bid Accepted!',
+                message: `Your bid for ${escrowJob.property_address || 'an inspection'} has been accepted. You can now begin the inspection.`,
+                link: `/inspections/my-work`,
+                metadata: { jobId, bidId },
+              }),
+            });
+          } catch (notifErr) {
+            console.error('Error sending bid_accepted notification:', notifErr);
+          }
+
+          // 6. Notify declined inspectors
+          try {
+            const declinedBids = await supabase.query(
+              'inspection_bids',
+              `job_id=eq.${jobId}&status=eq.declined&select=inspector_id`
+            );
+            for (const declined of declinedBids) {
+              await fetch(notifUrl, {
+                method: 'POST',
+                headers: {
+                  apikey: supabase.key,
+                  Authorization: `Bearer ${supabase.key}`,
+                  'Content-Type': 'application/json',
+                  Prefer: 'return=minimal',
+                },
+                body: JSON.stringify({
+                  user_id: declined.inspector_id,
+                  type: 'bid_declined',
+                  title: 'Bid Not Selected',
+                  message: `Another inspector was selected for the inspection at ${escrowJob.property_address || 'a property'}.`,
+                  link: `/inspections/my-work`,
+                  metadata: { jobId },
+                }),
+              });
+            }
+          } catch (notifErr) {
+            console.error('Error sending bid_declined notifications:', notifErr);
+          }
+
+          console.log(`Escrow payment complete: job ${jobId} assigned to inspector ${inspectorId}`);
+          break;
+        }
+
+        // -----------------------------------------------
+        // SUBSCRIPTION CHECKOUT (existing logic)
+        // -----------------------------------------------
         const userId = session.metadata?.userId;
         const customerId = session.customer;
         const subscriptionId = session.subscription;
@@ -230,7 +382,7 @@ serve(async (req) => {
         const transfer = event.data.object;
         const jobId = transfer.metadata?.jobId;
         const inspectorId = transfer.metadata?.inspectorId;
-        const netAmount = transfer.metadata?.netAmount;
+        const netAmount = transfer.metadata?.netAmountCents;
 
         console.log(`Transfer created: ${transfer.id} to ${transfer.destination} for job ${jobId}`);
 
@@ -271,6 +423,46 @@ serve(async (req) => {
             console.log(`Payment notification sent to inspector ${inspectorId}`);
           } catch (notifError) {
             console.error('Error sending payment notification:', notifError);
+          }
+        }
+        break;
+      }
+
+      // ===========================================
+      // REFUND EVENTS
+      // ===========================================
+      case 'charge.refunded': {
+        const charge = event.data.object;
+        const paymentIntentId = charge.payment_intent;
+
+        // Check if this is an inspection escrow refund
+        if (paymentIntentId) {
+          const refundJobs = await supabase.query(
+            'inspection_jobs',
+            `stripe_payment_intent_id=eq.${paymentIntentId}&select=id,payment_status`
+          );
+          const refundJob = refundJobs[0];
+
+          if (refundJob) {
+            console.log(`Escrow refund processed for job ${refundJob.id}`);
+
+            // Update job payment status
+            await supabase.update('inspection_jobs', refundJob.id, {
+              payment_status: 'refunded',
+            });
+
+            // Update inspection_payments status
+            const paymentUpdateUrl = `${supabase.url}/rest/v1/inspection_payments?job_id=eq.${refundJob.id}`;
+            await fetch(paymentUpdateUrl, {
+              method: 'PATCH',
+              headers: {
+                apikey: supabase.key,
+                Authorization: `Bearer ${supabase.key}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({ status: 'refunded' }),
+            });
           }
         }
         break;

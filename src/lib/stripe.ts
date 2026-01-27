@@ -318,6 +318,78 @@ export async function createConnectPayout(
 }
 
 // ===========================================
+// ESCROW PAYMENT HELPERS (FOR INSPECTION JOBS)
+// ===========================================
+
+/**
+ * Accept a bid with escrow payment via Stripe Checkout.
+ * Creates a Checkout Session and returns the URL to redirect the poster to.
+ * The bid is NOT accepted until payment succeeds (handled by webhook).
+ *
+ * @param jobId - The inspection job ID
+ * @param bidId - The bid to accept
+ * @param userId - The poster's user ID
+ * @returns The checkout URL to redirect to
+ */
+export async function acceptBidWithPayment(
+  jobId: string,
+  bidId: string,
+  userId: string
+): Promise<{ checkoutUrl?: string; error?: string }> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/accept-bid-with-payment`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ jobId, bidId, userId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to create payment session' };
+    }
+
+    const { checkoutUrl } = await response.json();
+    return { checkoutUrl };
+  } catch (err) {
+    console.error('[Stripe] Accept bid with payment error:', err);
+    return { error: 'Failed to connect to payment service' };
+  }
+}
+
+/**
+ * Refund an escrow payment for a cancelled job.
+ *
+ * @param jobId - The inspection job ID
+ * @returns The refund status
+ */
+export async function refundEscrowPayment(
+  jobId: string
+): Promise<{ status?: string; refundId?: string; error?: string }> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/refund-escrow-payment`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ jobId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to process refund' };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.error('[Stripe] Refund escrow payment error:', err);
+    return { error: 'Failed to connect to payment service' };
+  }
+}
+
+// ===========================================
 // SUBSCRIPTION TIER CONFIGURATION
 // ===========================================
 

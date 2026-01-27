@@ -21,11 +21,15 @@ export function ProtectedRoute({
   fallbackPath = '/auth',
   showForbidden = false,
 }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
 
   // Only show loading for initial auth check (max 1 second)
   // Don't wait for profile - we'll use cached profile or render without it
   const [initialCheckDone, setInitialCheckDone] = useState(false);
+  // Track whether we've already tried refreshing the profile after a permission failure.
+  // This prevents infinite refresh loops when access is genuinely denied.
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     // Give auth check 1 second max
@@ -51,17 +55,10 @@ export function ProtectedRoute({
     return <Navigate to={fallbackPath} replace />;
   }
 
-  // Check role-based access
-  // Admins bypass role checks - they have access to everything
-  if (requiredRole && profile?.role !== requiredRole && profile?.role !== 'admin') {
-    console.log('Role check failed:', { requiredRole, actualRole: profile?.role, profile });
-    if (showForbidden) {
-      return <ForbiddenPage />;
-    }
-    return <Navigate to="/" replace />;
-  }
+  // Determine if the current profile passes the access checks
+  const roleCheckFailed = requiredRole && profile?.role !== requiredRole && profile?.role !== 'admin';
 
-  // Check permission-based access
+  let permissionCheckFailed = false;
   if (requiredPermission) {
     const permissionContext = {
       isAuthenticated: !!user,
@@ -69,13 +66,44 @@ export function ProtectedRoute({
       approvalStatus: profile?.approval_status || null,
       userId: user?.id || null,
     };
+    permissionCheckFailed = !hasPermission(permissionContext, requiredPermission);
+  }
 
-    if (!hasPermission(permissionContext, requiredPermission)) {
-      if (showForbidden) {
-        return <ForbiddenPage />;
-      }
-      return <Navigate to="/" replace />;
+  const accessDenied = roleCheckFailed || permissionCheckFailed;
+
+  // If access is denied but we haven't tried refreshing the profile yet,
+  // fetch a fresh profile from the database. This handles the case where
+  // the admin approved the user while they were already logged in and
+  // the cached profile is stale.
+  if (accessDenied && !hasAttemptedRefresh && !isRefreshing) {
+    console.log('[ProtectedRoute] Access denied with stale profile, refreshing...', {
+      requiredRole,
+      requiredPermission,
+      actualRole: profile?.role,
+    });
+    setIsRefreshing(true);
+    setHasAttemptedRefresh(true);
+    refreshProfile().finally(() => setIsRefreshing(false));
+  }
+
+  // Show loading while the refresh is in progress
+  if (isRefreshing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Checking access...</div>
+      </div>
+    );
+  }
+
+  // After refresh (or without needing one), enforce the access check
+  if (accessDenied) {
+    if (roleCheckFailed) {
+      console.log('Role check failed:', { requiredRole, actualRole: profile?.role, profile });
     }
+    if (showForbidden) {
+      return <ForbiddenPage />;
+    }
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

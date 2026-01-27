@@ -1,1 +1,6 @@
 project_id = "kveuukcmfzxdnuzkbfss"
+
+# Stripe webhook must accept requests from Stripe without a Supabase JWT.
+# Stripe authenticates via its own stripe-signature header instead.
+[functions.stripe-webhook]
+verify_jwt = false

@@ -171,7 +171,7 @@ interface InspectionReport {
   };
 }
 
-type PaymentStatus = 'pending' | 'paid' | 'released' | 'refunded';
+type PaymentStatus = 'pending' | 'in_escrow' | 'released' | 'refunded';
 
 interface InspectionJob {
   id: string;
@@ -1289,7 +1289,7 @@ export default function InspectionReportView() {
                   </div>
                   {job.agreed_price && (
                     <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                      {job.payment_status === 'paid' ? (
+                      {job.payment_status === 'in_escrow' ? (
                         <>
                           <div className="flex items-center gap-2 mb-2">
                             <Shield className="h-4 w-4 text-emerald-700" />
@@ -1345,7 +1345,7 @@ export default function InspectionReportView() {
                 className="bg-green-600 hover:bg-green-700"
               >
                 {approving ? 'Releasing...' : (
-                  job.payment_status === 'paid'
+                  job.payment_status === 'in_escrow'
                     ? `Approve & Release ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`
                     : `Approve & Pay ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`
                 )}

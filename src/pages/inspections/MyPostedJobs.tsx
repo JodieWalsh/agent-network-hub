@@ -59,13 +59,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { notifyBidAccepted, notifyBidDeclined, notifyJobCancelled } from '@/lib/notifications';
+import { notifyBidDeclined, notifyJobCancelled } from '@/lib/notifications';
 import { getOrCreateConversation } from '@/lib/messaging';
+import { acceptBidWithPayment, refundEscrowPayment } from '@/lib/stripe';
 
 // Types
 type JobStatus = 'open' | 'in_negotiation' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled' | 'expired';
 type BidStatus = 'pending' | 'shortlisted' | 'accepted' | 'declined' | 'withdrawn';
-type PaymentStatus = 'pending' | 'paid' | 'released' | 'refunded';
+type PaymentStatus = 'pending' | 'in_escrow' | 'released' | 'refunded';
 
 type PayoutStatus = 'pending' | 'processing' | 'paid' | 'failed';
 
@@ -201,6 +202,28 @@ export default function MyPostedJobs() {
     }
   }, [user]);
 
+  // Handle Stripe Checkout return
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const jobId = searchParams.get('job');
+    if (payment === 'success' && jobId) {
+      toast.success('Payment successful! The inspector has been assigned and notified.');
+      // Clean URL params
+      const params = new URLSearchParams(searchParams);
+      params.delete('payment');
+      params.delete('job');
+      window.history.replaceState({}, '', `${window.location.pathname}${params.toString() ? `?${params}` : ''}`);
+      // Refresh jobs to show updated status
+      if (user) fetchJobs();
+    } else if (payment === 'cancelled' && jobId) {
+      toast.info('Payment cancelled. The bid has not been accepted.');
+      const params = new URLSearchParams(searchParams);
+      params.delete('payment');
+      params.delete('job');
+      window.history.replaceState({}, '', `${window.location.pathname}${params.toString() ? `?${params}` : ''}`);
+    }
+  }, [searchParams]);
+
   const fetchJobs = async () => {
     if (!user) return;
 
@@ -315,91 +338,26 @@ export default function MyPostedJobs() {
     if (!user || !targetJob) return;
 
     try {
-      const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+      // Call Edge Function to create Stripe Checkout Session
+      const result = await acceptBidWithPayment(targetJob.id, bid.id, user.id);
 
-      // 1. Update the accepted bid status
-      await fetch(
-        `${supabaseUrl}/rest/v1/inspection_bids?id=eq.${bid.id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 'accepted', updated_at: new Date().toISOString() }),
-        }
-      );
-
-      // 2. Decline other pending bids for this job
-      await fetch(
-        `${supabaseUrl}/rest/v1/inspection_bids?job_id=eq.${targetJob.id}&id=neq.${bid.id}&status=eq.pending`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 'declined', updated_at: new Date().toISOString() }),
-        }
-      );
-
-      // 3. Update the job status to assigned
-      await fetch(
-        `${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${targetJob.id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            status: 'assigned',
-            assigned_inspector_id: bid.inspector_id,
-            agreed_price: bid.proposed_price,
-            agreed_date: bid.proposed_date,
-            assigned_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }),
-        }
-      );
-
-      // 4. Send notifications
-      try {
-        // Notify the accepted inspector
-        await notifyBidAccepted(
-          bid.inspector_id,                              // inspectorId
-          targetJob.property_address,                    // propertyAddress
-          targetJob.id,                                  // jobId
-          bid.id,                                        // bidId
-          user?.id || ''                                 // jobCreatorId
-        );
-
-        // Notify other inspectors whose bids were declined
-        const otherBids = targetJob.bids?.filter(b => b.id !== bid.id && b.status === 'pending') || [];
-        for (const declinedBid of otherBids) {
-          await notifyBidDeclined(
-            declinedBid.inspector_id,
-            targetJob.id,
-            declinedBid.id,
-            targetJob.title || targetJob.property_address,
-            'Another bid was accepted'
-          );
-        }
-      } catch (notifError) {
-        console.error('Failed to send notifications:', notifError);
-        // Don't fail the accept if notifications fail
+      if (result.error) {
+        toast.error(result.error);
+        return;
       }
 
-      toast.success('Bid accepted! The inspector has been assigned.');
-      setShowBidsDialog(false);
-      setConfirmAction(null);
-      fetchJobs();
+      if (result.checkoutUrl) {
+        // Close dialogs before redirect
+        setShowBidsDialog(false);
+        setConfirmAction(null);
+        // Redirect to Stripe Checkout - bid acceptance happens in webhook after payment
+        window.location.href = result.checkoutUrl;
+      } else {
+        toast.error('No checkout URL returned');
+      }
     } catch (error) {
       console.error('Error accepting bid:', error);
-      toast.error('Failed to accept bid');
+      toast.error('Failed to start payment process');
     }
   };
 
@@ -453,8 +411,16 @@ export default function MyPostedJobs() {
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
 
-      // Determine if refund is applicable (paid but no bid accepted)
-      const shouldRefund = job.payment_status === 'paid' && job.status === 'open';
+      // Refund escrow if payment is held
+      const shouldRefund = job.payment_status === 'in_escrow';
+
+      if (shouldRefund) {
+        const refundResult = await refundEscrowPayment(job.id);
+        if (refundResult.error) {
+          toast.error(`Refund failed: ${refundResult.error}`);
+          return;
+        }
+      }
 
       await fetch(
         `${supabaseUrl}/rest/v1/inspection_jobs?id=eq.${job.id}`,
@@ -467,7 +433,6 @@ export default function MyPostedJobs() {
           },
           body: JSON.stringify({
             status: 'cancelled',
-            payment_status: shouldRefund ? 'refunded' : job.payment_status,
             updated_at: new Date().toISOString(),
           }),
         }
@@ -488,7 +453,7 @@ export default function MyPostedJobs() {
       }
 
       if (shouldRefund) {
-        toast.success('Job cancelled. Your escrowed payment will be refunded.');
+        toast.success('Job cancelled. Your escrow payment is being refunded.');
       } else {
         toast.success('Job cancelled');
       }
@@ -729,32 +694,30 @@ export default function MyPostedJobs() {
                     <p>
                       You're accepting <strong>{confirmAction.bid.inspector?.full_name}</strong>'s bid of <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong> for this inspection.
                     </p>
-                    {confirmAction.job?.payment_status === 'paid' && (
-                      <div className="p-3 bg-emerald-100 rounded-lg text-sm border border-emerald-300">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Shield className="h-4 w-4 text-emerald-700" />
-                          <p className="font-medium text-emerald-800">Payment Already Secured</p>
-                        </div>
-                        <p className="text-emerald-700">
-                          Your payment of {formatCurrency(confirmAction.bid.proposed_price)} is held in escrow and will be released to the inspector when you approve their report.
-                        </p>
+                    <div className="p-3 bg-blue-50 rounded-lg text-sm border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shield className="h-4 w-4 text-blue-600" />
+                        <p className="font-medium text-blue-800">Secure Payment via Stripe</p>
                       </div>
-                    )}
+                      <p className="text-blue-700">
+                        You'll be redirected to Stripe to complete payment of <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong>. Funds will be held in escrow until you approve the inspection report.
+                      </p>
+                    </div>
                     <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                      <p className="font-medium text-muted-foreground mb-2">Payment breakdown when released:</p>
+                      <p className="font-medium text-muted-foreground mb-2">Payment breakdown:</p>
                       <div className="space-y-1 text-muted-foreground">
                         <div className="flex justify-between">
-                          <span>├── {confirmAction.bid.inspector?.full_name} receives:</span>
+                          <span>Inspector receives (90%):</span>
                           <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.90))}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>└── Platform fee:</span>
+                          <span>Platform fee (10%):</span>
                           <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.10))}</span>
                         </div>
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      All other pending bids will be automatically declined.
+                      All other pending bids will be automatically declined after payment.
                     </p>
                   </div>
                 )}
@@ -769,14 +732,14 @@ export default function MyPostedJobs() {
                     <p>
                       Are you sure you want to cancel "{confirmAction.job?.title}"?
                     </p>
-                    {confirmAction.job?.payment_status === 'paid' && (
+                    {confirmAction.job?.payment_status === 'in_escrow' && (
                       <div className="p-3 bg-blue-50 rounded-lg text-sm border border-blue-200">
                         <div className="flex items-center gap-2 mb-2">
                           <RefreshCw className="h-4 w-4 text-blue-600" />
                           <p className="font-medium text-blue-800">Refund Eligible</p>
                         </div>
                         <p className="text-blue-700">
-                          Since no bid has been accepted yet, you will receive a <strong>full refund</strong> of your escrowed payment.
+                          Your escrowed payment will be <strong>fully refunded</strong> via Stripe.
                         </p>
                       </div>
                     )}
@@ -805,7 +768,7 @@ export default function MyPostedJobs() {
                   }
                 }}
               >
-                {confirmAction?.type === 'accept' && 'Accept Bid'}
+                {confirmAction?.type === 'accept' && confirmAction.bid && `Accept & Pay ${formatCurrency(confirmAction.bid.proposed_price)}`}
                 {confirmAction?.type === 'decline' && 'Decline Bid'}
                 {confirmAction?.type === 'cancel' && 'Cancel Job'}
               </AlertDialogAction>
@@ -1005,10 +968,10 @@ function JobCard({
                 <StatusIcon size={12} className="mr-1" />
                 {statusConfig.label}
               </Badge>
-              {job.payment_status === 'paid' && (
-                <Badge className="border-emerald-300 text-emerald-700 bg-emerald-50">
+              {job.payment_status === 'in_escrow' && (
+                <Badge className="border-amber-300 text-amber-700 bg-amber-50">
                   <Lock size={12} className="mr-1" />
-                  Payment Secured
+                  In Escrow
                 </Badge>
               )}
               {job.payment_status === 'refunded' && (
@@ -1077,7 +1040,7 @@ function JobCard({
             </div>
 
             {/* Escrow / Payment Status Line */}
-            {tabId !== 'completed' && tabId !== 'cancelled' && job.payment_status === 'paid' && job.agreed_price && (
+            {tabId !== 'completed' && tabId !== 'cancelled' && job.payment_status === 'in_escrow' && job.agreed_price && (
               <div className="flex items-center gap-1.5 mt-2 text-sm text-amber-700">
                 <DollarSign size={14} className="text-amber-600" />
                 <span className="font-medium">{formatCurrency(job.agreed_price)} in escrow</span>

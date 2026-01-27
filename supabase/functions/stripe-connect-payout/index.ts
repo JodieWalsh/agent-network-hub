@@ -93,8 +93,9 @@ serve(async (req) => {
       });
     }
 
-    // Calculate fees
-    const { platformFee, inspectorPayout } = calculateFees(job.agreed_price);
+    // Convert dollars to cents (DB stores dollars, Stripe uses cents)
+    const amountInCents = Math.round(job.agreed_price * 100);
+    const { platformFee, inspectorPayout } = calculateFees(amountInCents);
 
     // Mark as processing before creating the transfer
     await supabase.update('inspection_jobs', jobId, {
@@ -112,9 +113,9 @@ serve(async (req) => {
         jobId,
         inspectorId: inspector.id,
         inspectorName: inspector.full_name || '',
-        grossAmount: String(job.agreed_price),
-        platformFee: String(platformFee),
-        netAmount: String(inspectorPayout),
+        grossAmountCents: String(amountInCents),
+        platformFeeCents: String(platformFee),
+        netAmountCents: String(inspectorPayout),
       },
     });
 
@@ -150,7 +151,7 @@ serve(async (req) => {
           status: 'released',
           stripe_transfer_id: transfer.id,
           released_at: now,
-          gross_amount: job.agreed_price,
+          gross_amount: amountInCents,
           platform_fee: platformFee,
           net_amount: inspectorPayout,
         }),
@@ -177,7 +178,7 @@ serve(async (req) => {
           job_id: jobId,
           payer_id: payerId,
           payee_id: inspector.id,
-          gross_amount: job.agreed_price,
+          gross_amount: amountInCents,
           platform_fee: platformFee,
           net_amount: inspectorPayout,
           currency: 'AUD',
