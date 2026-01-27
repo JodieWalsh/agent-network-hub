@@ -423,6 +423,17 @@ Budget you're offering: $200.00
 
 ---
 
+### 19. Subscription Upgrade Redirect Behaviour
+**Location:** Pricing page → Stripe Checkout → Post-checkout redirect
+
+**Context:** When a current subscriber upgrades their subscription (e.g., Basic → Premium), they are redirected to the `/welcome` onboarding page after checkout completes. This may be confusing for existing users who have already completed onboarding.
+
+**Question for Dani:**
+- [ ] When a current subscriber upgrades, should they be redirected to `/welcome`? Or should they go back to their dashboard / billing page instead?
+- [ ] Should the `/welcome` page only appear for brand-new signups?
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -444,4 +455,4 @@ Budget you're offering: $200.00
 
 ---
 
-*Last updated: 25 January 2026 - Expanded #18 Stripe & Business Setup with implementation details*
+*Last updated: 27 January 2026 - Added #19 Subscription Upgrade Redirect Behaviour*
