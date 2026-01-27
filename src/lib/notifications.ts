@@ -41,7 +41,10 @@ export type NotificationType =
   | 'badge_earned'
   | 'job_expired'
   | 'job_cancelled'
-  | 'new_message';
+  | 'new_message'
+  | 'user_approved'
+  | 'user_rejected'
+  | 'user_promoted_admin';
 
 export interface Notification {
   id: string;
@@ -692,6 +695,55 @@ export async function notifyNewMessage(
   });
 }
 
+/**
+ * Notify user when their professional application is approved
+ */
+export async function notifyUserApproved(
+  userId: string,
+  adminId: string
+) {
+  return createNotification({
+    userId,
+    type: 'user_approved',
+    title: "You're verified! Welcome to the network",
+    message: "Your professional account has been approved. You can now post inspection jobs, message other professionals, submit properties, and manage client briefs. Head to your dashboard to get started!",
+    fromUserId: adminId,
+  });
+}
+
+/**
+ * Notify user when their professional application is rejected
+ */
+export async function notifyUserRejected(
+  userId: string,
+  rejectionReason: string,
+  adminId: string
+) {
+  return createNotification({
+    userId,
+    type: 'user_rejected',
+    title: 'Application update',
+    message: `Unfortunately your professional application wasn't approved at this time. Reason: ${rejectionReason}. If you believe this was an error, please contact support.`,
+    fromUserId: adminId,
+  });
+}
+
+/**
+ * Notify user when they are promoted to administrator
+ */
+export async function notifyUserPromotedAdmin(
+  userId: string,
+  adminId: string
+) {
+  return createNotification({
+    userId,
+    type: 'user_promoted_admin',
+    title: "You've been made an administrator",
+    message: "You now have admin access to Buyers Agent Hub. You can approve users, review properties, and manage the platform from the Admin Dashboard.",
+    fromUserId: adminId,
+  });
+}
+
 // ===========================================
 // UTILITY FUNCTIONS
 // ===========================================
@@ -715,6 +767,9 @@ export function getNotificationIcon(type: NotificationType): string {
     job_expired: 'Clock',
     job_cancelled: 'XCircle',
     new_message: 'MessageSquare',
+    user_approved: 'UserCheck',
+    user_rejected: 'XCircle',
+    user_promoted_admin: 'Shield',
   };
   return icons[type] || 'Bell';
 }
@@ -738,6 +793,9 @@ export function getNotificationColor(type: NotificationType): string {
     job_expired: 'text-gray-600 bg-gray-50',
     job_cancelled: 'text-red-600 bg-red-50',
     new_message: 'text-forest bg-forest/10',
+    user_approved: 'text-green-600 bg-green-50',
+    user_rejected: 'text-red-600 bg-red-50',
+    user_promoted_admin: 'text-purple-600 bg-purple-50',
   };
   return colors[type] || 'text-gray-600 bg-gray-50';
 }
@@ -777,6 +835,13 @@ export function getNotificationLink(notification: Notification): string {
     case 'job_cancelled':
       // Go to completed/cancelled jobs
       return '/inspections/my-jobs?tab=cancelled';
+
+    case 'user_approved':
+      return '/';
+    case 'user_rejected':
+      return '/settings/profile';
+    case 'user_promoted_admin':
+      return '/admin';
 
     default:
       // Default: go to job spotlight if job_id exists

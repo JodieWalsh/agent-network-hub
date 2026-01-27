@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RoleBadge } from '@/components/ui/role-badge';
 import { AdminPropertyReviewModal } from '@/components/admin/AdminPropertyReviewModal';
+import { notifyUserApproved, notifyUserRejected, notifyUserPromotedAdmin } from '@/lib/notifications';
 
 interface PendingUser {
   id: string;
@@ -232,6 +233,7 @@ export default function Admin() {
       toast.error('Failed to approve user');
     } else {
       toast.success('User approved successfully');
+      notifyUserApproved(userId, user.id);
       fetchData();
     }
   };
@@ -267,6 +269,7 @@ export default function Admin() {
         toast.error('Failed to reject user');
       } else {
         toast.success('User application rejected');
+        notifyUserRejected(rejectId, rejectionReason, user.id);
         setRejectDialogOpen(false);
         fetchData();
       }
@@ -349,6 +352,7 @@ export default function Admin() {
       if (error) throw error;
 
       toast.success(`${roleChangeUserName} is now an administrator`);
+      notifyUserPromotedAdmin(roleChangeUserId, user.id);
       setRoleChangeDialogOpen(false);
       fetchData();
     } catch (error: any) {
