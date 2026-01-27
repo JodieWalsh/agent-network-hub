@@ -67,6 +67,8 @@ type JobStatus = 'open' | 'in_negotiation' | 'assigned' | 'in_progress' | 'pendi
 type BidStatus = 'pending' | 'shortlisted' | 'accepted' | 'declined' | 'withdrawn';
 type PaymentStatus = 'pending' | 'paid' | 'released' | 'refunded';
 
+type PayoutStatus = 'pending' | 'processing' | 'paid' | 'failed';
+
 interface InspectionJob {
   id: string;
   title: string;
@@ -78,6 +80,8 @@ interface InspectionJob {
   budget_max: number;
   status: JobStatus;
   payment_status: PaymentStatus | null;
+  payout_status: PayoutStatus | null;
+  payout_amount: number | null;
   created_at: string;
   inspection_date_from: string;
   inspection_date_to: string;
@@ -1173,6 +1177,41 @@ function JobCard({
                   formatDate={formatDate}
                 />
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Payment Breakdown for Completed Jobs */}
+        {tabId === 'completed' && job.agreed_price && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign size={14} className="text-muted-foreground" />
+                <span className="text-muted-foreground">Job Total:</span>
+                <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Inspector: <span className="font-medium text-green-700">{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                <span className="mx-1">·</span>
+                Platform fee: <span className="font-medium">{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+              </div>
+              {job.payout_status && (
+                <Badge className={cn(
+                  'border',
+                  job.payout_status === 'paid' && 'bg-green-100 text-green-800 border-green-200',
+                  job.payout_status === 'processing' && 'bg-blue-100 text-blue-800 border-blue-200',
+                  job.payout_status === 'pending' && 'bg-amber-100 text-amber-800 border-amber-200',
+                  job.payout_status === 'failed' && 'bg-red-100 text-red-800 border-red-200',
+                )}>
+                  {job.payout_status === 'paid' && <><CheckCircle size={12} className="mr-1" />Payout Sent</>}
+                  {job.payout_status === 'processing' && 'Processing Payout'}
+                  {job.payout_status === 'pending' && 'Payout Pending'}
+                  {job.payout_status === 'failed' && <><AlertCircle size={12} className="mr-1" />Payout Failed</>}
+                </Badge>
+              )}
+              {!job.payout_status && job.payment_status === 'released' && (
+                <Badge variant="secondary">Awaiting Payout</Badge>
+              )}
             </div>
           </div>
         )}

@@ -285,6 +285,38 @@ export async function createConnectDashboardLink(
   }
 }
 
+/**
+ * Trigger a payout to an inspector's Stripe Connect account.
+ * Called when a job report is approved and payment should be released.
+ *
+ * @param jobId - The inspection job ID
+ * @returns The payout status and transfer details
+ */
+export async function createConnectPayout(
+  jobId: string
+): Promise<{ status?: string; transferId?: string; amount?: number; error?: string }> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/stripe-connect-payout`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ jobId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to create payout' };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    console.error('[Stripe] Create connect payout error:', err);
+    return { error: 'Failed to connect to payment service' };
+  }
+}
+
 // ===========================================
 // SUBSCRIPTION TIER CONFIGURATION
 // ===========================================

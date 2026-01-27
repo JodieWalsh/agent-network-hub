@@ -228,8 +228,51 @@ serve(async (req) => {
 
       case 'transfer.created': {
         const transfer = event.data.object;
-        console.log(`Transfer created: ${transfer.id} to ${transfer.destination}`);
-        // Could create a notification for the inspector about incoming payout
+        const jobId = transfer.metadata?.jobId;
+        const inspectorId = transfer.metadata?.inspectorId;
+        const netAmount = transfer.metadata?.netAmount;
+
+        console.log(`Transfer created: ${transfer.id} to ${transfer.destination} for job ${jobId}`);
+
+        // Create notification for the inspector about payment received
+        if (inspectorId && jobId) {
+          try {
+            const amountFormatted = netAmount
+              ? `$${(parseInt(netAmount) / 100).toFixed(2)}`
+              : '';
+
+            // Fetch job address for notification message
+            const jobs = await supabase.query(
+              'inspection_jobs',
+              `id=eq.${jobId}&select=property_address`
+            );
+            const jobAddress = jobs[0]?.property_address || 'an inspection';
+
+            // Insert notification
+            const notifUrl = `${supabase.url}/rest/v1/notifications`;
+            await fetch(notifUrl, {
+              method: 'POST',
+              headers: {
+                apikey: supabase.key,
+                Authorization: `Bearer ${supabase.key}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                user_id: inspectorId,
+                type: 'payment_released',
+                title: 'Payment Received',
+                message: `You've been paid ${amountFormatted} for your inspection at ${jobAddress}.`,
+                link: '/settings/billing',
+                metadata: { jobId, transferId: transfer.id, amount: netAmount },
+              }),
+            });
+
+            console.log(`Payment notification sent to inspector ${inspectorId}`);
+          } catch (notifError) {
+            console.error('Error sending payment notification:', notifError);
+          }
+        }
         break;
       }
 

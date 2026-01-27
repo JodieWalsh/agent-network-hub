@@ -66,6 +66,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyReportApproved } from '@/lib/notifications';
+import { createConnectPayout } from '@/lib/stripe';
 
 // Types (matching InspectionReportBuilder)
 type MatchStatus = 'meets' | 'partial' | 'doesnt';
@@ -519,7 +520,25 @@ export default function InspectionReportView() {
         console.error('Failed to send notification:', notifError);
       }
 
-      toast.success('Report approved! Payment released to the inspector.');
+      // Trigger payout to inspector via Stripe Connect
+      try {
+        const payoutResult = await createConnectPayout(job.id);
+        if (payoutResult.status === 'paid') {
+          toast.success('Report approved! Payment released to the inspector.');
+        } else if (payoutResult.status === 'pending_onboarding') {
+          toast.success('Report approved! The inspector will be paid once they complete their payout setup.');
+        } else if (payoutResult.error) {
+          console.error('Payout error:', payoutResult.error);
+          toast.success('Report approved! There was an issue processing the payout — it will be retried.');
+        } else {
+          toast.success('Report approved! Payment is being processed.');
+        }
+      } catch (payoutError) {
+        console.error('Failed to trigger payout:', payoutError);
+        // Don't block approval — the job is already marked as completed
+        toast.success('Report approved! Payment processing will be handled separately.');
+      }
+
       setShowApproveDialog(false);
       navigate('/inspections/my-jobs?tab=completed');
     } catch (error) {

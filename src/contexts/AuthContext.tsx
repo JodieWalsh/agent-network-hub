@@ -39,6 +39,9 @@ interface Profile {
   subscription_status: string | null;
   subscription_current_period_end: string | null;
   stripe_customer_id: string | null;
+  // Stripe Connect fields (for inspectors)
+  stripe_connect_account_id: string | null;
+  stripe_connect_onboarding_complete: boolean;
 }
 
 interface AuthContextType {
