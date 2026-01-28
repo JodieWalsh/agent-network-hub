@@ -42,6 +42,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { formatPrice, formatPriceWithCode, getCurrency } from '@/lib/currency';
 
 type UrgencyLevel = 'standard' | 'urgent' | 'express';
 type PropertyType = 'house' | 'apartment' | 'townhouse' | 'land' | 'other';
@@ -124,7 +125,9 @@ const SESSION_STORAGE_KEY = 'inspection_job_draft_form';
 export default function CreateInspectionJob() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const jobCurrency = profile?.default_currency || 'AUD';
+  const currencySymbol = getCurrency(jobCurrency).symbol;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null);
@@ -323,6 +326,7 @@ export default function CreateInspectionJob() {
         special_instructions: formData.special_instructions || null,
         client_brief_id: formData.client_brief_id,
         budget_amount: formData.budget_amount,
+        budget_currency: jobCurrency,
         status: 'draft',
       };
 
@@ -400,6 +404,7 @@ export default function CreateInspectionJob() {
         special_instructions: formData.special_instructions || null,
         client_brief_id: formData.client_brief_id,
         budget_amount: formData.budget_amount,
+        budget_currency: jobCurrency,
         status: 'open',
         payment_status: 'pending', // Payment collected when poster accepts a bid
       };
@@ -812,9 +817,9 @@ export default function CreateInspectionJob() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Budget Amount (AUD) *</Label>
+                  <Label>Budget Amount ({jobCurrency}) *</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                     <Input
                       type="number"
                       min="0"
@@ -848,19 +853,19 @@ export default function CreateInspectionJob() {
                 {/* Fee Breakdown - Live Calculation */}
                 {formData.budget_amount && formData.budget_amount > 0 && (
                   <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-                    <p className="text-sm font-medium text-emerald-900 mb-3">💰 Fee Breakdown</p>
+                    <p className="text-sm font-medium text-emerald-900 mb-3">Fee Breakdown</p>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between text-emerald-800">
                         <span>Budget you're offering:</span>
-                        <span className="font-semibold">${formData.budget_amount.toFixed(2)}</span>
+                        <span className="font-semibold">{formatPrice(formData.budget_amount, jobCurrency)}</span>
                       </div>
                       <div className="flex justify-between text-emerald-700 pl-4">
-                        <span>├── Inspector receives (90%):</span>
-                        <span className="font-medium">${(formData.budget_amount * 0.90).toFixed(2)}</span>
+                        <span>Inspector receives (90%):</span>
+                        <span className="font-medium">{formatPrice(formData.budget_amount * 0.90, jobCurrency)}</span>
                       </div>
                       <div className="flex justify-between text-emerald-700 pl-4">
-                        <span>└── Platform fee (10%):</span>
-                        <span className="font-medium">${(formData.budget_amount * 0.10).toFixed(2)}</span>
+                        <span>Platform fee (10%):</span>
+                        <span className="font-medium">{formatPrice(formData.budget_amount * 0.10, jobCurrency)}</span>
                       </div>
                     </div>
                     <p className="text-xs text-emerald-600 mt-3">
@@ -985,16 +990,16 @@ export default function CreateInspectionJob() {
                   <h3 className="font-medium text-sm text-muted-foreground">BUDGET</h3>
                   <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                     <p className="text-2xl font-semibold text-forest">
-                      ${formData.budget_amount?.toLocaleString('en-AU')}
+                      {formatPriceWithCode(formData.budget_amount || 0, jobCurrency)}
                     </p>
                     <div className="text-sm space-y-1 border-t pt-3">
                       <div className="flex justify-between text-muted-foreground">
                         <span>Inspector receives (90%):</span>
-                        <span>${((formData.budget_amount || 0) * 0.90).toFixed(2)}</span>
+                        <span>{formatPrice((formData.budget_amount || 0) * 0.90, jobCurrency)}</span>
                       </div>
                       <div className="flex justify-between text-muted-foreground">
                         <span>Platform fee (10%):</span>
-                        <span>${((formData.budget_amount || 0) * 0.10).toFixed(2)}</span>
+                        <span>{formatPrice((formData.budget_amount || 0) * 0.10, jobCurrency)}</span>
                       </div>
                     </div>
                     <div className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700">
