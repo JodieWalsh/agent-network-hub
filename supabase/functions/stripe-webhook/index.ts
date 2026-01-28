@@ -112,10 +112,25 @@ serve(async (req) => {
           const amountInCents = Math.round(agreedPrice * 100);
           const { platformFee, inspectorPayout } = calculateFees(amountInCents);
           const now = new Date().toISOString();
+          const notifUrl = `${supabase.url}/rest/v1/notifications`;
 
-          // Steps 1-4 are independent DB writes — run in parallel
+          // Check if inspector has completed payout onboarding
+          const inspectorProfiles = await supabase.query(
+            'profiles',
+            `id=eq.${inspectorId}&select=stripe_connect_onboarding_complete,full_name`
+          );
+          const inspectorProfile = inspectorProfiles[0];
+          const inspectorOnboarded = inspectorProfile?.stripe_connect_onboarding_complete === true;
+          const inspectorName = inspectorProfile?.full_name || 'The inspector';
+
+          console.log(`Inspector ${inspectorId} onboarded: ${inspectorOnboarded}`);
+
+          // Steps 1-3 are always done: accept bid, decline others, create payment record
           const declineUrl = `${supabase.url}/rest/v1/inspection_bids?job_id=eq.${jobId}&id=neq.${bidId}&status=eq.pending`;
           const paymentInsertUrl = `${supabase.url}/rest/v1/inspection_payments`;
+
+          // Determine job status based on inspector onboarding
+          const jobStatus = inspectorOnboarded ? 'assigned' : 'pending_inspector_setup';
 
           const [, , , paymentInsertRes] = await Promise.all([
             // 1. Accept the bid
@@ -133,14 +148,15 @@ serve(async (req) => {
               body: JSON.stringify({ status: 'declined' }),
             }),
 
-            // 3. Assign inspector to the job
+            // 3. Update job — 'assigned' or 'pending_inspector_setup'
             supabase.update('inspection_jobs', jobId, {
-              status: 'assigned',
+              status: jobStatus,
               payment_status: 'in_escrow',
               stripe_payment_intent_id: paymentIntentId,
               agreed_price: agreedPrice,
               agreed_date: escrowBid.proposed_date,
               assigned_inspector_id: inspectorId,
+              accepted_bid_id: bidId,
             }),
 
             // 4. Create inspection_payments record (amounts in cents)
@@ -172,50 +188,126 @@ serve(async (req) => {
             console.error(`inspection_payments insert failed (${paymentInsertRes.status}): ${errBody}`);
           }
 
-          // 5. Notify accepted inspector
-          // NOTE: notifications table has job_id/bid_id/from_user_id FKs — NOT metadata/link columns.
-          // Links are computed dynamically by getNotificationLink() in the frontend.
-          const notifUrl = `${supabase.url}/rest/v1/notifications`;
-          console.log('=== BID ACCEPTED NOTIFICATION DEBUG ===');
-          console.log('Inspector ID (recipient):', inspectorId);
-          console.log('Poster ID (from_user):', posterId);
-          console.log('Job ID:', jobId);
-          console.log('Bid ID:', bidId);
-          console.log('Notification URL:', notifUrl);
-          try {
-            const notifBody = {
-              user_id: inspectorId,
-              type: 'bid_accepted',
-              title: 'Bid Accepted!',
-              message: `Your bid for ${escrowJob.property_address || 'an inspection'} has been accepted. You can now begin the inspection.`,
-              job_id: jobId,
-              bid_id: bidId,
-              from_user_id: posterId,
-            };
-            console.log('Notification payload:', JSON.stringify(notifBody));
-            const acceptedNotifRes = await fetch(notifUrl, {
-              method: 'POST',
-              headers: {
-                apikey: supabase.key,
-                Authorization: `Bearer ${supabase.key}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal',
-              },
-              body: JSON.stringify(notifBody),
-            });
-            console.log('bid_accepted response status:', acceptedNotifRes.status);
-            if (!acceptedNotifRes.ok) {
-              const errBody = await acceptedNotifRes.text();
-              console.error(`bid_accepted notification FAILED (${acceptedNotifRes.status}): ${errBody}`);
-            } else {
-              console.log(`bid_accepted notification SUCCESS — sent to inspector ${inspectorId}`);
-            }
-          } catch (notifErr) {
-            console.error('bid_accepted notification EXCEPTION:', notifErr);
-          }
-          console.log('=== END BID ACCEPTED NOTIFICATION DEBUG ===');
+          // Send notifications based on inspector onboarding status
+          if (inspectorOnboarded) {
+            // === INSPECTOR IS ONBOARDED: Normal assignment flow ===
+            console.log('Inspector onboarded — sending bid_accepted notification');
 
-          // 6. Notify declined inspectors
+            // Notify inspector: bid accepted, start work
+            try {
+              const res = await fetch(notifUrl, {
+                method: 'POST',
+                headers: {
+                  apikey: supabase.key,
+                  Authorization: `Bearer ${supabase.key}`,
+                  'Content-Type': 'application/json',
+                  Prefer: 'return=minimal',
+                },
+                body: JSON.stringify({
+                  user_id: inspectorId,
+                  type: 'bid_accepted',
+                  title: 'Bid Accepted!',
+                  message: `Your bid for ${escrowJob.property_address || 'an inspection'} has been accepted. You can now begin the inspection.`,
+                  job_id: jobId,
+                  bid_id: bidId,
+                  from_user_id: posterId,
+                }),
+              });
+              if (!res.ok) {
+                console.error(`bid_accepted notification failed (${res.status}): ${await res.text()}`);
+              } else {
+                console.log(`bid_accepted notification sent to inspector ${inspectorId}`);
+              }
+            } catch (err) {
+              console.error('bid_accepted notification error:', err);
+            }
+
+            // Notify poster: payment confirmed, inspector assigned
+            try {
+              const res = await fetch(notifUrl, {
+                method: 'POST',
+                headers: {
+                  apikey: supabase.key,
+                  Authorization: `Bearer ${supabase.key}`,
+                  'Content-Type': 'application/json',
+                  Prefer: 'return=minimal',
+                },
+                body: JSON.stringify({
+                  user_id: posterId,
+                  type: 'payment_confirmed',
+                  title: 'Payment Confirmed',
+                  message: `Your payment of $${agreedPrice.toFixed(2)} for the inspection at ${escrowJob.property_address || 'a property'} has been confirmed. ${inspectorName} has been assigned.`,
+                  job_id: jobId,
+                  bid_id: bidId,
+                }),
+              });
+              if (!res.ok) {
+                console.error(`payment_confirmed notification failed (${res.status}): ${await res.text()}`);
+              }
+            } catch (err) {
+              console.error('payment_confirmed notification error:', err);
+            }
+          } else {
+            // === INSPECTOR NOT ONBOARDED: Pending setup flow ===
+            console.log('Inspector NOT onboarded — sending payout_setup_required notification');
+
+            // Notify inspector: complete payout setup
+            try {
+              const res = await fetch(notifUrl, {
+                method: 'POST',
+                headers: {
+                  apikey: supabase.key,
+                  Authorization: `Bearer ${supabase.key}`,
+                  'Content-Type': 'application/json',
+                  Prefer: 'return=minimal',
+                },
+                body: JSON.stringify({
+                  user_id: inspectorId,
+                  type: 'payout_setup_required',
+                  title: 'Congratulations! Complete setup to start your job',
+                  message: `Your bid for ${escrowJob.property_address || 'an inspection'} was accepted! Set up your payout account to get officially assigned and start work.`,
+                  job_id: jobId,
+                  bid_id: bidId,
+                  from_user_id: posterId,
+                }),
+              });
+              if (!res.ok) {
+                console.error(`payout_setup_required notification failed (${res.status}): ${await res.text()}`);
+              } else {
+                console.log(`payout_setup_required notification sent to inspector ${inspectorId}`);
+              }
+            } catch (err) {
+              console.error('payout_setup_required notification error:', err);
+            }
+
+            // Notify poster: awaiting inspector setup
+            try {
+              const res = await fetch(notifUrl, {
+                method: 'POST',
+                headers: {
+                  apikey: supabase.key,
+                  Authorization: `Bearer ${supabase.key}`,
+                  'Content-Type': 'application/json',
+                  Prefer: 'return=minimal',
+                },
+                body: JSON.stringify({
+                  user_id: posterId,
+                  type: 'awaiting_inspector_setup',
+                  title: 'Bid accepted — awaiting inspector setup',
+                  message: `You've accepted ${inspectorName}'s bid for ${escrowJob.property_address || 'a property'}. They're completing their payout setup and will be assigned shortly.`,
+                  job_id: jobId,
+                  bid_id: bidId,
+                }),
+              });
+              if (!res.ok) {
+                console.error(`awaiting_inspector_setup notification failed (${res.status}): ${await res.text()}`);
+              }
+            } catch (err) {
+              console.error('awaiting_inspector_setup notification error:', err);
+            }
+          }
+
+          // Notify declined inspectors (always)
           try {
             const declinedBids = await supabase.query(
               'inspection_bids',
@@ -241,8 +333,7 @@ serve(async (req) => {
                   }),
                 });
                 if (!res.ok) {
-                  const errBody = await res.text();
-                  console.error(`bid_declined notification failed for ${declined.inspector_id} (${res.status}): ${errBody}`);
+                  console.error(`bid_declined notification failed for ${declined.inspector_id} (${res.status}): ${await res.text()}`);
                 }
               } catch (err) {
                 console.error(`bid_declined notification error for ${declined.inspector_id}:`, err);
@@ -253,36 +344,7 @@ serve(async (req) => {
             console.error('Error sending bid_declined notifications:', notifErr);
           }
 
-          // 7. Notify poster that payment was confirmed
-          try {
-            const posterNotifRes = await fetch(notifUrl, {
-              method: 'POST',
-              headers: {
-                apikey: supabase.key,
-                Authorization: `Bearer ${supabase.key}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal',
-              },
-              body: JSON.stringify({
-                user_id: posterId,
-                type: 'payment_confirmed',
-                title: 'Payment Confirmed',
-                message: `Your payment of $${agreedPrice.toFixed(2)} for the inspection at ${escrowJob.property_address || 'a property'} has been confirmed. The inspector has been assigned.`,
-                job_id: jobId,
-                bid_id: bidId,
-              }),
-            });
-            if (!posterNotifRes.ok) {
-              const errBody = await posterNotifRes.text();
-              console.error(`payment_confirmed notification failed (${posterNotifRes.status}): ${errBody}`);
-            } else {
-              console.log(`payment_confirmed notification sent to poster ${posterId}`);
-            }
-          } catch (notifErr) {
-            console.error('Error sending payment_confirmed notification:', notifErr);
-          }
-
-          console.log(`Escrow payment complete: job ${jobId} assigned to inspector ${inspectorId}`);
+          console.log(`Escrow payment complete: job ${jobId} status=${jobStatus}, inspector=${inspectorId}`);
           break;
         }
 
@@ -444,8 +506,87 @@ serve(async (req) => {
 
           console.log(`Connect account updated for user ${userId}: onboarding complete = ${onboardingComplete}`);
 
-          // If onboarding just became complete, retry any pending payouts
+          // If onboarding just became complete, complete any pending assignments + retry payouts
           if (onboardingComplete) {
+            // -----------------------------------------------
+            // COMPLETE PENDING ASSIGNMENTS (payout gating)
+            // Jobs in 'pending_inspector_setup' where this inspector was accepted
+            // -----------------------------------------------
+            try {
+              const pendingSetupJobs = await supabase.query(
+                'inspection_jobs',
+                `assigned_inspector_id=eq.${userId}&status=eq.pending_inspector_setup&select=id,property_address,requesting_agent_id,accepted_bid_id`
+              );
+
+              if (pendingSetupJobs && pendingSetupJobs.length > 0) {
+                console.log(`Found ${pendingSetupJobs.length} pending_inspector_setup job(s) for inspector ${userId}`);
+                const notifUrl = `${supabase.url}/rest/v1/notifications`;
+
+                for (const setupJob of pendingSetupJobs) {
+                  try {
+                    // Transition job to 'assigned'
+                    await supabase.update('inspection_jobs', setupJob.id, {
+                      status: 'assigned',
+                    });
+
+                    console.log(`Job ${setupJob.id} transitioned from pending_inspector_setup to assigned`);
+
+                    // Notify inspector: officially assigned
+                    const inspNotifRes = await fetch(notifUrl, {
+                      method: 'POST',
+                      headers: {
+                        apikey: supabase.key,
+                        Authorization: `Bearer ${supabase.key}`,
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=minimal',
+                      },
+                      body: JSON.stringify({
+                        user_id: userId,
+                        type: 'job_assigned',
+                        title: 'You\'re officially assigned!',
+                        message: `Your payout setup is complete. You can now start the inspection at ${setupJob.property_address || 'the property'}.`,
+                        job_id: setupJob.id,
+                        bid_id: setupJob.accepted_bid_id,
+                        from_user_id: setupJob.requesting_agent_id,
+                      }),
+                    });
+                    if (!inspNotifRes.ok) {
+                      console.error(`job_assigned notification failed (${inspNotifRes.status}): ${await inspNotifRes.text()}`);
+                    }
+
+                    // Notify poster: inspector is now assigned
+                    const posterNotifRes = await fetch(notifUrl, {
+                      method: 'POST',
+                      headers: {
+                        apikey: supabase.key,
+                        Authorization: `Bearer ${supabase.key}`,
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=minimal',
+                      },
+                      body: JSON.stringify({
+                        user_id: setupJob.requesting_agent_id,
+                        type: 'inspector_assigned',
+                        title: 'Inspector assigned to your job',
+                        message: `The inspector has completed their payout setup and is now officially assigned to ${setupJob.property_address || 'your inspection'}.`,
+                        job_id: setupJob.id,
+                        bid_id: setupJob.accepted_bid_id,
+                      }),
+                    });
+                    if (!posterNotifRes.ok) {
+                      console.error(`inspector_assigned notification failed (${posterNotifRes.status}): ${await posterNotifRes.text()}`);
+                    }
+                  } catch (assignErr) {
+                    console.error(`Failed to complete assignment for job ${setupJob.id}:`, assignErr);
+                  }
+                }
+              }
+            } catch (setupErr) {
+              console.error('Error checking pending_inspector_setup jobs:', setupErr);
+            }
+
+            // -----------------------------------------------
+            // RETRY PENDING PAYOUTS (existing logic)
+            // -----------------------------------------------
             try {
               const pendingJobs = await supabase.query(
                 'inspection_jobs',

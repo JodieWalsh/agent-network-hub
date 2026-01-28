@@ -55,7 +55,7 @@ import { getOrCreateConversation } from '@/lib/messaging';
 
 type UrgencyLevel = 'standard' | 'urgent' | 'express';
 type PropertyType = 'house' | 'apartment' | 'townhouse' | 'land' | 'other';
-type JobStatus = 'draft' | 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+type JobStatus = 'draft' | 'open' | 'pending_inspector_setup' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
 type BidStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn';
 
 type PaymentStatus = 'pending' | 'in_escrow' | 'released' | 'refunded';
@@ -699,6 +699,18 @@ export default function InspectionSpotlightDetail() {
                     </p>
                   </div>
                 </div>
+              ) : job.status === 'pending_inspector_setup' ? (
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">
+                      Waiting for inspector to complete payout setup
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      ${job.budget_amount.toLocaleString('en-AU')} held in escrow &middot; The inspector will be officially assigned once they finish setting up their payout account.
+                    </p>
+                  </div>
+                </div>
               ) : job.payment_status === 'in_escrow' ? (
                 <div className="flex items-start gap-3">
                   <DollarSign className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -794,6 +806,38 @@ export default function InspectionSpotlightDetail() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pending Inspector Setup - Inspector View */}
+        {!isJobCreator && job.status === 'pending_inspector_setup' && job.assigned_inspector_id === user?.id && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base text-amber-800">
+                <Wallet className="h-5 w-5 text-amber-600" />
+                Complete Payout Setup to Start This Job
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-amber-800 mb-3">
+                Your bid was accepted! Set up your payout account to get officially assigned and start work.
+              </p>
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-lg mb-3">
+                <div className="text-sm">
+                  <span className="text-emerald-700 font-semibold">
+                    Your earnings: ${Math.round((job.budget_amount) * 0.90).toLocaleString('en-AU')}
+                  </span>
+                  <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate('/settings/billing')}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                <Wallet className="h-4 w-4 mr-2" />
+                Set Up Payouts
+              </Button>
             </CardContent>
           </Card>
         )}

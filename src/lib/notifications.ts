@@ -38,6 +38,9 @@ export type NotificationType =
   | 'payment_released'
   | 'payment_confirmed'
   | 'payment_refunded'
+  | 'payout_setup_required'
+  | 'awaiting_inspector_setup'
+  | 'inspector_assigned'
   | 'review_received'
   | 'badge_earned'
   | 'job_expired'
@@ -764,6 +767,9 @@ export function getNotificationIcon(type: NotificationType): string {
     payment_released: 'DollarSign',
     payment_confirmed: 'CreditCard',
     payment_refunded: 'RefreshCw',
+    payout_setup_required: 'Wallet',
+    awaiting_inspector_setup: 'Clock',
+    inspector_assigned: 'UserCheck',
     review_received: 'Star',
     badge_earned: 'Award',
     job_expired: 'Clock',
@@ -791,6 +797,9 @@ export function getNotificationColor(type: NotificationType): string {
     payment_released: 'text-green-600 bg-green-50',
     payment_confirmed: 'text-green-600 bg-green-50',
     payment_refunded: 'text-blue-600 bg-blue-50',
+    payout_setup_required: 'text-amber-600 bg-amber-50',
+    awaiting_inspector_setup: 'text-amber-600 bg-amber-50',
+    inspector_assigned: 'text-green-600 bg-green-50',
     review_received: 'text-yellow-600 bg-yellow-50',
     badge_earned: 'text-pink-600 bg-pink-50',
     job_expired: 'text-gray-600 bg-gray-50',
@@ -823,12 +832,24 @@ export function getNotificationLink(notification: Notification): string {
     case 'bid_accepted':
     case 'bid_declined':
     case 'job_assigned':
+    case 'inspector_assigned':
     case 'report_approved':
       // Inspector notifications - go to the job spotlight
       if (notification.job_id) {
         return `/inspections/spotlights/${notification.job_id}`;
       }
       return '/inspections/spotlights';
+
+    case 'payout_setup_required':
+      // Inspector needs to set up payouts
+      return '/settings/billing';
+
+    case 'awaiting_inspector_setup':
+      // Poster waiting for inspector to set up payouts
+      if (notification.job_id) {
+        return `/inspections/spotlights/${notification.job_id}`;
+      }
+      return '/inspections/my-jobs?tab=progress';
 
     case 'report_submitted':
       // Job poster sees report - go to My Jobs "Reports Ready" tab

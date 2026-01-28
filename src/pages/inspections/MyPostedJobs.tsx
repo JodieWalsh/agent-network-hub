@@ -64,7 +64,7 @@ import { getOrCreateConversation } from '@/lib/messaging';
 import { acceptBidWithPayment, refundEscrowPayment } from '@/lib/stripe';
 
 // Types
-type JobStatus = 'open' | 'in_negotiation' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled' | 'expired';
+type JobStatus = 'open' | 'in_negotiation' | 'pending_inspector_setup' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled' | 'expired';
 type BidStatus = 'pending' | 'shortlisted' | 'accepted' | 'declined' | 'withdrawn';
 type PaymentStatus = 'pending' | 'in_escrow' | 'released' | 'refunded';
 
@@ -135,7 +135,7 @@ interface BidHistoryEntry {
 const TABS = [
   { id: 'awaiting', label: 'Awaiting Bids', filter: (j: InspectionJob) => j.status === 'open' && (!j.bid_count || j.bid_count === 0) },
   { id: 'received', label: 'Bids Received', filter: (j: InspectionJob) => j.status === 'open' && j.bid_count && j.bid_count > 0, urgent: true },
-  { id: 'progress', label: 'In Progress', filter: (j: InspectionJob) => ['assigned', 'in_progress'].includes(j.status) },
+  { id: 'progress', label: 'In Progress', filter: (j: InspectionJob) => ['pending_inspector_setup', 'assigned', 'in_progress'].includes(j.status) },
   { id: 'reports', label: 'Reports Ready', filter: (j: InspectionJob) => j.status === 'pending_review', urgent: true },
   { id: 'completed', label: 'Completed', filter: (j: InspectionJob) => j.status === 'completed' },
   { id: 'cancelled', label: 'Cancelled/Expired', filter: (j: InspectionJob) => ['cancelled', 'expired'].includes(j.status) },
@@ -145,6 +145,7 @@ const TABS = [
 const STATUS_CONFIG: Record<JobStatus, { label: string; color: string; icon: typeof Clock }> = {
   open: { label: 'Open', color: 'bg-green-100 text-green-800 border-green-200', icon: Clock },
   in_negotiation: { label: 'Negotiating', color: 'bg-blue-100 text-blue-800 border-blue-200', icon: MessageSquare },
+  pending_inspector_setup: { label: 'Awaiting Inspector Setup', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
   assigned: { label: 'Assigned', color: 'bg-purple-100 text-purple-800 border-purple-200', icon: User },
   in_progress: { label: 'In Progress', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: Zap },
   pending_review: { label: 'Report Ready', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: FileText },
@@ -1038,6 +1039,15 @@ function JobCard({
                 </span>
               )}
             </div>
+
+            {/* Pending Inspector Setup Status */}
+            {job.status === 'pending_inspector_setup' && (
+              <div className="flex items-center gap-1.5 mt-2 text-sm text-amber-700">
+                <Clock size={14} className="text-amber-600" />
+                <span className="font-medium">Waiting for inspector to complete payout setup</span>
+                <span className="text-amber-600 text-xs">&middot; They'll be assigned once setup is complete</span>
+              </div>
+            )}
 
             {/* Escrow / Payment Status Line */}
             {tabId !== 'completed' && tabId !== 'cancelled' && job.payment_status === 'in_escrow' && job.agreed_price && (

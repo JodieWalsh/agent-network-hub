@@ -66,7 +66,7 @@ import { toast } from 'sonner';
 import { getOrCreateConversation } from '@/lib/messaging';
 
 // Types
-type JobStatus = 'open' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled';
+type JobStatus = 'open' | 'pending_inspector_setup' | 'assigned' | 'in_progress' | 'pending_review' | 'completed' | 'cancelled';
 type BidStatus = 'pending' | 'shortlisted' | 'accepted' | 'declined' | 'withdrawn';
 
 interface InspectionJob {
@@ -155,7 +155,7 @@ const getDaysDiff = (dateStr: string, fromNow = true) => {
 
 export default function MyInspectionWork() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('bids');
 
@@ -312,7 +312,7 @@ export default function MyInspectionWork() {
 
         // Categorize jobs
         const accepted = jobsWithCreators.filter(
-          (j: InspectionJob) => j.status === 'assigned' || j.status === 'in_progress'
+          (j: InspectionJob) => j.status === 'pending_inspector_setup' || j.status === 'assigned' || j.status === 'in_progress'
         );
         const submitted = jobsWithCreators.filter((j: InspectionJob) => j.status === 'pending_review');
         const completed = jobsWithCreators.filter((j: InspectionJob) => j.status === 'completed');
@@ -818,18 +818,32 @@ function AcceptedJobCard({
   onCompleteReport: () => void;
   onMessage?: () => void;
 }) {
+  const navigate = useNavigate();
   const inspectionDate = job.agreed_date ? new Date(job.agreed_date) : null;
   const now = new Date();
   const isPastInspection = inspectionDate && inspectionDate < now;
   const daysUntil = inspectionDate ? getDaysDiff(job.agreed_date!, false) : null;
+  const isPendingSetup = job.status === 'pending_inspector_setup';
 
   return (
-    <Card className="border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/30 overflow-hidden">
-      {/* Success Banner */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 flex items-center gap-2">
-        <PartyPopper className="h-4 w-4 text-white" />
-        <span className="text-white font-medium text-sm">You got the gig!</span>
-      </div>
+    <Card className={cn(
+      'overflow-hidden',
+      isPendingSetup
+        ? 'border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/30'
+        : 'border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/30'
+    )}>
+      {/* Banner */}
+      {isPendingSetup ? (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-white" />
+          <span className="text-white font-medium text-sm">Almost there! Complete payout setup to start this job</span>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 flex items-center gap-2">
+          <PartyPopper className="h-4 w-4 text-white" />
+          <span className="text-white font-medium text-sm">You got the gig!</span>
+        </div>
+      )}
 
       <CardContent className="pt-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -857,6 +871,23 @@ function AcceptedJobCard({
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                 <User className="h-4 w-4" />
                 <span>{job.creator.full_name || 'Anonymous'}</span>
+              </div>
+            )}
+
+            {/* Pending Setup Message */}
+            {isPendingSetup && (
+              <div className="p-3 bg-amber-100 border border-amber-300 rounded-lg mb-3">
+                <div className="flex items-start gap-2">
+                  <Wallet className="h-4 w-4 text-amber-700 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">
+                      Your bid was accepted! Set up your payout account to get officially assigned.
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Connect your bank account so you can receive payments when your reports are approved.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -889,8 +920,8 @@ function AcceptedJobCard({
               </div>
             </div>
 
-            {/* Inspection Date Status */}
-            {daysUntil !== null && (
+            {/* Inspection Date Status (only for fully assigned jobs) */}
+            {!isPendingSetup && daysUntil !== null && (
               <p className={cn('text-sm', isPastInspection ? 'text-amber-700' : 'text-muted-foreground')}>
                 {isPastInspection ? (
                   <>
@@ -908,10 +939,17 @@ function AcceptedJobCard({
 
           {/* Actions */}
           <div className="flex flex-col gap-2">
-            <Button onClick={onCompleteReport} className="bg-forest hover:bg-forest/90" size="lg">
-              <ClipboardList className="h-4 w-4 mr-2" />
-              Complete Report
-            </Button>
+            {isPendingSetup ? (
+              <Button onClick={() => navigate('/settings/billing')} className="bg-amber-600 hover:bg-amber-700" size="lg">
+                <Wallet className="h-4 w-4 mr-2" />
+                Set Up Payouts
+              </Button>
+            ) : (
+              <Button onClick={onCompleteReport} className="bg-forest hover:bg-forest/90" size="lg">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Complete Report
+              </Button>
+            )}
             {onMessage && (
               <Button variant="outline" size="sm" onClick={onMessage} className="text-forest border-forest/30 hover:bg-forest/5">
                 <MessageSquare className="h-4 w-4 mr-2" />
