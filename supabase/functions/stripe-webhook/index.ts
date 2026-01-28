@@ -81,24 +81,24 @@ serve(async (req) => {
 
           console.log(`Escrow checkout completed: job=${jobId}, bid=${bidId}, poster=${posterId}, inspector=${inspectorId}`);
 
-          // Re-validate job is still open
-          const escrowJobs = await supabase.query(
-            'inspection_jobs',
-            `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address`
-          );
+          // Re-validate job and bid in parallel
+          const [escrowJobs, escrowBids] = await Promise.all([
+            supabase.query(
+              'inspection_jobs',
+              `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address`
+            ),
+            supabase.query(
+              'inspection_bids',
+              `id=eq.${bidId}&select=id,status,proposed_price,proposed_date,inspector_id`
+            ),
+          ]);
           const escrowJob = escrowJobs[0];
+          const escrowBid = escrowBids[0];
 
           if (!escrowJob || escrowJob.status !== 'open') {
             console.error(`Escrow webhook: Job ${jobId} is not open (status: ${escrowJob?.status}). Refund may be needed.`);
             break;
           }
-
-          // Re-validate bid is still pending
-          const escrowBids = await supabase.query(
-            'inspection_bids',
-            `id=eq.${bidId}&select=id,status,proposed_price,proposed_date,inspector_id`
-          );
-          const escrowBid = escrowBids[0];
 
           if (!escrowBid || escrowBid.status !== 'pending') {
             console.error(`Escrow webhook: Bid ${bidId} is not pending (status: ${escrowBid?.status}). Refund may be needed.`);
@@ -110,60 +110,69 @@ serve(async (req) => {
           const { platformFee, inspectorPayout } = calculateFees(amountInCents);
           const now = new Date().toISOString();
 
-          // 1. Accept the bid
-          await supabase.update('inspection_bids', bidId, { status: 'accepted' });
-
-          // 2. Decline all other pending bids for this job
+          // Steps 1-4 are independent DB writes — run in parallel
           const declineUrl = `${supabase.url}/rest/v1/inspection_bids?job_id=eq.${jobId}&id=neq.${bidId}&status=eq.pending`;
-          await fetch(declineUrl, {
-            method: 'PATCH',
-            headers: {
-              apikey: supabase.key,
-              Authorization: `Bearer ${supabase.key}`,
-              'Content-Type': 'application/json',
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify({ status: 'declined' }),
-          });
-
-          // 3. Assign inspector to the job
-          await supabase.update('inspection_jobs', jobId, {
-            status: 'assigned',
-            payment_status: 'in_escrow',
-            stripe_payment_intent_id: paymentIntentId,
-            agreed_price: agreedPrice,
-            agreed_date: escrowBid.proposed_date,
-            assigned_inspector_id: inspectorId,
-          });
-
-          // 4. Create inspection_payments record (amounts in cents)
           const paymentInsertUrl = `${supabase.url}/rest/v1/inspection_payments`;
-          await fetch(paymentInsertUrl, {
-            method: 'POST',
-            headers: {
-              apikey: supabase.key,
-              Authorization: `Bearer ${supabase.key}`,
-              'Content-Type': 'application/json',
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify({
-              job_id: jobId,
-              payer_id: posterId,
-              payee_id: inspectorId,
-              gross_amount: amountInCents,
-              platform_fee: platformFee,
-              net_amount: inspectorPayout,
-              currency: 'AUD',
-              status: 'held',
-              stripe_payment_intent_id: paymentIntentId,
-              paid_at: now,
+
+          const [, , , paymentInsertRes] = await Promise.all([
+            // 1. Accept the bid
+            supabase.update('inspection_bids', bidId, { status: 'accepted' }),
+
+            // 2. Decline all other pending bids for this job
+            fetch(declineUrl, {
+              method: 'PATCH',
+              headers: {
+                apikey: supabase.key,
+                Authorization: `Bearer ${supabase.key}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({ status: 'declined' }),
             }),
-          });
+
+            // 3. Assign inspector to the job
+            supabase.update('inspection_jobs', jobId, {
+              status: 'assigned',
+              payment_status: 'in_escrow',
+              stripe_payment_intent_id: paymentIntentId,
+              agreed_price: agreedPrice,
+              agreed_date: escrowBid.proposed_date,
+              assigned_inspector_id: inspectorId,
+            }),
+
+            // 4. Create inspection_payments record (amounts in cents)
+            fetch(paymentInsertUrl, {
+              method: 'POST',
+              headers: {
+                apikey: supabase.key,
+                Authorization: `Bearer ${supabase.key}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                job_id: jobId,
+                payer_id: posterId,
+                payee_id: inspectorId,
+                gross_amount: amountInCents,
+                platform_fee: platformFee,
+                net_amount: inspectorPayout,
+                currency: 'AUD',
+                status: 'held',
+                stripe_payment_intent_id: paymentIntentId,
+                paid_at: now,
+              }),
+            }),
+          ]);
+
+          if (!paymentInsertRes.ok) {
+            const errBody = await paymentInsertRes.text();
+            console.error(`inspection_payments insert failed (${paymentInsertRes.status}): ${errBody}`);
+          }
 
           // 5. Notify accepted inspector
           const notifUrl = `${supabase.url}/rest/v1/notifications`;
           try {
-            await fetch(notifUrl, {
+            const acceptedNotifRes = await fetch(notifUrl, {
               method: 'POST',
               headers: {
                 apikey: supabase.key,
@@ -180,6 +189,12 @@ serve(async (req) => {
                 metadata: { jobId, bidId },
               }),
             });
+            if (!acceptedNotifRes.ok) {
+              const errBody = await acceptedNotifRes.text();
+              console.error(`bid_accepted notification failed (${acceptedNotifRes.status}): ${errBody}`);
+            } else {
+              console.log(`bid_accepted notification sent to inspector ${inspectorId}`);
+            }
           } catch (notifErr) {
             console.error('Error sending bid_accepted notification:', notifErr);
           }
@@ -190,25 +205,34 @@ serve(async (req) => {
               'inspection_bids',
               `job_id=eq.${jobId}&status=eq.declined&select=inspector_id`
             );
-            for (const declined of declinedBids) {
-              await fetch(notifUrl, {
-                method: 'POST',
-                headers: {
-                  apikey: supabase.key,
-                  Authorization: `Bearer ${supabase.key}`,
-                  'Content-Type': 'application/json',
-                  Prefer: 'return=minimal',
-                },
-                body: JSON.stringify({
-                  user_id: declined.inspector_id,
-                  type: 'bid_declined',
-                  title: 'Bid Not Selected',
-                  message: `Another inspector was selected for the inspection at ${escrowJob.property_address || 'a property'}.`,
-                  link: `/inspections/my-work`,
-                  metadata: { jobId },
-                }),
-              });
-            }
+            const declinedNotifPromises = (declinedBids || []).map(async (declined: any) => {
+              try {
+                const res = await fetch(notifUrl, {
+                  method: 'POST',
+                  headers: {
+                    apikey: supabase.key,
+                    Authorization: `Bearer ${supabase.key}`,
+                    'Content-Type': 'application/json',
+                    Prefer: 'return=minimal',
+                  },
+                  body: JSON.stringify({
+                    user_id: declined.inspector_id,
+                    type: 'bid_declined',
+                    title: 'Bid Not Selected',
+                    message: `Another inspector was selected for the inspection at ${escrowJob.property_address || 'a property'}.`,
+                    link: `/inspections/my-work`,
+                    metadata: { jobId },
+                  }),
+                });
+                if (!res.ok) {
+                  const errBody = await res.text();
+                  console.error(`bid_declined notification failed for ${declined.inspector_id} (${res.status}): ${errBody}`);
+                }
+              } catch (err) {
+                console.error(`bid_declined notification error for ${declined.inspector_id}:`, err);
+              }
+            });
+            await Promise.all(declinedNotifPromises);
           } catch (notifErr) {
             console.error('Error sending bid_declined notifications:', notifErr);
           }
