@@ -41,7 +41,7 @@ serve(async (req) => {
     // 1. Fetch and validate the job
     const jobs = await supabase.query(
       'inspection_jobs',
-      `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address,budget`
+      `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address`
     );
     const job = jobs[0];
 

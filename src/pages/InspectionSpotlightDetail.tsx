@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -653,7 +653,12 @@ export default function InspectionSpotlightDetail() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{creator.full_name || 'Anonymous'}</p>
+                  <Link
+                    to={`/profiles/${job.creator_id}`}
+                    className="font-medium text-forest hover:underline"
+                  >
+                    {creator.full_name || 'Anonymous'}
+                  </Link>
                   <p className="text-sm text-muted-foreground capitalize">
                     {creator.user_type.replace('_', ' ')}
                   </p>

@@ -130,7 +130,7 @@ export default function CreateInspectionJob() {
   const [preferredDate3, setPreferredDate3] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [addressUnknown, setAddressUnknown] = useState(false);
-  const [generalArea, setGeneralArea] = useState('');
+  const [generalAreaLocation, setGeneralAreaLocation] = useState<LocationSuggestion | null>(null);
   const [useBrief, setUseBrief] = useState(false);
   const [clientBriefs, setClientBriefs] = useState<ClientBrief[]>([]);
   const [loadingBriefs, setLoadingBriefs] = useState(false);
@@ -223,7 +223,7 @@ export default function CreateInspectionJob() {
       case 1:
         // Can proceed if exact address is provided OR if address is unknown but general area is specified
         const hasLocation = addressUnknown
-          ? generalArea.trim().length > 0
+          ? !!generalAreaLocation
           : formData.property_address.length > 0;
         return !!(hasLocation && formData.property_type);
       case 2:
@@ -263,7 +263,7 @@ export default function CreateInspectionJob() {
 
       // Use general area if address is unknown, otherwise use exact address
       const propertyAddress = addressUnknown
-        ? `Area: ${generalArea}`
+        ? `Area: ${generalAreaLocation?.name || ''}`
         : formData.property_address;
 
       // Use raw fetch since Supabase client has issues
@@ -284,9 +284,11 @@ export default function CreateInspectionJob() {
         creator_id: user.id,
         requesting_agent_id: user.id,
         property_address: propertyAddress,
-        property_location: formData.property_lat && formData.property_lng
-          ? `POINT(${formData.property_lng} ${formData.property_lat})`
-          : null,
+        property_location: addressUnknown && generalAreaLocation
+          ? `POINT(${generalAreaLocation.coordinates.lng} ${generalAreaLocation.coordinates.lat})`
+          : formData.property_lat && formData.property_lng
+            ? `POINT(${formData.property_lng} ${formData.property_lat})`
+            : null,
         property_type: formData.property_type,
         property_access_notes: formData.property_access_notes || null,
         urgency_level: formData.urgency_level,
@@ -338,7 +340,7 @@ export default function CreateInspectionJob() {
 
       // Use general area if address is unknown, otherwise use exact address
       const propertyAddress = addressUnknown
-        ? `Area: ${generalArea}`
+        ? `Area: ${generalAreaLocation?.name || ''}`
         : formData.property_address;
 
       // Use raw fetch since Supabase client has issues
@@ -359,9 +361,11 @@ export default function CreateInspectionJob() {
         creator_id: user.id,
         requesting_agent_id: user.id,
         property_address: propertyAddress,
-        property_location: formData.property_lat && formData.property_lng
-          ? `POINT(${formData.property_lng} ${formData.property_lat})`
-          : null,
+        property_location: addressUnknown && generalAreaLocation
+          ? `POINT(${generalAreaLocation.coordinates.lng} ${generalAreaLocation.coordinates.lat})`
+          : formData.property_lat && formData.property_lng
+            ? `POINT(${formData.property_lng} ${formData.property_lat})`
+            : null,
         property_type: formData.property_type,
         property_access_notes: formData.property_access_notes || null,
         urgency_level: formData.urgency_level,
@@ -484,7 +488,7 @@ export default function CreateInspectionJob() {
                         }));
                       } else {
                         // Clear general area when switching to exact address
-                        setGeneralArea('');
+                        setGeneralAreaLocation(null);
                       }
                     }}
                   />
@@ -522,15 +526,23 @@ export default function CreateInspectionJob() {
                 ) : (
                   <div className="space-y-2">
                     <Label>General Area *</Label>
-                    <Textarea
-                      placeholder="e.g., Richmond and surrounding suburbs within 10km, Eastern suburbs of Melbourne, North Shore Sydney..."
-                      value={generalArea}
-                      onChange={(e) => setGeneralArea(e.target.value)}
-                      rows={3}
-                      required
+                    <LocationSearch
+                      value={generalAreaLocation}
+                      onChange={setGeneralAreaLocation}
+                      placeholder="Search for a suburb or area..."
+                      types={['place', 'locality', 'neighborhood']}
                     />
+                    {generalAreaLocation && (
+                      <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <MapPinned className="h-4 w-4 text-blue-600 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{generalAreaLocation.name}</p>
+                          <p className="text-xs text-muted-foreground">{generalAreaLocation.fullName}</p>
+                        </div>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      Describe the general area where you expect to request inspections. The inspector can confirm availability for this region.
+                      Search for the suburb or area where you need the inspection.
                     </p>
                   </div>
                 )}
@@ -843,7 +855,10 @@ export default function CreateInspectionJob() {
                             <Badge variant="outline" className="mb-2 bg-blue-50 text-blue-700 border-blue-200">
                               General Area Booking
                             </Badge>
-                            <p className="text-sm font-medium">{generalArea}</p>
+                            <p className="text-sm font-medium">{generalAreaLocation?.name}</p>
+                            {generalAreaLocation?.fullName && (
+                              <p className="text-xs text-muted-foreground">{generalAreaLocation.fullName}</p>
+                            )}
                           </>
                         ) : (
                           <p className="text-sm font-medium">{formData.property_address}</p>

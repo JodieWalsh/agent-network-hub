@@ -34,6 +34,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Activity from "./pages/Activity";
 import Pricing from "./pages/Pricing";
 import Messaging from "./pages/Messaging";
+import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/inspections/spotlights/:id" element={<InspectionSpotlightDetail />} />
             <Route path="/activity" element={<Activity />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/profiles/:userId" element={<PublicProfile />} />
 
             {/* Protected Routes */}
             <Route

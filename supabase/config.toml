@@ -4,3 +4,14 @@ project_id = "kveuukcmfzxdnuzkbfss"
 # Stripe authenticates via its own stripe-signature header instead.
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Escrow payment functions - called from frontend with auth headers.
+# verify_jwt disabled so the functions handle their own validation.
+[functions.accept-bid-with-payment]
+verify_jwt = false
+
+[functions.refund-escrow-payment]
+verify_jwt = false
+
+[functions.stripe-connect-payout]
+verify_jwt = false
