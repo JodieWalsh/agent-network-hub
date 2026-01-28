@@ -104,7 +104,6 @@ BEGIN
         )
         OR
         -- Match 4: State service area name appears in job address
-        OR
         EXISTS (
           SELECT 1 FROM public.agent_service_areas sa
           WHERE sa.agent_id = p.id

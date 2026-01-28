@@ -415,7 +415,7 @@ export default function CreateInspectionJob() {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal',
+          'Prefer': 'return=representation',
         },
         body: JSON.stringify(jobData),
       });
@@ -423,6 +423,28 @@ export default function CreateInspectionJob() {
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || `Insert failed: ${response.status}`);
+      }
+
+      // Get the created job ID to notify nearby inspectors
+      let createdJobId: string | null = null;
+      try {
+        const [createdJob] = await response.json();
+        createdJobId = createdJob?.id || null;
+      } catch (e) {
+        console.warn('Could not parse created job response:', e);
+      }
+
+      // Notify inspectors whose service area covers this job location (non-blocking)
+      if (createdJobId) {
+        fetch(`${supabaseUrl}/rest/v1/rpc/notify_nearby_inspectors`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ p_job_id: createdJobId }),
+        }).catch((err) => console.warn('Failed to notify nearby inspectors:', err));
       }
 
       toast.success('Job posted! Inspectors can now submit bids.');
