@@ -29,6 +29,7 @@ import {
   createDefaultPreferences,
   type NotificationPreferences,
 } from "@/lib/notifications";
+import { COUNTRY_TO_CURRENCY, getCurrencyForCountry, getPopularCurrencies, getAllCurrencies } from "@/lib/currency";
 
 const userTypeLabels: Record<string, string> = {
   buyers_agent: "Buyer's Agent",
@@ -56,6 +57,42 @@ const membershipColors: Record<string, string> = {
   premium: "bg-rose-gold/20 text-rose-gold border-rose-gold/30",
 };
 
+const PROFILE_COUNTRIES = [
+  { code: "AU", name: "Australia" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CA", name: "Canada" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "IE", name: "Ireland" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "AT", name: "Austria" },
+  { code: "CH", name: "Switzerland" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+  { code: "FI", name: "Finland" },
+  { code: "PT", name: "Portugal" },
+  { code: "PL", name: "Poland" },
+  { code: "CZ", name: "Czech Republic" },
+  { code: "HU", name: "Hungary" },
+  { code: "RO", name: "Romania" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "HR", name: "Croatia" },
+  { code: "GR", name: "Greece" },
+  { code: "SG", name: "Singapore" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "JP", name: "Japan" },
+  { code: "MY", name: "Malaysia" },
+  { code: "TH", name: "Thailand" },
+  { code: "MX", name: "Mexico" },
+  { code: "BR", name: "Brazil" },
+] as const;
+
 export default function ProfileEdit() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,6 +113,10 @@ export default function ProfileEdit() {
   const [role, setRole] = useState<UserRole>("guest");
   const [approvalStatus, setApprovalStatus] = useState<string>("approved");
   const [professionalAccreditation, setProfessionalAccreditation] = useState("");
+
+  // Country & currency state
+  const [selectedCountry, setSelectedCountry] = useState("AU");
+  const [selectedCurrency, setSelectedCurrency] = useState("AUD");
 
   // Location state
   const [homeSuburb, setHomeSuburb] = useState<LocationSuggestion | null>(null);
@@ -161,6 +202,8 @@ export default function ProfileEdit() {
         setRole(data.role || "guest");
         setApprovalStatus(data.approval_status || "approved");
         setProfessionalAccreditation(data.professional_accreditation || "");
+        setSelectedCountry(data.country_code || "AU");
+        setSelectedCurrency(data.default_currency || getCurrencyForCountry(data.country_code || "AU"));
       }
     } catch (error) {
       console.error("🔴 [ProfileEdit] Error fetching profile:", error);
@@ -191,6 +234,8 @@ export default function ProfileEdit() {
           setRole(data.role || "guest");
           setApprovalStatus(data.approval_status || "approved");
           setProfessionalAccreditation(data.professional_accreditation || "");
+          setSelectedCountry(data.country_code || "AU");
+          setSelectedCurrency(data.default_currency || getCurrencyForCountry(data.country_code || "AU"));
         } else {
           toast.error("Failed to load profile");
         }
@@ -237,6 +282,8 @@ export default function ProfileEdit() {
         latitude,
         longitude,
         professional_accreditation: professionalAccreditation || null,
+        country_code: selectedCountry,
+        default_currency: selectedCurrency,
       };
 
       // If user is a guest and submitting professional accreditation,
@@ -739,6 +786,54 @@ export default function ProfileEdit() {
                 </RadioGroup>
                 <p className="text-xs text-muted-foreground">
                   This affects how distances and property sizes are displayed throughout the app
+                </p>
+              </div>
+
+              {/* Country & Currency */}
+              <div className="space-y-3 pt-2 border-t">
+                <Label>Country</Label>
+                <Select
+                  value={selectedCountry}
+                  onValueChange={(value) => {
+                    setSelectedCountry(value);
+                    setSelectedCurrency(getCurrencyForCountry(value));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROFILE_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Your country determines the default currency for job postings and payments
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Currency</Label>
+                <Select
+                  value={selectedCurrency}
+                  onValueChange={setSelectedCurrency}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAllCurrencies().map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.symbol} {c.code} — {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This is the currency shown by default when you create jobs or view prices
                 </p>
               </div>
             </CardContent>
