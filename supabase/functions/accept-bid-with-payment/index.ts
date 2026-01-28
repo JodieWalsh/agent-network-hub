@@ -158,6 +158,16 @@ serve(async (req) => {
         userId,
         inspectorId: bid.inspector_id,
       },
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          description: 'Property inspection escrow payment',
+          metadata: {
+            job_id: jobId,
+            property_address: job.property_address || 'Inspection job',
+          },
+        },
+      },
       success_url: `${origin}/inspections/my-jobs?payment=success&job=${jobId}`,
       cancel_url: `${origin}/inspections/my-jobs?payment=cancelled&job=${jobId}`,
     });

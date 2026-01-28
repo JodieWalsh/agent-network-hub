@@ -76,10 +76,13 @@ serve(async (req) => {
         // INSPECTION ESCROW PAYMENT
         // -----------------------------------------------
         if (session.metadata?.type === 'inspection_escrow') {
+          console.log('=== ESCROW HANDLER ENTERED ===');
+          console.log('Session metadata:', JSON.stringify(session.metadata));
           const { jobId, bidId, userId: posterId, inspectorId } = session.metadata;
           const paymentIntentId = session.payment_intent;
 
           console.log(`Escrow checkout completed: job=${jobId}, bid=${bidId}, poster=${posterId}, inspector=${inspectorId}`);
+          console.log('Payment intent ID:', paymentIntentId);
 
           // Re-validate job and bid in parallel
           const [escrowJobs, escrowBids] = await Promise.all([
@@ -170,8 +173,26 @@ serve(async (req) => {
           }
 
           // 5. Notify accepted inspector
+          // NOTE: notifications table has job_id/bid_id/from_user_id FKs — NOT metadata/link columns.
+          // Links are computed dynamically by getNotificationLink() in the frontend.
           const notifUrl = `${supabase.url}/rest/v1/notifications`;
+          console.log('=== BID ACCEPTED NOTIFICATION DEBUG ===');
+          console.log('Inspector ID (recipient):', inspectorId);
+          console.log('Poster ID (from_user):', posterId);
+          console.log('Job ID:', jobId);
+          console.log('Bid ID:', bidId);
+          console.log('Notification URL:', notifUrl);
           try {
+            const notifBody = {
+              user_id: inspectorId,
+              type: 'bid_accepted',
+              title: 'Bid Accepted!',
+              message: `Your bid for ${escrowJob.property_address || 'an inspection'} has been accepted. You can now begin the inspection.`,
+              job_id: jobId,
+              bid_id: bidId,
+              from_user_id: posterId,
+            };
+            console.log('Notification payload:', JSON.stringify(notifBody));
             const acceptedNotifRes = await fetch(notifUrl, {
               method: 'POST',
               headers: {
@@ -180,24 +201,19 @@ serve(async (req) => {
                 'Content-Type': 'application/json',
                 Prefer: 'return=minimal',
               },
-              body: JSON.stringify({
-                user_id: inspectorId,
-                type: 'bid_accepted',
-                title: 'Bid Accepted!',
-                message: `Your bid for ${escrowJob.property_address || 'an inspection'} has been accepted. You can now begin the inspection.`,
-                link: `/inspections/my-work`,
-                metadata: { jobId, bidId },
-              }),
+              body: JSON.stringify(notifBody),
             });
+            console.log('bid_accepted response status:', acceptedNotifRes.status);
             if (!acceptedNotifRes.ok) {
               const errBody = await acceptedNotifRes.text();
-              console.error(`bid_accepted notification failed (${acceptedNotifRes.status}): ${errBody}`);
+              console.error(`bid_accepted notification FAILED (${acceptedNotifRes.status}): ${errBody}`);
             } else {
-              console.log(`bid_accepted notification sent to inspector ${inspectorId}`);
+              console.log(`bid_accepted notification SUCCESS — sent to inspector ${inspectorId}`);
             }
           } catch (notifErr) {
-            console.error('Error sending bid_accepted notification:', notifErr);
+            console.error('bid_accepted notification EXCEPTION:', notifErr);
           }
+          console.log('=== END BID ACCEPTED NOTIFICATION DEBUG ===');
 
           // 6. Notify declined inspectors
           try {
@@ -220,8 +236,8 @@ serve(async (req) => {
                     type: 'bid_declined',
                     title: 'Bid Not Selected',
                     message: `Another inspector was selected for the inspection at ${escrowJob.property_address || 'a property'}.`,
-                    link: `/inspections/my-work`,
-                    metadata: { jobId },
+                    job_id: jobId,
+                    from_user_id: posterId,
                   }),
                 });
                 if (!res.ok) {
@@ -252,8 +268,8 @@ serve(async (req) => {
                 type: 'payment_confirmed',
                 title: 'Payment Confirmed',
                 message: `Your payment of $${agreedPrice.toFixed(2)} for the inspection at ${escrowJob.property_address || 'a property'} has been confirmed. The inspector has been assigned.`,
-                link: `/inspections/my-jobs`,
-                metadata: { jobId, bidId, amount: agreedPrice },
+                job_id: jobId,
+                bid_id: bidId,
               }),
             });
             if (!posterNotifRes.ok) {
@@ -453,9 +469,9 @@ serve(async (req) => {
             );
             const jobAddress = jobs[0]?.property_address || 'an inspection';
 
-            // Insert notification
+            // Insert notification (use job_id FK, not metadata/link columns)
             const notifUrl = `${supabase.url}/rest/v1/notifications`;
-            await fetch(notifUrl, {
+            const paymentNotifRes = await fetch(notifUrl, {
               method: 'POST',
               headers: {
                 apikey: supabase.key,
@@ -468,12 +484,16 @@ serve(async (req) => {
                 type: 'payment_released',
                 title: 'Payment Received',
                 message: `You've been paid ${amountFormatted} for your inspection at ${jobAddress}.`,
-                link: '/settings/billing',
-                metadata: { jobId, transferId: transfer.id, amount: netAmount },
+                job_id: jobId,
               }),
             });
 
-            console.log(`Payment notification sent to inspector ${inspectorId}`);
+            if (!paymentNotifRes.ok) {
+              const errBody = await paymentNotifRes.text();
+              console.error(`payment_released notification failed (${paymentNotifRes.status}): ${errBody}`);
+            } else {
+              console.log(`Payment notification sent to inspector ${inspectorId}`);
+            }
           } catch (notifError) {
             console.error('Error sending payment notification:', notifError);
           }
