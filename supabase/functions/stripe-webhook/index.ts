@@ -523,163 +523,162 @@ serve(async (req) => {
 
         console.log(`Connect account updated for user ${userId}: onboarding complete = ${onboardingComplete}, db update ok = ${updateOk}`);
 
-          // If onboarding just became complete, complete any pending assignments + retry payouts
-          if (onboardingComplete) {
-            // -----------------------------------------------
-            // COMPLETE PENDING ASSIGNMENTS (payout gating)
-            // Jobs in 'pending_inspector_setup' where this inspector was accepted
-            // -----------------------------------------------
-            try {
-              const pendingSetupJobs = await supabase.query(
-                'inspection_jobs',
-                `assigned_inspector_id=eq.${userId}&status=eq.pending_inspector_setup&select=id,property_address,requesting_agent_id,accepted_bid_id`
-              );
+        // If onboarding just became complete, complete any pending assignments + retry payouts
+        if (onboardingComplete) {
+          // -----------------------------------------------
+          // COMPLETE PENDING ASSIGNMENTS (payout gating)
+          // Jobs in 'pending_inspector_setup' where this inspector was accepted
+          // -----------------------------------------------
+          try {
+            const pendingSetupJobs = await supabase.query(
+              'inspection_jobs',
+              `assigned_inspector_id=eq.${userId}&status=eq.pending_inspector_setup&select=id,property_address,requesting_agent_id,accepted_bid_id`
+            );
 
-              if (pendingSetupJobs && pendingSetupJobs.length > 0) {
-                console.log(`Found ${pendingSetupJobs.length} pending_inspector_setup job(s) for inspector ${userId}`);
-                const notifUrl = `${supabase.url}/rest/v1/notifications`;
+            if (pendingSetupJobs && pendingSetupJobs.length > 0) {
+              console.log(`Found ${pendingSetupJobs.length} pending_inspector_setup job(s) for inspector ${userId}`);
+              const notifUrl = `${supabase.url}/rest/v1/notifications`;
 
-                for (const setupJob of pendingSetupJobs) {
-                  try {
-                    // Transition job to 'assigned'
-                    await supabase.update('inspection_jobs', setupJob.id, {
-                      status: 'assigned',
-                    });
+              for (const setupJob of pendingSetupJobs) {
+                try {
+                  // Transition job to 'assigned'
+                  await supabase.update('inspection_jobs', setupJob.id, {
+                    status: 'assigned',
+                  });
 
-                    console.log(`Job ${setupJob.id} transitioned from pending_inspector_setup to assigned`);
+                  console.log(`Job ${setupJob.id} transitioned from pending_inspector_setup to assigned`);
 
-                    // Notify inspector: officially assigned
-                    const inspNotifRes = await fetch(notifUrl, {
-                      method: 'POST',
-                      headers: {
-                        apikey: supabase.key,
-                        Authorization: `Bearer ${supabase.key}`,
-                        'Content-Type': 'application/json',
-                        Prefer: 'return=minimal',
-                      },
-                      body: JSON.stringify({
-                        user_id: userId,
-                        type: 'job_assigned',
-                        title: 'You\'re officially assigned!',
-                        message: `Your payout setup is complete. You can now start the inspection at ${setupJob.property_address || 'the property'}.`,
-                        job_id: setupJob.id,
-                        bid_id: setupJob.accepted_bid_id,
-                        from_user_id: setupJob.requesting_agent_id,
-                      }),
-                    });
-                    if (!inspNotifRes.ok) {
-                      console.error(`job_assigned notification failed (${inspNotifRes.status}): ${await inspNotifRes.text()}`);
-                    }
-
-                    // Notify poster: inspector is now assigned
-                    const posterNotifRes = await fetch(notifUrl, {
-                      method: 'POST',
-                      headers: {
-                        apikey: supabase.key,
-                        Authorization: `Bearer ${supabase.key}`,
-                        'Content-Type': 'application/json',
-                        Prefer: 'return=minimal',
-                      },
-                      body: JSON.stringify({
-                        user_id: setupJob.requesting_agent_id,
-                        type: 'inspector_assigned',
-                        title: 'Inspector assigned to your job',
-                        message: `The inspector has completed their payout setup and is now officially assigned to ${setupJob.property_address || 'your inspection'}.`,
-                        job_id: setupJob.id,
-                        bid_id: setupJob.accepted_bid_id,
-                      }),
-                    });
-                    if (!posterNotifRes.ok) {
-                      console.error(`inspector_assigned notification failed (${posterNotifRes.status}): ${await posterNotifRes.text()}`);
-                    }
-                  } catch (assignErr) {
-                    console.error(`Failed to complete assignment for job ${setupJob.id}:`, assignErr);
+                  // Notify inspector: officially assigned
+                  const inspNotifRes = await fetch(notifUrl, {
+                    method: 'POST',
+                    headers: {
+                      apikey: supabase.key,
+                      Authorization: `Bearer ${supabase.key}`,
+                      'Content-Type': 'application/json',
+                      Prefer: 'return=minimal',
+                    },
+                    body: JSON.stringify({
+                      user_id: userId,
+                      type: 'job_assigned',
+                      title: 'You\'re officially assigned!',
+                      message: `Your payout setup is complete. You can now start the inspection at ${setupJob.property_address || 'the property'}.`,
+                      job_id: setupJob.id,
+                      bid_id: setupJob.accepted_bid_id,
+                      from_user_id: setupJob.requesting_agent_id,
+                    }),
+                  });
+                  if (!inspNotifRes.ok) {
+                    console.error(`job_assigned notification failed (${inspNotifRes.status}): ${await inspNotifRes.text()}`);
                   }
+
+                  // Notify poster: inspector is now assigned
+                  const posterNotifRes = await fetch(notifUrl, {
+                    method: 'POST',
+                    headers: {
+                      apikey: supabase.key,
+                      Authorization: `Bearer ${supabase.key}`,
+                      'Content-Type': 'application/json',
+                      Prefer: 'return=minimal',
+                    },
+                    body: JSON.stringify({
+                      user_id: setupJob.requesting_agent_id,
+                      type: 'inspector_assigned',
+                      title: 'Inspector assigned to your job',
+                      message: `The inspector has completed their payout setup and is now officially assigned to ${setupJob.property_address || 'your inspection'}.`,
+                      job_id: setupJob.id,
+                      bid_id: setupJob.accepted_bid_id,
+                    }),
+                  });
+                  if (!posterNotifRes.ok) {
+                    console.error(`inspector_assigned notification failed (${posterNotifRes.status}): ${await posterNotifRes.text()}`);
+                  }
+                } catch (assignErr) {
+                  console.error(`Failed to complete assignment for job ${setupJob.id}:`, assignErr);
                 }
               }
-            } catch (setupErr) {
-              console.error('Error checking pending_inspector_setup jobs:', setupErr);
             }
+          } catch (setupErr) {
+            console.error('Error checking pending_inspector_setup jobs:', setupErr);
+          }
 
-            // -----------------------------------------------
-            // RETRY PENDING PAYOUTS (existing logic)
-            // -----------------------------------------------
-            try {
-              const pendingJobs = await supabase.query(
-                'inspection_jobs',
-                `assigned_inspector_id=eq.${userId}&payout_status=eq.pending&select=id,agreed_price,property_address,requesting_agent_id,budget_currency`
-              );
+          // -----------------------------------------------
+          // RETRY PENDING PAYOUTS (existing logic)
+          // -----------------------------------------------
+          try {
+            const pendingJobs = await supabase.query(
+              'inspection_jobs',
+              `assigned_inspector_id=eq.${userId}&payout_status=eq.pending&select=id,agreed_price,property_address,requesting_agent_id,budget_currency`
+            );
 
-              if (pendingJobs && pendingJobs.length > 0) {
-                console.log(`Found ${pendingJobs.length} pending payout(s) for inspector ${userId}`);
+            if (pendingJobs && pendingJobs.length > 0) {
+              console.log(`Found ${pendingJobs.length} pending payout(s) for inspector ${userId}`);
 
-                for (const pendingJob of pendingJobs) {
-                  try {
-                    const amountInCents = Math.round(pendingJob.agreed_price * 100);
-                    const fees = calculateFees(amountInCents);
+              for (const pendingJob of pendingJobs) {
+                try {
+                  const amountInCents = Math.round(pendingJob.agreed_price * 100);
+                  const fees = calculateFees(amountInCents);
 
-                    // Mark as processing
-                    await supabase.update('inspection_jobs', pendingJob.id, {
-                      payout_status: 'processing',
-                    });
+                  // Mark as processing
+                  await supabase.update('inspection_jobs', pendingJob.id, {
+                    payout_status: 'processing',
+                  });
 
-                    // Create transfer to inspector's Connect account
-                    const transfer = await stripe.transfers.create({
-                      amount: fees.inspectorPayout,
-                      currency: (pendingJob.budget_currency || 'AUD').toLowerCase(),
-                      destination: account.id,
-                      transfer_group: `job_${pendingJob.id}`,
-                      description: `Inspection payout for ${pendingJob.property_address || pendingJob.id}`,
-                      metadata: {
-                        jobId: pendingJob.id,
-                        inspectorId: userId,
-                        grossAmountCents: String(amountInCents),
-                        platformFeeCents: String(fees.platformFee),
-                        netAmountCents: String(fees.inspectorPayout),
-                      },
-                    });
+                  // Create transfer to inspector's Connect account
+                  const transfer = await stripe.transfers.create({
+                    amount: fees.inspectorPayout,
+                    currency: (pendingJob.budget_currency || 'AUD').toLowerCase(),
+                    destination: account.id,
+                    transfer_group: `job_${pendingJob.id}`,
+                    description: `Inspection payout for ${pendingJob.property_address || pendingJob.id}`,
+                    metadata: {
+                      jobId: pendingJob.id,
+                      inspectorId: userId,
+                      grossAmountCents: String(amountInCents),
+                      platformFeeCents: String(fees.platformFee),
+                      netAmountCents: String(fees.inspectorPayout),
+                    },
+                  });
 
-                    const now = new Date().toISOString();
+                  const now = new Date().toISOString();
 
-                    // Update job with payout details
-                    await supabase.update('inspection_jobs', pendingJob.id, {
-                      payout_status: 'paid',
-                      payout_amount: fees.inspectorPayout,
-                      payout_transfer_id: transfer.id,
-                      payout_completed_at: now,
-                    });
+                  // Update job with payout details
+                  await supabase.update('inspection_jobs', pendingJob.id, {
+                    payout_status: 'paid',
+                    payout_amount: fees.inspectorPayout,
+                    payout_transfer_id: transfer.id,
+                    payout_completed_at: now,
+                  });
 
-                    // Update inspection_payments record
-                    const paymentUpdateUrl = `${supabase.url}/rest/v1/inspection_payments?job_id=eq.${pendingJob.id}`;
-                    await fetch(paymentUpdateUrl, {
-                      method: 'PATCH',
-                      headers: {
-                        apikey: supabase.key,
-                        Authorization: `Bearer ${supabase.key}`,
-                        'Content-Type': 'application/json',
-                        Prefer: 'return=minimal',
-                      },
-                      body: JSON.stringify({
-                        status: 'released',
-                        stripe_transfer_id: transfer.id,
-                        released_at: now,
-                        net_amount: fees.inspectorPayout,
-                      }),
-                    });
+                  // Update inspection_payments record
+                  const paymentUpdateUrl = `${supabase.url}/rest/v1/inspection_payments?job_id=eq.${pendingJob.id}`;
+                  await fetch(paymentUpdateUrl, {
+                    method: 'PATCH',
+                    headers: {
+                      apikey: supabase.key,
+                      Authorization: `Bearer ${supabase.key}`,
+                      'Content-Type': 'application/json',
+                      Prefer: 'return=minimal',
+                    },
+                    body: JSON.stringify({
+                      status: 'released',
+                      stripe_transfer_id: transfer.id,
+                      released_at: now,
+                      net_amount: fees.inspectorPayout,
+                    }),
+                  });
 
-                    console.log(`Pending payout completed: ${transfer.id} for job ${pendingJob.id}`);
-                  } catch (payoutErr) {
-                    console.error(`Failed to process pending payout for job ${pendingJob.id}:`, payoutErr);
-                    // Mark as failed so it can be retried manually
-                    await supabase.update('inspection_jobs', pendingJob.id, {
-                      payout_status: 'failed',
-                    });
-                  }
+                  console.log(`Pending payout completed: ${transfer.id} for job ${pendingJob.id}`);
+                } catch (payoutErr) {
+                  console.error(`Failed to process pending payout for job ${pendingJob.id}:`, payoutErr);
+                  // Mark as failed so it can be retried manually
+                  await supabase.update('inspection_jobs', pendingJob.id, {
+                    payout_status: 'failed',
+                  });
                 }
               }
-            } catch (pendingErr) {
-              console.error('Error checking pending payouts:', pendingErr);
             }
+          } catch (pendingErr) {
+            console.error('Error checking pending payouts:', pendingErr);
           }
         }
         break;
