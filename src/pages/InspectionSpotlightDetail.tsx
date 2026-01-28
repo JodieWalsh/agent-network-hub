@@ -46,6 +46,7 @@ import {
   ExternalLink,
   Shield,
   Lock,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -770,6 +771,33 @@ export default function InspectionSpotlightDetail() {
           </Card>
         )}
 
+        {/* Payout Setup Reminder for Inspectors */}
+        {!isJobCreator && profile?.user_type === 'building_inspector' && !profile?.stripe_connect_onboarding_complete && job.status === 'open' && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start gap-3">
+                <Wallet className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-800">
+                    Set up payouts to receive earnings
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Connect your bank account so you can receive payments when your reports are approved.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                    onClick={() => navigate('/settings/billing')}
+                  >
+                    Set Up Payouts
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Your Earnings - Inspector Assigned/In-Progress */}
         {!isJobCreator && (job.status === 'assigned' || job.status === 'in_progress' || job.status === 'pending_review') && job.assigned_inspector_id === user?.id && (
           <Card className="border-amber-200 bg-amber-50/50">
@@ -1157,6 +1185,29 @@ export default function InspectionSpotlightDetail() {
                 <p className="text-xs text-emerald-600 mt-2">
                   You'll receive your portion when the job poster approves your report.
                 </p>
+              </div>
+            )}
+
+            {/* Payout Setup Note */}
+            {profile?.user_type === 'building_inspector' && !profile?.stripe_connect_onboarding_complete && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Wallet className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Payout setup needed</p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      You can submit this bid now, but you'll need to{' '}
+                      <button
+                        type="button"
+                        className="underline font-medium"
+                        onClick={() => { setShowBidDialog(false); navigate('/settings/billing'); }}
+                      >
+                        set up payouts
+                      </button>
+                      {' '}before you can receive earnings.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

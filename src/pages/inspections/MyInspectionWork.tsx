@@ -59,6 +59,7 @@ import {
   Send,
   Trash2,
   MessageSquare,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -440,6 +441,32 @@ export default function MyInspectionWork() {
         <h1 className="text-2xl font-serif font-semibold text-foreground">My Inspection Work</h1>
         <p className="text-muted-foreground">Track your bids, jobs, and earnings</p>
       </div>
+
+      {/* Payout Setup Reminder */}
+      {profile && !profile.stripe_connect_onboarding_complete && (
+        <Card className="mb-6 border-amber-200 bg-amber-50/50">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
+                <Wallet className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-amber-800">Set up payouts to receive your earnings</p>
+                <p className="text-sm text-amber-600 mt-1">
+                  Connect your bank account so payments are sent directly to you when job posters approve your reports.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white flex-shrink-0"
+                onClick={() => navigate('/settings/billing')}
+              >
+                Set Up Payouts
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
