@@ -71,6 +71,28 @@ serve(async (req) => {
       await supabase.update('profiles', userId, {
         stripe_connect_onboarding_complete: true,
       });
+
+      // Transition any pending_inspector_setup jobs to assigned
+      // This is a safety net in case the account.updated webhook didn't fire
+      try {
+        const pendingJobs = await supabase.query(
+          'inspection_jobs',
+          `assigned_inspector_id=eq.${userId}&status=eq.pending_inspector_setup&select=id,property_address`
+        );
+
+        if (pendingJobs && pendingJobs.length > 0) {
+          console.log(`Transitioning ${pendingJobs.length} pending_inspector_setup job(s) to assigned for user ${userId}`);
+          for (const job of pendingJobs) {
+            await supabase.update('inspection_jobs', job.id, {
+              status: 'assigned',
+            });
+            console.log(`Job ${job.id} (${job.property_address}) transitioned to assigned`);
+          }
+        }
+      } catch (jobErr) {
+        console.error('Error transitioning pending jobs:', jobErr);
+        // Non-blocking: profile is already updated, job transition is a bonus
+      }
     }
 
     return jsonResponse({
