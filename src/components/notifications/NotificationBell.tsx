@@ -23,6 +23,7 @@ import {
   Check,
   MessageSquare,
   RefreshCw,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -54,6 +55,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   job_expired: Clock,
   job_cancelled: XCircle,
   new_message: MessageSquare,
+  job_posted_nearby: MapPin,
 };
 
 export function NotificationBell() {

@@ -48,7 +48,8 @@ export type NotificationType =
   | 'new_message'
   | 'user_approved'
   | 'user_rejected'
-  | 'user_promoted_admin';
+  | 'user_promoted_admin'
+  | 'job_posted_nearby';
 
 export interface Notification {
   id: string;
@@ -778,6 +779,7 @@ export function getNotificationIcon(type: NotificationType): string {
     user_approved: 'UserCheck',
     user_rejected: 'XCircle',
     user_promoted_admin: 'Shield',
+    job_posted_nearby: 'MapPin',
   };
   return icons[type] || 'Bell';
 }
@@ -808,6 +810,7 @@ export function getNotificationColor(type: NotificationType): string {
     user_approved: 'text-green-600 bg-green-50',
     user_rejected: 'text-red-600 bg-red-50',
     user_promoted_admin: 'text-purple-600 bg-purple-50',
+    job_posted_nearby: 'text-blue-600 bg-blue-50',
   };
   return colors[type] || 'text-gray-600 bg-gray-50';
 }
@@ -857,6 +860,13 @@ export function getNotificationLink(notification: Notification): string {
     case 'report_submitted':
       // Job poster sees report - go to My Jobs "Reports Ready" tab
       return '/inspections/my-jobs?tab=reports';
+
+    case 'job_posted_nearby':
+      // Inspector sees a new job near them - go to the job detail
+      if (notification.job_id) {
+        return `/inspections/spotlights/${notification.job_id}`;
+      }
+      return '/inspections/spotlights';
 
     case 'job_expired':
     case 'job_cancelled':
