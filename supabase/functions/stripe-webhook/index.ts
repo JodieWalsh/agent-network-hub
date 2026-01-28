@@ -443,6 +443,86 @@ serve(async (req) => {
           });
 
           console.log(`Connect account updated for user ${userId}: onboarding complete = ${onboardingComplete}`);
+
+          // If onboarding just became complete, retry any pending payouts
+          if (onboardingComplete) {
+            try {
+              const pendingJobs = await supabase.query(
+                'inspection_jobs',
+                `assigned_inspector_id=eq.${userId}&payout_status=eq.pending&select=id,agreed_price,property_address,requesting_agent_id`
+              );
+
+              if (pendingJobs && pendingJobs.length > 0) {
+                console.log(`Found ${pendingJobs.length} pending payout(s) for inspector ${userId}`);
+
+                for (const pendingJob of pendingJobs) {
+                  try {
+                    const amountInCents = Math.round(pendingJob.agreed_price * 100);
+                    const fees = calculateFees(amountInCents);
+
+                    // Mark as processing
+                    await supabase.update('inspection_jobs', pendingJob.id, {
+                      payout_status: 'processing',
+                    });
+
+                    // Create transfer to inspector's Connect account
+                    const transfer = await stripe.transfers.create({
+                      amount: fees.inspectorPayout,
+                      currency: 'aud',
+                      destination: account.id,
+                      transfer_group: `job_${pendingJob.id}`,
+                      description: `Inspection payout for ${pendingJob.property_address || pendingJob.id}`,
+                      metadata: {
+                        jobId: pendingJob.id,
+                        inspectorId: userId,
+                        grossAmountCents: String(amountInCents),
+                        platformFeeCents: String(fees.platformFee),
+                        netAmountCents: String(fees.inspectorPayout),
+                      },
+                    });
+
+                    const now = new Date().toISOString();
+
+                    // Update job with payout details
+                    await supabase.update('inspection_jobs', pendingJob.id, {
+                      payout_status: 'paid',
+                      payout_amount: fees.inspectorPayout,
+                      payout_transfer_id: transfer.id,
+                      payout_completed_at: now,
+                    });
+
+                    // Update inspection_payments record
+                    const paymentUpdateUrl = `${supabase.url}/rest/v1/inspection_payments?job_id=eq.${pendingJob.id}`;
+                    await fetch(paymentUpdateUrl, {
+                      method: 'PATCH',
+                      headers: {
+                        apikey: supabase.key,
+                        Authorization: `Bearer ${supabase.key}`,
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=minimal',
+                      },
+                      body: JSON.stringify({
+                        status: 'released',
+                        stripe_transfer_id: transfer.id,
+                        released_at: now,
+                        net_amount: fees.inspectorPayout,
+                      }),
+                    });
+
+                    console.log(`Pending payout completed: ${transfer.id} for job ${pendingJob.id}`);
+                  } catch (payoutErr) {
+                    console.error(`Failed to process pending payout for job ${pendingJob.id}:`, payoutErr);
+                    // Mark as failed so it can be retried manually
+                    await supabase.update('inspection_jobs', pendingJob.id, {
+                      payout_status: 'failed',
+                    });
+                  }
+                }
+              }
+            } catch (pendingErr) {
+              console.error('Error checking pending payouts:', pendingErr);
+            }
+          }
         }
         break;
       }
