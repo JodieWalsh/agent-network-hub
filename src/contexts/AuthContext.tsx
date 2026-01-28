@@ -42,6 +42,9 @@ interface Profile {
   // Stripe Connect fields (for inspectors)
   stripe_connect_account_id: string | null;
   stripe_connect_onboarding_complete: boolean;
+  // Country & currency preferences
+  country_code: string | null;
+  default_currency: string | null;
 }
 
 interface AuthContextType {

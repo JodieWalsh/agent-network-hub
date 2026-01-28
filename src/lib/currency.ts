@@ -221,6 +221,18 @@ export function formatCurrency(
 }
 
 /**
+ * Format price with currency code appended for disambiguation
+ * Useful when multiple currencies may appear on the same page.
+ * @param amount - Numeric amount in dollars (not cents)
+ * @param currencyCode - Currency code
+ * @returns Formatted string with code (e.g., "$400 AUD", "£300 GBP", "250 kr SEK")
+ */
+export function formatPriceWithCode(amount: number, currencyCode: string): string {
+  const formatted = formatPrice(amount, currencyCode);
+  return `${formatted} ${currencyCode}`;
+}
+
+/**
  * Format with conversion estimate (legacy compatibility)
  * Note: This is a simplified version - real currency conversion would require an API
  */
