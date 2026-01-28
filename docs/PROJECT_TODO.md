@@ -127,6 +127,24 @@ When a new inspection job is posted, notify building inspectors whose service ar
 - Inspectors must have `user_type = 'building_inspector'` and `is_approved = true`
 - General area jobs (`property_address` starting with `"Area: "`) should match against the suburb/area rather than exact coordinates
 
+### 11. Stripe Invoice/Receipt Customization
+**Priority:** Medium
+**Status:** To Do
+
+Make Stripe invoices professional and tax-compliant before launch.
+
+**Branding:**
+- [ ] Add Buyers Agent Hub company logo to Stripe invoice template
+- [ ] Customize invoice colours to match branding (forest green theme)
+- [ ] Review and configure template in Stripe Dashboard > Settings > Branding
+
+**Tax compliance:**
+- [ ] Poster's business details (ABN for Australia, tax ID for other countries) should appear on receipts
+- [ ] This allows posters to use the receipt as a tax deduction document
+- [ ] May need to collect business number during registration or in billing settings
+- [ ] Research requirements for different countries (Australia ABN, US EIN, UK VAT, etc.)
+- [ ] Consider using Stripe Tax ID collection (`tax_id_collection: { enabled: true }`) — already enabled for subscription checkout, needs review for escrow payments
+
 ---
 
 ## 🐛 BUGS TO FIX
