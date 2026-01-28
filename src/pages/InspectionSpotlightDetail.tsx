@@ -800,7 +800,7 @@ export default function InspectionSpotlightDetail() {
                     variant="outline"
                     size="sm"
                     className="mt-2 border-amber-300 text-amber-700 hover:bg-amber-100"
-                    onClick={() => navigate('/settings/billing')}
+                    onClick={() => navigate('/settings/payouts')}
                   >
                     Set Up Payouts
                   </Button>
@@ -832,7 +832,7 @@ export default function InspectionSpotlightDetail() {
                 </div>
               </div>
               <Button
-                onClick={() => navigate('/settings/billing')}
+                onClick={() => navigate(`/settings/payouts?job=${job.id}`)}
                 className="bg-amber-600 hover:bg-amber-700"
               >
                 <Wallet className="h-4 w-4 mr-2" />
@@ -1244,7 +1244,7 @@ export default function InspectionSpotlightDetail() {
                       <button
                         type="button"
                         className="underline font-medium"
-                        onClick={() => { setShowBidDialog(false); navigate('/settings/billing'); }}
+                        onClick={() => { setShowBidDialog(false); navigate('/settings/payouts'); }}
                       >
                         set up payouts
                       </button>

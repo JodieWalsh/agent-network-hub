@@ -67,7 +67,7 @@ export default function ConnectReturn() {
   useEffect(() => {
     if (!checking && onboardingComplete) {
       toast.success("Payout account connected successfully!");
-      const timer = setTimeout(() => navigate("/settings/billing"), 3000);
+      const timer = setTimeout(() => navigate("/settings/payouts"), 3000);
       return () => clearTimeout(timer);
     }
   }, [checking, onboardingComplete, navigate]);
@@ -113,10 +113,10 @@ export default function ConnectReturn() {
                   inspection reports are approved.
                 </p>
                 <Button
-                  onClick={() => navigate("/settings/billing")}
+                  onClick={() => navigate("/settings/payouts")}
                   className="bg-forest hover:bg-forest/90 text-white"
                 >
-                  Go to Billing
+                  View Payout Status
                 </Button>
               </div>
             ) : isRefresh ? (
@@ -145,10 +145,10 @@ export default function ConnectReturn() {
                 </Button>
                 <Button
                   variant="ghost"
-                  onClick={() => navigate("/settings/billing")}
+                  onClick={() => navigate("/settings/payouts")}
                   className="text-sm"
                 >
-                  Back to Billing
+                  Back to Payout Setup
                 </Button>
               </div>
             ) : (
@@ -163,10 +163,10 @@ export default function ConnectReturn() {
                   everything is set up.
                 </p>
                 <Button
-                  onClick={() => navigate("/settings/billing")}
+                  onClick={() => navigate("/settings/payouts")}
                   className="bg-forest hover:bg-forest/90 text-white"
                 >
-                  Go to Billing
+                  View Payout Status
                 </Button>
               </div>
             )}

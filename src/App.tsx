@@ -17,6 +17,7 @@ import PostInspection from "./pages/PostInspection";
 import ProfileEdit from "./pages/settings/ProfileEdit";
 import Billing from "./pages/settings/Billing";
 import ConnectReturn from "./pages/settings/ConnectReturn";
+import PayoutSetup from "./pages/settings/PayoutSetup";
 import Admin from "./pages/Admin";
 import AddProperty from "./pages/AddProperty";
 import ClientBriefs from "./pages/ClientBriefs";
@@ -171,6 +172,7 @@ const App = () => (
             />
             <Route path="/settings/profile" element={<ProfileEdit />} />
             <Route path="/settings/billing" element={<Billing />} />
+            <Route path="/settings/payouts" element={<PayoutSetup />} />
             <Route path="/settings/connect-return" element={<ConnectReturn />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

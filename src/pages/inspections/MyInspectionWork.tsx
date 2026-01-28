@@ -459,7 +459,7 @@ export default function MyInspectionWork() {
               <Button
                 size="sm"
                 className="bg-amber-600 hover:bg-amber-700 text-white flex-shrink-0"
-                onClick={() => navigate('/settings/billing')}
+                onClick={() => navigate('/settings/payouts')}
               >
                 Set Up Payouts
               </Button>
@@ -940,7 +940,7 @@ function AcceptedJobCard({
           {/* Actions */}
           <div className="flex flex-col gap-2">
             {isPendingSetup ? (
-              <Button onClick={() => navigate('/settings/billing')} className="bg-amber-600 hover:bg-amber-700" size="lg">
+              <Button onClick={() => navigate(`/settings/payouts?job=${job.id}`)} className="bg-amber-600 hover:bg-amber-700" size="lg">
                 <Wallet className="h-4 w-4 mr-2" />
                 Set Up Payouts
               </Button>

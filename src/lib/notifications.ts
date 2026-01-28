@@ -841,8 +841,11 @@ export function getNotificationLink(notification: Notification): string {
       return '/inspections/spotlights';
 
     case 'payout_setup_required':
-      // Inspector needs to set up payouts
-      return '/settings/billing';
+      // Inspector needs to set up payouts - link to dedicated setup page
+      if (notification.job_id) {
+        return `/settings/payouts?job=${notification.job_id}`;
+      }
+      return '/settings/payouts';
 
     case 'awaiting_inspector_setup':
       // Poster waiting for inspector to set up payouts
