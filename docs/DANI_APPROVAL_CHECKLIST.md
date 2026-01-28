@@ -434,6 +434,38 @@ Budget you're offering: $200.00
 
 ---
 
+### 20. Stripe Fees Eating Into Platform Fee
+**Location:** Platform-wide payment economics
+
+**Context:** We charge a 10% platform fee on inspection jobs, but Stripe takes approximately 2.9% + 30c per transaction from the gross amount. This significantly reduces actual platform revenue, especially on smaller jobs.
+
+**Example on a $200 job:**
+| Line Item | Amount |
+|-----------|--------|
+| Job total | $200.00 |
+| Platform fee (10%) | $20.00 |
+| Stripe processing (~2.9% + 30c) | ~$6.10 |
+| **Actual platform revenue** | **~$13.90** |
+| Stripe's share of our fee | **~30%** |
+
+**Impact by job size:**
+| Job Size | Platform Fee (10%) | Stripe Fee (~3%) | Actual Revenue | Stripe % of Fee |
+|----------|-------------------|-------------------|----------------|-----------------|
+| $100 | $10 | ~$3.20 | ~$6.80 | ~32% |
+| $200 | $20 | ~$6.10 | ~$13.90 | ~30% |
+| $500 | $50 | ~$14.80 | ~$35.20 | ~30% |
+| $1,000 | $100 | ~$29.30 | ~$70.70 | ~29% |
+
+**Questions for Dani:**
+- [ ] Is 10% still the right platform fee, or should we increase it (e.g., 12-15%)?
+- [ ] Should we pass Stripe processing fees on to the customer (charge 10% + payment processing)?
+- [ ] Should we absorb Stripe fees as a cost of doing business?
+- [ ] For smaller jobs the impact is worse — should there be a minimum platform fee (e.g., $10)?
+
+**Note:** This doesn't need immediate action but should be reviewed before launch.
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -455,4 +487,4 @@ Budget you're offering: $200.00
 
 ---
 
-*Last updated: 27 January 2026 - Added #19 Subscription Upgrade Redirect Behaviour*
+*Last updated: 28 January 2026 - Added #20 Stripe Fees Eating Into Platform Fee*
