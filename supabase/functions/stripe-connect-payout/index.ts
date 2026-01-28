@@ -28,8 +28,12 @@ serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  // Extract jobId early so the error handler can use it
+  // (req.json() consumes the body stream, so req.clone().json() fails in catch)
+  let jobId: string | undefined;
+
   try {
-    const { jobId } = await req.json();
+    ({ jobId } = await req.json());
 
     if (!jobId) {
       return errorResponse('Missing jobId');
@@ -200,17 +204,17 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error creating payout:', error);
 
-    // If we know the jobId, mark payout as failed
-    try {
-      const { jobId } = await req.clone().json();
-      if (jobId) {
+    // Mark payout as failed so it can be retried
+    if (jobId) {
+      try {
         const supabase = getSupabaseClient();
         await supabase.update('inspection_jobs', jobId, {
           payout_status: 'failed',
         });
+        console.log(`Marked payout as failed for job ${jobId}`);
+      } catch (cleanupErr) {
+        console.error('Failed to mark payout as failed:', cleanupErr);
       }
-    } catch (_) {
-      // Ignore cleanup errors
     }
 
     return errorResponse(error.message || 'Internal server error', 500);
