@@ -132,6 +132,27 @@ Job Posted (escrow payment) -> Inspector Completes Report -> Agent Approves Repo
 - `payout_transfer_id`: Stripe Transfer ID
 - `payout_completed_at`: Timestamp
 
+### Payout Gating at Job Assignment (Option C - Built 28 Jan 2026)
+
+When a poster accepts a bid and pays via Stripe Checkout, the webhook checks if the inspector has completed Stripe Connect onboarding:
+
+- **Inspector onboarded:** Job status → `assigned`, notifications sent (`bid_accepted`, `payment_confirmed`)
+- **Inspector NOT onboarded:** Job status → `pending_inspector_setup`, notifications sent (`payout_setup_required` to inspector, `awaiting_inspector_setup` to poster)
+
+When the inspector completes onboarding (`account.updated` webhook):
+1. Queries `inspection_jobs` with `status=pending_inspector_setup AND assigned_inspector_id=userId`
+2. Transitions each job to `assigned`
+3. Sends `job_assigned` notification to inspector
+4. Sends `inspector_assigned` notification to poster
+5. Also retries any pending payouts (existing logic)
+
+Key columns: `accepted_bid_id UUID` (tracks which bid was accepted before full assignment)
+
+UI:
+- **MyPostedJobs:** Shows "Awaiting Inspector Setup" badge and message for `pending_inspector_setup` jobs
+- **MyInspectionWork:** Shows amber "Set Up Payouts" CTA for `pending_inspector_setup` jobs in Accepted tab
+- **InspectionSpotlightDetail:** Poster sees "Waiting for inspector to complete payout setup"; inspector sees "Set Up Payouts" button
+
 ### Edge Functions for Connect
 | Function | Purpose |
 |----------|---------|
@@ -360,7 +381,7 @@ formatFileSize(bytes)                                  Human-readable file size
 
 ### `src/lib/notifications.ts` (811 lines)
 
-**Notification types:** `bid_received`, `bid_accepted`, `bid_declined`, `bid_edited`, `job_assigned`, `report_submitted`, `report_approved`, `payment_released`, `payment_confirmed`, `payment_refunded`, `review_received`, `badge_earned`, `job_expired`, `job_cancelled`, `new_message`, `user_approved`, `user_rejected`, `user_promoted_admin`
+**Notification types:** `bid_received`, `bid_accepted`, `bid_declined`, `bid_edited`, `job_assigned`, `report_submitted`, `report_approved`, `payment_released`, `payment_confirmed`, `payment_refunded`, `payout_setup_required`, `awaiting_inspector_setup`, `inspector_assigned`, `review_received`, `badge_earned`, `job_expired`, `job_cancelled`, `new_message`, `user_approved`, `user_rejected`, `user_promoted_admin`
 
 **Multi-channel delivery:**
 - In-app database records (permanent history)
@@ -448,8 +469,9 @@ Non-logged-in user clicks Subscribe -> stores plan in sessionStorage -> redirect
 ### Job Status Workflow
 ```
 draft -> open -> assigned -> in_progress -> pending_review -> completed
-                                                           -> cancelled
+              \-> pending_inspector_setup -> assigned       -> cancelled
 ```
+Note: `pending_inspector_setup` is used when the accepted inspector hasn't completed Stripe Connect onboarding. The job auto-transitions to `assigned` when they complete setup.
 
 ### Payment Status Workflow
 ```

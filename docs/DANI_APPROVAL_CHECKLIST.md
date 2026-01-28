@@ -492,8 +492,8 @@ Budget you're offering: $200.00
 - This is the Airbnb/Uber model: drivers/hosts must complete payout setup before they can start earning
 
 **Questions for Dani:**
-- [ ] Which gating option should we use? (A, B, or C)
-- [ ] If Option C: Should we block the poster from accepting a bid if the inspector hasn't set up payouts? Or accept the bid and prompt the inspector?
+- [x] Which gating option should we use? (A, B, or C) → **Option C chosen**
+- [x] If Option C: Should we block the poster from accepting a bid if the inspector hasn't set up payouts? Or accept the bid and prompt the inspector? → **Accept the bid and prompt the inspector. Job enters `pending_inspector_setup` status; when inspector completes onboarding, job auto-transitions to `assigned`.**
 - [ ] Should there be a time limit for completing payout setup after a bid is accepted?
 
 ---
@@ -506,7 +506,10 @@ Budget you're offering: $200.00
 
 ## 🟢 APPROVED
 
-*(Nothing yet)*
+### 21. Inspector Payout Setup Gating — Option C Implemented
+**Decision:** Gate at job assignment (Option C). Inspectors can browse and bid freely. When a poster accepts a bid and pays, if the inspector hasn't completed Stripe Connect onboarding, the job enters `pending_inspector_setup` status. The inspector is prompted to set up payouts. When they complete onboarding, the `account.updated` webhook automatically transitions the job to `assigned` and notifies both parties.
+
+**Implemented:** 28 Jan 2026
 
 ---
 
