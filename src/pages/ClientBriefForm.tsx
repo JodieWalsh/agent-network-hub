@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -257,6 +257,7 @@ const initialFormData: BriefFormData = {
 export default function ClientBriefForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState<BriefFormData>(initialFormData);
@@ -658,7 +659,8 @@ export default function ClientBriefForm() {
         description: "Client brief has been saved successfully.",
       });
 
-      navigate("/briefs");
+      const returnTo = searchParams.get('returnTo');
+      navigate(returnTo || "/briefs");
     } catch (error: any) {
       console.error(`Error ${isEditMode ? 'updating' : 'creating'} brief:`, error);
       const isTimeout = error?.message?.includes('timed out');
@@ -2016,7 +2018,7 @@ export default function ClientBriefForm() {
 
           {/* Form Actions */}
           <div className="flex justify-end gap-4 pt-6">
-            <Button type="button" variant="outline" onClick={() => navigate("/briefs")}>
+            <Button type="button" variant="outline" onClick={() => navigate(searchParams.get('returnTo') || "/briefs")}>
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>

@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -119,8 +119,11 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+const SESSION_STORAGE_KEY = 'inspection_job_draft_form';
+
 export default function CreateInspectionJob() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -148,6 +151,29 @@ export default function CreateInspectionJob() {
     client_brief_id: null,
     budget_amount: null,
   });
+
+  // Restore form state from sessionStorage (e.g., after returning from brief creation)
+  useEffect(() => {
+    const returnedFromBrief = searchParams.get('returnedFromBrief');
+    const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (returnedFromBrief && saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (state.formData) setFormData(state.formData);
+        if (state.currentStep) setCurrentStep(state.currentStep);
+        if (state.addressUnknown != null) setAddressUnknown(state.addressUnknown);
+        if (state.generalAreaLocation) setGeneralAreaLocation(state.generalAreaLocation);
+        if (state.selectedLocation) setSelectedLocation(state.selectedLocation);
+        if (state.preferredDate1) setPreferredDate1(state.preferredDate1);
+        if (state.preferredDate2) setPreferredDate2(state.preferredDate2);
+        if (state.preferredDate3) setPreferredDate3(state.preferredDate3);
+        if (state.useBrief != null) setUseBrief(state.useBrief);
+      } catch (e) {
+        console.error('Failed to restore form state:', e);
+      }
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  }, []);
 
   // Fetch user's client briefs on mount
   useEffect(() => {
@@ -690,7 +716,27 @@ export default function CreateInspectionJob() {
                     ) : (
                       <p className="text-xs text-muted-foreground mt-1">
                         You don't have any client briefs yet.{' '}
-                        <a href="/briefs/new" className="text-purple-600 hover:underline">Create one</a> to link inspections to specific client requirements.
+                        <button
+                          type="button"
+                          className="text-purple-600 hover:underline"
+                          onClick={() => {
+                            // Save form state so we can restore it when returning
+                            sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+                              formData,
+                              currentStep,
+                              addressUnknown,
+                              generalAreaLocation,
+                              selectedLocation,
+                              preferredDate1,
+                              preferredDate2,
+                              preferredDate3,
+                              useBrief,
+                            }));
+                            navigate('/briefs/new?returnTo=/inspections/jobs/new?returnedFromBrief=1');
+                          }}
+                        >
+                          Create one
+                        </button> to link inspections to specific client requirements.
                       </p>
                     )}
                   </div>

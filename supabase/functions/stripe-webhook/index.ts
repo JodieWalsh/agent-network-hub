@@ -237,6 +237,35 @@ serve(async (req) => {
             console.error('Error sending bid_declined notifications:', notifErr);
           }
 
+          // 7. Notify poster that payment was confirmed
+          try {
+            const posterNotifRes = await fetch(notifUrl, {
+              method: 'POST',
+              headers: {
+                apikey: supabase.key,
+                Authorization: `Bearer ${supabase.key}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                user_id: posterId,
+                type: 'payment_confirmed',
+                title: 'Payment Confirmed',
+                message: `Your payment of $${agreedPrice.toFixed(2)} for the inspection at ${escrowJob.property_address || 'a property'} has been confirmed. The inspector has been assigned.`,
+                link: `/inspections/my-jobs`,
+                metadata: { jobId, bidId, amount: agreedPrice },
+              }),
+            });
+            if (!posterNotifRes.ok) {
+              const errBody = await posterNotifRes.text();
+              console.error(`payment_confirmed notification failed (${posterNotifRes.status}): ${errBody}`);
+            } else {
+              console.log(`payment_confirmed notification sent to poster ${posterId}`);
+            }
+          } catch (notifErr) {
+            console.error('Error sending payment_confirmed notification:', notifErr);
+          }
+
           console.log(`Escrow payment complete: job ${jobId} assigned to inspector ${inspectorId}`);
           break;
         }

@@ -105,6 +105,28 @@ Actually send emails via Resend API (preferences are built, sending is not).
 
 Mobile/browser push notifications.
 
+### 10. Area-Based Job Notifications for Inspectors
+**Priority:** Medium
+**Status:** To Do
+
+When a new inspection job is posted, notify building inspectors whose service area covers the job's location.
+
+**Requirements:**
+- [ ] When a job is posted, query `agent_service_areas` to find inspectors covering the job location
+- [ ] Use PostGIS `ST_DWithin` or `ST_Contains` to match job coordinates against inspector service areas
+- [ ] Send `job_posted_nearby` notification to each matched inspector
+- [ ] Include property address and budget range in notification
+- [ ] Link notification to the job detail page (`/inspections/spotlights/{jobId}`)
+- [ ] Add `job_posted_nearby` to the notification type CHECK constraint
+- [ ] Respect notification preferences (quiet hours, opt-out)
+- [ ] Consider rate limiting: don't spam inspectors if many jobs posted at once
+
+**Implementation notes:**
+- Could be done as a Supabase database trigger (AFTER INSERT on `inspection_jobs` WHERE status = 'open')
+- Or as part of the job posting Edge Function
+- Inspectors must have `user_type = 'building_inspector'` and `is_approved = true`
+- General area jobs (`property_address` starting with `"Area: "`) should match against the suburb/area rather than exact coordinates
+
 ---
 
 ## 🐛 BUGS TO FIX
@@ -137,4 +159,4 @@ Mobile/browser push notifications.
 
 ---
 
-*Last updated: January 2026*
+*Last updated: 28 January 2026*

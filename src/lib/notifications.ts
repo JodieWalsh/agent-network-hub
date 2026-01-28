@@ -36,6 +36,7 @@ export type NotificationType =
   | 'report_submitted'
   | 'report_approved'
   | 'payment_released'
+  | 'payment_confirmed'
   | 'payment_refunded'
   | 'review_received'
   | 'badge_earned'
@@ -761,6 +762,7 @@ export function getNotificationIcon(type: NotificationType): string {
     report_submitted: 'FileText',
     report_approved: 'CheckCircle2',
     payment_released: 'DollarSign',
+    payment_confirmed: 'CreditCard',
     payment_refunded: 'RefreshCw',
     review_received: 'Star',
     badge_earned: 'Award',
@@ -787,6 +789,7 @@ export function getNotificationColor(type: NotificationType): string {
     report_submitted: 'text-indigo-600 bg-indigo-50',
     report_approved: 'text-emerald-600 bg-emerald-50',
     payment_released: 'text-green-600 bg-green-50',
+    payment_confirmed: 'text-green-600 bg-green-50',
     payment_refunded: 'text-blue-600 bg-blue-50',
     review_received: 'text-yellow-600 bg-yellow-50',
     badge_earned: 'text-pink-600 bg-pink-50',

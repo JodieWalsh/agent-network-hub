@@ -139,6 +139,7 @@ serve(async (req) => {
       ],
       payment_intent_data: {
         transfer_group: `job_${jobId}`,
+        receipt_email: profile.email,
         metadata: {
           type: 'inspection_escrow',
           jobId,

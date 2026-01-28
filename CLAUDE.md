@@ -360,7 +360,7 @@ formatFileSize(bytes)                                  Human-readable file size
 
 ### `src/lib/notifications.ts` (811 lines)
 
-**Notification types:** `bid_received`, `bid_accepted`, `bid_declined`, `bid_edited`, `job_assigned`, `report_submitted`, `report_approved`, `payment_released`, `payment_refunded`, `review_received`, `badge_earned`, `job_expired`, `job_cancelled`, `new_message`
+**Notification types:** `bid_received`, `bid_accepted`, `bid_declined`, `bid_edited`, `job_assigned`, `report_submitted`, `report_approved`, `payment_released`, `payment_confirmed`, `payment_refunded`, `review_received`, `badge_earned`, `job_expired`, `job_cancelled`, `new_message`, `user_approved`, `user_rejected`, `user_promoted_admin`
 
 **Multi-channel delivery:**
 - In-app database records (permanent history)
@@ -417,6 +417,11 @@ Non-logged-in user clicks Subscribe -> stores plan in sessionStorage -> redirect
 - Inspection marketplace: 10% platform fee (inspector gets 90%)
 - `_shared/stripe.ts` has `PLATFORM_FEE_PERCENT = 10` and `calculateFees(amount)` helper
 - All amounts stored in cents in Stripe, displayed in dollars in UI
+
+### Stripe Email Receipts
+- **Escrow payments (one-time):** `receipt_email` set on PaymentIntent via `payment_intent_data.receipt_email` in `accept-bid-with-payment`. Stripe sends receipt automatically after payment.
+- **Subscriptions:** Stripe sends invoice receipts automatically to the customer's email. Enable in Stripe Dashboard: Settings > Emails > Successful payments.
+- **In-app notification:** `payment_confirmed` notification sent to poster after escrow checkout completes (via webhook).
 
 ### Webhook Events Handled
 - `checkout.session.completed` - Update subscription status
