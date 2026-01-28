@@ -564,6 +564,7 @@ export default function MyInspectionWork() {
               <AcceptedJobCard
                 key={job.id}
                 job={job}
+                userCurrency={profile?.default_currency || null}
                 onViewJob={() => navigate(`/inspections/spotlights/${job.id}`)}
                 onCompleteReport={() => navigate(`/inspections/jobs/${job.id}/report`)}
                 onMessage={() => handleSendMessage(job.creator_id, job.id, job.property_address)}
@@ -801,11 +802,13 @@ function BidCard({
 
 function AcceptedJobCard({
   job,
+  userCurrency,
   onViewJob,
   onCompleteReport,
   onMessage,
 }: {
   job: InspectionJob;
+  userCurrency: string | null;
   onViewJob: () => void;
   onCompleteReport: () => void;
   onMessage?: () => void;
@@ -910,9 +913,9 @@ function AcceptedJobCard({
                 </span>
                 <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
               </div>
-              {profile?.default_currency && (job.budget_currency || 'AUD') !== profile.default_currency && (
+              {userCurrency && (job.budget_currency || 'AUD') !== userCurrency && (
                 <p className="text-xs text-emerald-600 mt-1">
-                  Earnings will be converted to {profile.default_currency} by Stripe when paid out.
+                  Earnings will be converted to {userCurrency} by Stripe when paid out.
                 </p>
               )}
             </div>
