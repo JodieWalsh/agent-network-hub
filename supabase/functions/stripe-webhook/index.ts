@@ -26,6 +26,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {
   stripe,
   webhookSecret,
+  connectWebhookSecret,
   corsHeaders,
   jsonResponse,
   errorResponse,
@@ -47,7 +48,7 @@ serve(async (req) => {
       return errorResponse('Missing stripe-signature header', 400);
     }
 
-    // Verify webhook signature
+    // Verify webhook signature — try platform secret first, then Connect secret
     let event;
     try {
       event = await stripe.webhooks.constructEventAsync(
@@ -56,8 +57,23 @@ serve(async (req) => {
         webhookSecret
       );
     } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
-      return errorResponse(`Webhook signature verification failed: ${err.message}`, 400);
+      // If platform secret fails and we have a Connect secret, try that
+      if (connectWebhookSecret) {
+        try {
+          event = await stripe.webhooks.constructEventAsync(
+            body,
+            signature,
+            connectWebhookSecret
+          );
+          console.log('Event verified with Connect webhook secret');
+        } catch (connectErr) {
+          console.error('Webhook signature verification failed with both secrets:', err.message);
+          return errorResponse(`Webhook signature verification failed: ${err.message}`, 400);
+        }
+      } else {
+        console.error('Webhook signature verification failed:', err.message);
+        return errorResponse(`Webhook signature verification failed: ${err.message}`, 400);
+      }
     }
 
     const supabase = getSupabaseClient();

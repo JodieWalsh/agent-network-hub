@@ -23,8 +23,11 @@ export const stripe = new Stripe(stripeSecretKey, {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-// Webhook secret for signature verification
+// Webhook secrets for signature verification
+// Platform webhook secret (for subscription, checkout, invoice events)
 export const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
+// Connect webhook secret (for account.updated, transfer.created from connected accounts)
+export const connectWebhookSecret = Deno.env.get('STRIPE_CONNECT_WEBHOOK_SECRET') || '';
 
 /**
  * Standard CORS headers for Edge Functions
