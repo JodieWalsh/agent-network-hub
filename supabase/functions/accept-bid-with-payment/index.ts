@@ -45,7 +45,7 @@ serve(async (req) => {
     const [jobs, bids, profiles] = await Promise.all([
       supabase.query(
         'inspection_jobs',
-        `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address`
+        `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address,budget_currency`
       ),
       supabase.query(
         'inspection_bids',
@@ -127,7 +127,7 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: 'aud',
+            currency: (job.budget_currency || 'AUD').toLowerCase(),
             unit_amount: amountInCents,
             product_data: {
               name: `Building Inspection`,

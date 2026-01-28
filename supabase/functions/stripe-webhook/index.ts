@@ -88,7 +88,7 @@ serve(async (req) => {
           const [escrowJobs, escrowBids] = await Promise.all([
             supabase.query(
               'inspection_jobs',
-              `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address`
+              `id=eq.${jobId}&select=id,status,payment_status,requesting_agent_id,property_address,budget_currency`
             ),
             supabase.query(
               'inspection_bids',
@@ -175,7 +175,7 @@ serve(async (req) => {
                 gross_amount: amountInCents,
                 platform_fee: platformFee,
                 net_amount: inspectorPayout,
-                currency: 'AUD',
+                currency: escrowJob.budget_currency || 'AUD',
                 status: 'held',
                 stripe_payment_intent_id: paymentIntentId,
                 paid_at: now,
@@ -236,7 +236,7 @@ serve(async (req) => {
                   user_id: posterId,
                   type: 'payment_confirmed',
                   title: 'Payment Confirmed',
-                  message: `Your payment of $${agreedPrice.toFixed(2)} for the inspection at ${escrowJob.property_address || 'a property'} has been confirmed. ${inspectorName} has been assigned.`,
+                  message: `Your payment of ${(escrowJob.budget_currency || 'AUD')} $${agreedPrice.toFixed(2)} for the inspection at ${escrowJob.property_address || 'a property'} has been confirmed. ${inspectorName} has been assigned.`,
                   job_id: jobId,
                   bid_id: bidId,
                 }),
@@ -590,7 +590,7 @@ serve(async (req) => {
             try {
               const pendingJobs = await supabase.query(
                 'inspection_jobs',
-                `assigned_inspector_id=eq.${userId}&payout_status=eq.pending&select=id,agreed_price,property_address,requesting_agent_id`
+                `assigned_inspector_id=eq.${userId}&payout_status=eq.pending&select=id,agreed_price,property_address,requesting_agent_id,budget_currency`
               );
 
               if (pendingJobs && pendingJobs.length > 0) {
@@ -609,7 +609,7 @@ serve(async (req) => {
                     // Create transfer to inspector's Connect account
                     const transfer = await stripe.transfers.create({
                       amount: fees.inspectorPayout,
-                      currency: 'aud',
+                      currency: (pendingJob.budget_currency || 'AUD').toLowerCase(),
                       destination: account.id,
                       transfer_group: `job_${pendingJob.id}`,
                       description: `Inspection payout for ${pendingJob.property_address || pendingJob.id}`,
@@ -679,16 +679,17 @@ serve(async (req) => {
         // Create notification for the inspector about payment received
         if (inspectorId && jobId) {
           try {
-            const amountFormatted = netAmount
-              ? `$${(parseInt(netAmount) / 100).toFixed(2)}`
-              : '';
-
-            // Fetch job address for notification message
+            // Fetch job address and currency for notification message
             const jobs = await supabase.query(
               'inspection_jobs',
-              `id=eq.${jobId}&select=property_address`
+              `id=eq.${jobId}&select=property_address,budget_currency`
             );
             const jobAddress = jobs[0]?.property_address || 'an inspection';
+            const jobCurrency = jobs[0]?.budget_currency || 'AUD';
+
+            const amountFormatted = netAmount
+              ? `${jobCurrency} $${(parseInt(netAmount) / 100).toFixed(2)}`
+              : '';
 
             // Insert notification (use job_id FK, not metadata/link columns)
             const notifUrl = `${supabase.url}/rest/v1/notifications`;

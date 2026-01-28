@@ -40,7 +40,7 @@ serve(async (req) => {
     // Fetch the job with inspector details
     const jobs = await supabase.query(
       'inspection_jobs',
-      `id=eq.${jobId}&select=id,status,payment_status,payout_status,agreed_price,assigned_inspector_id,property_address`
+      `id=eq.${jobId}&select=id,status,payment_status,payout_status,agreed_price,assigned_inspector_id,property_address,budget_currency`
     );
     const job = jobs[0];
 
@@ -105,7 +105,7 @@ serve(async (req) => {
     // Create Stripe Transfer to inspector's Connect account
     const transfer = await stripe.transfers.create({
       amount: inspectorPayout,
-      currency: 'aud',
+      currency: (job.budget_currency || 'AUD').toLowerCase(),
       destination: inspector.stripe_connect_account_id,
       transfer_group: `job_${jobId}`,
       description: `Inspection payout for ${job.property_address || jobId}`,
@@ -181,7 +181,7 @@ serve(async (req) => {
           gross_amount: amountInCents,
           platform_fee: platformFee,
           net_amount: inspectorPayout,
-          currency: 'AUD',
+          currency: job.budget_currency || 'AUD',
           status: 'released',
           stripe_transfer_id: transfer.id,
           paid_at: now,
