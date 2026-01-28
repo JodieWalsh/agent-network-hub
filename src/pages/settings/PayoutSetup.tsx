@@ -21,13 +21,58 @@ import {
   DollarSign,
   Shield,
   ArrowRight,
+  Globe,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   createConnectOnboardingLink,
   redirectToConnectOnboarding,
 } from "@/lib/stripe";
+
+// Countries supported by Stripe Connect Express
+const CONNECT_COUNTRIES = [
+  { code: "AU", name: "Australia" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CA", name: "Canada" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "IE", name: "Ireland" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "AT", name: "Austria" },
+  { code: "CH", name: "Switzerland" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+  { code: "FI", name: "Finland" },
+  { code: "PT", name: "Portugal" },
+  { code: "PL", name: "Poland" },
+  { code: "CZ", name: "Czech Republic" },
+  { code: "HU", name: "Hungary" },
+  { code: "RO", name: "Romania" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "HR", name: "Croatia" },
+  { code: "GR", name: "Greece" },
+  { code: "SG", name: "Singapore" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "JP", name: "Japan" },
+  { code: "MY", name: "Malaysia" },
+  { code: "TH", name: "Thailand" },
+  { code: "MX", name: "Mexico" },
+  { code: "BR", name: "Brazil" },
+] as const;
 
 interface PendingJob {
   id: string;
@@ -42,6 +87,7 @@ export default function PayoutSetup() {
   const [searchParams] = useSearchParams();
   const { user, profile } = useAuth();
   const [settingUpPayouts, setSettingUpPayouts] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("AU");
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
 
@@ -92,7 +138,7 @@ export default function PayoutSetup() {
     setSettingUpPayouts(true);
 
     try {
-      const { url, error } = await createConnectOnboardingLink(user.id);
+      const { url, error } = await createConnectOnboardingLink(user.id, selectedCountry);
       if (error || !url) {
         throw new Error(error || "Failed to create onboarding link");
       }
@@ -292,6 +338,29 @@ export default function PayoutSetup() {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Country Selector */}
+              <div className="w-full space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  Your country
+                </label>
+                <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select your country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONNECT_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This must match the country where your bank account is located.
+                </p>
               </div>
 
               {/* CTA Button */}

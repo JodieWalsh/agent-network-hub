@@ -229,7 +229,8 @@ export async function createPortalSession(
  * @returns The onboarding URL to redirect to
  */
 export async function createConnectOnboardingLink(
-  userId: string
+  userId: string,
+  country?: string
 ): Promise<{ url?: string; error?: string }> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -237,7 +238,7 @@ export async function createConnectOnboardingLink(
     const response = await fetch(`${supabaseUrl}/functions/v1/stripe-connect-onboarding`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId, country }),
     });
 
     if (!response.ok) {

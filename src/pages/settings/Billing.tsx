@@ -287,7 +287,7 @@ export default function Billing() {
               </CardHeader>
               <CardContent>
                 {!connectAccountId ? (
-                  /* Not started onboarding */
+                  /* Not started onboarding - redirect to dedicated setup page */
                   <div className="space-y-4">
                     <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
                       <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -301,24 +301,14 @@ export default function Billing() {
                     </div>
                     <Button
                       className="w-full bg-forest hover:bg-forest/90 text-white"
-                      onClick={handleSetupPayouts}
-                      disabled={settingUpPayouts}
+                      onClick={() => navigate("/settings/payouts")}
                     >
-                      {settingUpPayouts ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Redirecting to Stripe...
-                        </>
-                      ) : (
-                        <>
-                          Set Up Payouts
-                          <ExternalLink className="h-4 w-4 ml-2" />
-                        </>
-                      )}
+                      Set Up Payouts
+                      <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 ) : !connectOnboarded ? (
-                  /* Started but incomplete */
+                  /* Started but incomplete - redirect to dedicated setup page */
                   <div className="space-y-4">
                     <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
                       <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -332,20 +322,10 @@ export default function Billing() {
                     </div>
                     <Button
                       className="w-full bg-forest hover:bg-forest/90 text-white"
-                      onClick={handleSetupPayouts}
-                      disabled={settingUpPayouts}
+                      onClick={() => navigate("/settings/payouts")}
                     >
-                      {settingUpPayouts ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Redirecting to Stripe...
-                        </>
-                      ) : (
-                        <>
-                          Continue Setup
-                          <ExternalLink className="h-4 w-4 ml-2" />
-                        </>
-                      )}
+                      Continue Setup
+                      <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </div>
                 ) : (

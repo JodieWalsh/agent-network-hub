@@ -28,11 +28,23 @@ serve(async (req) => {
   if (corsResponse) return corsResponse;
 
   try {
-    const { userId } = await req.json();
+    const { userId, country } = await req.json();
 
     if (!userId) {
       return errorResponse('Missing userId');
     }
+
+    // Validate country is a supported Stripe Connect Express country
+    const SUPPORTED_COUNTRIES = [
+      'AU', 'US', 'GB', 'CA', 'NZ', // English-speaking
+      'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH', 'IE', // Western Europe
+      'SE', 'NO', 'DK', 'FI',       // Nordics
+      'PT', 'GR', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR', // Southern/Eastern Europe
+      'SK', 'SI', 'EE', 'LV', 'LT', 'LU', 'MT', 'CY', // EU
+      'SG', 'HK', 'JP', 'MY', 'TH', // Asia-Pacific
+      'MX', 'BR',                     // Americas
+    ];
+    const accountCountry = country && SUPPORTED_COUNTRIES.includes(country) ? country : 'AU';
 
     const supabase = getSupabaseClient();
 
@@ -53,7 +65,7 @@ serve(async (req) => {
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: 'express',
-        country: 'AU', // Default to Australia, can be made configurable
+        country: accountCountry,
         email: profile.email,
         capabilities: {
           card_payments: { requested: true },
