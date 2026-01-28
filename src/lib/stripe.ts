@@ -318,6 +318,38 @@ export async function createConnectPayout(
   }
 }
 
+/**
+ * Check the status of an inspector's Stripe Connect account.
+ * Directly queries the Stripe API and updates the database if verified.
+ * Use this as a fallback when the account.updated webhook is delayed.
+ *
+ * @param userId - The user's ID
+ * @returns The connect account status
+ */
+export async function checkConnectStatus(
+  userId: string
+): Promise<{ status?: string; onboarding_complete?: boolean; error?: string }> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/stripe-connect-status`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to check connect status' };
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('[Stripe] Check connect status error:', err);
+    return { error: 'Failed to connect to payment service' };
+  }
+}
+
 // ===========================================
 // ESCROW PAYMENT HELPERS (FOR INSPECTION JOBS)
 // ===========================================

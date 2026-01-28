@@ -493,18 +493,35 @@ serve(async (req) => {
       // ===========================================
       case 'account.updated': {
         const account = event.data.object;
-        const userId = account.metadata?.userId;
+        let userId = account.metadata?.userId;
 
-        if (userId) {
-          // Check if onboarding is complete
-          const onboardingComplete =
-            account.charges_enabled && account.payouts_enabled;
+        console.log(`account.updated received: account=${account.id}, charges_enabled=${account.charges_enabled}, payouts_enabled=${account.payouts_enabled}, metadata_userId=${userId || 'MISSING'}`);
 
-          await supabase.update('profiles', userId, {
-            stripe_connect_onboarding_complete: onboardingComplete,
-          });
+        // Fallback: if userId not in metadata, look up by stripe_connect_account_id
+        if (!userId) {
+          console.log(`No userId in account metadata for ${account.id}, looking up by stripe_connect_account_id...`);
+          const matchedProfiles = await supabase.query(
+            'profiles',
+            `stripe_connect_account_id=eq.${account.id}&select=id`
+          );
+          if (matchedProfiles && matchedProfiles.length > 0) {
+            userId = matchedProfiles[0].id;
+            console.log(`Found user ${userId} by stripe_connect_account_id lookup`);
+          } else {
+            console.error(`account.updated: No profile found for Connect account ${account.id}. Cannot update onboarding status.`);
+            break;
+          }
+        }
 
-          console.log(`Connect account updated for user ${userId}: onboarding complete = ${onboardingComplete}`);
+        // Check if onboarding is complete
+        const onboardingComplete =
+          account.charges_enabled && account.payouts_enabled;
+
+        const updateOk = await supabase.update('profiles', userId, {
+          stripe_connect_onboarding_complete: onboardingComplete,
+        });
+
+        console.log(`Connect account updated for user ${userId}: onboarding complete = ${onboardingComplete}, db update ok = ${updateOk}`);
 
           // If onboarding just became complete, complete any pending assignments + retry payouts
           if (onboardingComplete) {

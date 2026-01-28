@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import {
   createConnectOnboardingLink,
   redirectToConnectOnboarding,
+  checkConnectStatus,
 } from "@/lib/stripe";
 
 export default function ConnectReturn() {
@@ -37,15 +38,20 @@ export default function ConnectReturn() {
         return;
       }
 
-      // Refresh profile to get latest stripe_connect_onboarding_complete
-      if (refreshProfile) {
-        await refreshProfile();
+      // Directly check Stripe account status (bypasses webhook dependency)
+      if (user?.id) {
+        const result = await checkConnectStatus(user.id);
+        if (result.onboarding_complete) {
+          // DB was updated by the edge function — refresh profile to pick it up
+          await refreshProfile();
+          setChecking(false);
+          return;
+        }
       }
 
-      // Small delay to allow webhook to fire
+      // Small delay then re-check via profile refresh
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Re-check profile after delay
       if (refreshProfile) {
         await refreshProfile();
       }
@@ -54,7 +60,7 @@ export default function ConnectReturn() {
     };
 
     checkStatus();
-  }, [isRefresh, refreshProfile]);
+  }, [isRefresh, user?.id, refreshProfile]);
 
   // Update onboardingComplete when profile changes
   useEffect(() => {

@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.stripe-connect-payout]
 verify_jwt = false
+
+[functions.stripe-connect-status]
+verify_jwt = false

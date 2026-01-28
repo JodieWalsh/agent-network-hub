@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import {
   createConnectOnboardingLink,
   redirectToConnectOnboarding,
+  checkConnectStatus,
 } from "@/lib/stripe";
 import { formatPrice } from "@/lib/currency";
 
@@ -142,21 +143,37 @@ export default function PayoutSetup() {
 
   // Poll for verification completion while in pending state
   useEffect(() => {
-    if (!isPendingVerification) return;
+    if (!isPendingVerification || !user?.id) return;
 
-    const interval = setInterval(async () => {
+    const checkStatus = async () => {
       try {
-        await refreshProfile();
+        // Directly check Stripe account status (also updates DB if verified)
+        const result = await checkConnectStatus(user.id);
+        if (result.onboarding_complete) {
+          // DB was updated by the edge function — refresh profile to pick it up
+          await refreshProfile();
+        }
       } catch (_) {}
-    }, 5000);
+    };
 
+    // Check immediately on mount
+    checkStatus();
+
+    const interval = setInterval(checkStatus, 5000);
     return () => clearInterval(interval);
-  }, [isPendingVerification, refreshProfile]);
+  }, [isPendingVerification, user?.id, refreshProfile]);
 
   const handleRefreshStatus = async () => {
+    if (!user?.id) return;
     setRefreshing(true);
     try {
-      await refreshProfile();
+      const result = await checkConnectStatus(user.id);
+      if (result.onboarding_complete) {
+        await refreshProfile();
+        toast.success("Payout account verified!");
+      } else if (result.status === 'pending') {
+        toast.info("Still verifying — Stripe is reviewing your details.");
+      }
     } catch (_) {}
     setRefreshing(false);
   };
