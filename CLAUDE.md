@@ -45,7 +45,7 @@ src/
     UnitsContext.tsx                   Imperial/metric unit preferences
     MessageNotificationContext.tsx     Unread count, toast/browser notifications
   lib/
-    currency.ts          Currency formatting (AUD)
+    currency.ts          Multi-currency formatting (30+ currencies, 33 countries)
     geocoder.ts          Legacy geocoder
     mapbox-geocoder.ts   Mapbox geocoding integration
     messaging.ts         Full messaging API (752 lines) - see Messaging section
@@ -93,7 +93,7 @@ supabase/
     stripe-connect-dashboard/    Inspector earnings dashboard (Express Dashboard link)
     stripe-connect-payout/       Trigger payout to inspector after report approval
     _shared/stripe.ts            Shared Stripe client + CORS + calculateFees() + helpers
-  migrations/                    ~58 migration files (see Database section)
+  migrations/                    ~60 migration files (see Database section)
 docs/
   TECHNICAL_DOCUMENTATION.md     Architecture reference
   KEY_FEATURES.md                Feature list
@@ -429,7 +429,7 @@ formatFileSize(bytes)                                  Human-readable file size
 
 ### `src/lib/notifications.ts` (811 lines)
 
-**Notification types:** `bid_received`, `bid_accepted`, `bid_declined`, `bid_edited`, `job_assigned`, `report_submitted`, `report_approved`, `payment_released`, `payment_confirmed`, `payment_refunded`, `payout_setup_required`, `awaiting_inspector_setup`, `inspector_assigned`, `review_received`, `badge_earned`, `job_expired`, `job_cancelled`, `new_message`, `user_approved`, `user_rejected`, `user_promoted_admin`
+**Notification types:** `bid_received`, `bid_accepted`, `bid_declined`, `bid_edited`, `job_assigned`, `report_submitted`, `report_approved`, `payment_released`, `payment_confirmed`, `payment_refunded`, `payout_setup_required`, `awaiting_inspector_setup`, `inspector_assigned`, `review_received`, `badge_earned`, `job_expired`, `job_cancelled`, `new_message`, `user_approved`, `user_rejected`, `user_promoted_admin`, `job_posted_nearby`
 
 **Multi-channel delivery:**
 - In-app database records (permanent history)
@@ -447,6 +447,36 @@ formatFileSize(bytes)                                  Human-readable file size
 - Mark as read (single + all)
 - 30-second polling
 - Click to navigate
+
+### Area-Based Job Notifications (Built 28 Jan 2026)
+
+When a new inspection job is posted, nearby inspectors are automatically notified so they can bid.
+
+**How it works:**
+1. User posts a job in `CreateInspectionJob.tsx`
+2. POST returns the created job record (uses `'Prefer': 'return=representation'`)
+3. Non-blocking `fetch` calls `notify_nearby_inspectors(p_job_id)` RPC
+4. RPC finds all approved users whose service areas cover the job location
+5. Creates `job_posted_nearby` notification for each matching inspector
+6. Inspector sees blue MapPin notification in NotificationBell → clicks to navigate to job detail
+
+**6 Matching Strategies** (in `notify_nearby_inspectors` RPC):
+1. **Radius service area** — `ST_DWithin(sa.center_point, job.property_location, sa.radius_km * 1000)`
+2. **Global service area** — matches all jobs
+3. **Region name** — `job.property_address ILIKE '%' || sa.region_name || '%'`
+4. **State name** — `job.property_address ILIKE '%' || sa.state_name || '%'`
+5. **Country name** — `job.property_address ILIKE '%' || sa.country_name || '%'`
+6. **Home proximity** — inspector's home lat/lng within 5km of job (`ST_DWithin` with 5000m)
+
+**Files:**
+| File | What |
+|------|------|
+| `supabase/migrations/20260128040000_add_job_posted_nearby_notifications.sql` | CHECK constraint + RPC function |
+| `src/lib/notifications.ts` | Added type, icon (MapPin), color (blue), route |
+| `src/components/notifications/NotificationBell.tsx` | Added MapPin icon mapping |
+| `src/pages/CreateInspectionJob.tsx` | Calls RPC after job creation (non-blocking) |
+
+**Rate limiting:** Not implemented yet. Comment in RPC notes where to add it.
 
 ---
 
@@ -498,6 +528,41 @@ Non-logged-in user clicks Subscribe -> stores plan in sessionStorage -> redirect
 - `customer.subscription.deleted` - Mark subscription cancelled
 - `account.updated` - Set `stripe_connect_onboarding_complete` on profiles
 - `transfer.created` - Create notification for inspector about payment received
+
+### Stripe Test Mode: Payout Debugging (28 Jan 2026)
+
+**Important:** In Stripe test mode, checkout charges go to the **pending balance**, not the available balance. Stripe transfers require **available balance**. This means payouts will fail with "insufficient available funds" unless test funds are added.
+
+**To add available test funds:**
+```bash
+curl https://api.stripe.com/v1/charges \
+  -u sk_test_KEY: \
+  -d amount=50000 \
+  -d currency=aud \
+  -d source=tok_bypassPending \
+  -d description="Test funds for available balance"
+```
+The `tok_bypassPending` token creates charges that go directly to available balance.
+
+**To check Stripe balance:**
+```bash
+curl https://api.stripe.com/v1/balance -u sk_test_KEY:
+```
+
+**Payout retry:** If `payout_status` is stuck at `'processing'` or `'failed'`, reset it and re-invoke the edge function:
+```bash
+# Reset status
+curl -X PATCH "${SUPABASE_URL}/rest/v1/inspection_jobs?id=eq.${JOB_ID}" \
+  -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{"payout_status": null}'
+
+# Re-invoke payout
+curl -X POST "${SUPABASE_URL}/functions/v1/stripe-connect-payout" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"jobId": "JOB_UUID"}'
+```
 
 ---
 
@@ -596,6 +661,21 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 - **Raw fetch pattern:** Many pages use direct `fetch()` to Supabase REST API with manually constructed auth headers (see `getAuthHeaders()` pattern in multiple files)
 - **Real-time:** `postgres_changes` for persistent data, `broadcast` for ephemeral data, `presence` for online status
 - **Auth headers:** Extracted from `localStorage` for REST calls (`sb-{ref}-auth-token`)
+
+### Supabase Management API (for migrations & admin)
+Used to apply migrations and run ad-hoc SQL when the Supabase CLI isn't available:
+```
+# Get service role key
+GET https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/api-keys
+Authorization: Bearer sbp_27c59fda6094c95b9ed679e7d4b5c65c6a40e038
+
+# Execute SQL
+POST https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/database/query
+Authorization: Bearer sbp_27c59fda6094c95b9ed679e7d4b5c65c6a40e038
+Content-Type: application/json
+Body: { "query": "SELECT 1" }
+```
+**Note:** For complex SQL with dollar-quoting (`$$`), use a Node.js `.cjs` script file to avoid shell escaping issues (the project has `"type": "module"` in package.json so `.cjs` extension is needed for CommonJS).
 
 ### Edge Function Pattern
 ```typescript
@@ -738,3 +818,21 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
   - All 3 Stripe edge functions use dynamic currency from job
 - `fdf14c8` - feat: add cross-currency conversion notes for inspectors
   - Subtle note when inspector currency differs from job currency
+
+### Session: 28 January 2026 (Bug Fixes + Area Notifications)
+- `0f529e8` - fix: add job transition safety net to stripe-connect-status
+- `1913a71` - fix: handle null budget_min/budget_max in MyPostedJobs to prevent blank screen
+- `1762734` - fix: payout error handler now reliably marks failed status
+  - Bug: `stripe-connect-payout` error handler used `req.clone().json()` which fails after body consumed
+  - Fix: extract `jobId` to outer-scope `let` before try block so error handler can access it
+  - Deployed updated edge function to Supabase
+- `098efa8` - docs: comprehensive CLAUDE.md update for session continuity
+- `cbe4c79` - feat: add job_posted_nearby notification type and matching RPC
+  - Migration: updated CHECK constraint, created `notify_nearby_inspectors()` RPC (SECURITY DEFINER)
+  - 6 matching strategies: radius, global, region, state, country, home proximity
+- `3be7d3b` - feat: add job_posted_nearby notification type to frontend
+  - `notifications.ts`: type, icon (MapPin), color (blue), route to job detail
+  - `NotificationBell.tsx`: MapPin icon mapping
+- `b17e87a` - feat: notify nearby inspectors when new job is posted
+  - `CreateInspectionJob.tsx`: changed to `return=representation`, calls RPC after job creation
+  - Fixed double OR syntax bug in migration SQL and live database function
