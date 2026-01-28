@@ -183,6 +183,7 @@ export function getCurrencyForCountry(countryCode: string | undefined): string {
  * @returns Currency object or AUD as default
  */
 export function getCurrency(currencyCode: string): Currency {
+  if (!currencyCode) return CURRENCIES.AUD;
   return CURRENCIES[currencyCode.toUpperCase()] || CURRENCIES.AUD;
 }
 
@@ -193,6 +194,7 @@ export function getCurrency(currencyCode: string): Currency {
  * @returns Formatted string (e.g., "£450,000", "$1,200,000")
  */
 export function formatPrice(amount: number, currencyCode: string): string {
+  if (amount == null) return '—';
   const currency = getCurrency(currencyCode);
   const formatted = amount.toLocaleString('en-US', {
     minimumFractionDigits: currency.decimalPlaces,

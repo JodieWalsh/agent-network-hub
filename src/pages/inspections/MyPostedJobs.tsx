@@ -995,7 +995,9 @@ function JobCard({
               <span className="flex items-center gap-1.5">
                 <DollarSign size={14} className="text-green-600" />
                 <span className="font-medium">
-                  {formatPrice(job.budget_min, job.budget_currency || 'AUD')} - {formatPrice(job.budget_max, job.budget_currency || 'AUD')}
+                  {job.budget_min != null && job.budget_max != null
+                    ? `${formatPrice(job.budget_min, job.budget_currency || 'AUD')} - ${formatPrice(job.budget_max, job.budget_currency || 'AUD')}`
+                    : formatPrice(job.budget_amount, job.budget_currency || 'AUD')}
                 </span>
               </span>
               <span className="flex items-center gap-1.5">

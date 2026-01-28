@@ -485,6 +485,7 @@ export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
  * @param currency - The currency code (default: AUD)
  */
 export function formatPrice(amount: number, currency = 'AUD'): string {
+  if (amount == null) return '—';
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
     currency,
