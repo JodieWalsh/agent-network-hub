@@ -22,6 +22,8 @@ import {
   Shield,
   ArrowRight,
   Globe,
+  RefreshCw,
+  Clock,
 } from "lucide-react";
 import {
   Select,
@@ -87,14 +89,17 @@ interface PendingJob {
 export default function PayoutSetup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [settingUpPayouts, setSettingUpPayouts] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("AU");
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const jobIdParam = searchParams.get("job");
   const isOnboarded = profile?.stripe_connect_onboarding_complete;
+  const isPendingVerification =
+    !!profile?.stripe_connect_account_id && !isOnboarded;
 
   // Fetch pending_inspector_setup jobs for this inspector
   useEffect(() => {
@@ -134,6 +139,27 @@ export default function PayoutSetup() {
 
     fetchPendingJobs();
   }, [user?.id]);
+
+  // Poll for verification completion while in pending state
+  useEffect(() => {
+    if (!isPendingVerification) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await refreshProfile();
+      } catch (_) {}
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isPendingVerification, refreshProfile]);
+
+  const handleRefreshStatus = async () => {
+    setRefreshing(true);
+    try {
+      await refreshProfile();
+    } catch (_) {}
+    setRefreshing(false);
+  };
 
   const handleSetupPayouts = async () => {
     if (!user?.id) return;
@@ -179,6 +205,82 @@ export default function PayoutSetup() {
                     variant="outline"
                   >
                     View Earnings
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/inspections/my-work")}
+                    className="bg-forest hover:bg-forest/90 text-white"
+                  >
+                    My Inspection Work
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Intermediate state: account created but verification pending
+  if (isPendingVerification) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-lg mx-auto py-16 px-4">
+          <Card className="border-blue-200 bg-gradient-to-b from-blue-50/50 to-white">
+            <CardContent className="pt-8 pb-8">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Clock className="h-8 w-8 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-semibold">Verification in Progress</h2>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Stripe is verifying your details. This usually completes
+                  within a few moments in test mode, or up to a couple of
+                  business days in production.
+                </p>
+
+                {/* Pending jobs reminder */}
+                {!loadingJobs && pendingJobs.length > 0 && (
+                  <div className="w-full p-4 bg-amber-50 border border-amber-200 rounded-lg text-left">
+                    <p className="text-sm text-amber-800">
+                      You'll be automatically assigned to your{" "}
+                      {pendingJobs.length} pending job
+                      {pendingJobs.length !== 1 ? "s" : ""} once verification
+                      completes.
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleRefreshStatus}
+                  variant="outline"
+                  disabled={refreshing}
+                  className="mt-2"
+                >
+                  {refreshing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Status
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-xs text-muted-foreground">
+                  This page checks automatically every few seconds.
+                </p>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    onClick={() => navigate("/settings/billing")}
+                    variant="outline"
+                  >
+                    View Billing
                   </Button>
                   <Button
                     onClick={() => navigate("/inspections/my-work")}
