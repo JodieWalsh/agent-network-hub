@@ -7,7 +7,7 @@ Read this first before doing any work on this project.
 
 ## Platform Overview
 
-**Buyers Agent Hub** (repo: `agent-network-hub`) is a professional networking marketplace for Australian property professionals. It connects buyers agents, real estate agents, building inspectors, conveyancers, mortgage brokers, and stylists.
+**Buyers Agent Hub** (repo: `agent-network-hub`) is a professional networking marketplace for property professionals. Originally Australian-focused, now supports international users across 33 countries with multi-currency support. It connects buyers agents, real estate agents, building inspectors, conveyancers, mortgage brokers, and stylists.
 
 ### Tech Stack
 - **Frontend:** React 18 + TypeScript + Vite
@@ -224,6 +224,54 @@ The 90%/10% fee split is shown at every stage of the payment flow:
 - **Amber** (`text-amber-700`, `bg-amber-50`) for pending/escrow states
 - **Subtle secondary text** for fee details (never overwhelming)
 - `DollarSign` icon from lucide-react for payment indicators
+
+---
+
+## Multi-Currency Support (Built 28 Jan 2026)
+
+The platform supports international users with multi-currency job posting and payment processing. The poster's profile currency determines the job currency. Stripe handles cross-border conversion for inspector payouts automatically.
+
+### How It Works
+1. **User sets country/currency** in Profile Settings → stored as `profiles.country_code` + `profiles.default_currency`
+2. **Job posting** reads `profile.default_currency` → stored as `inspection_jobs.budget_currency`
+3. **All displays** use `formatPrice(amount, job.budget_currency || 'AUD')` from `src/lib/currency.ts`
+4. **Stripe Checkout** charges in the job's currency: `currency: (job.budget_currency || 'AUD').toLowerCase()`
+5. **Stripe Transfer** pays inspector in the job's currency; Stripe converts to their local currency
+6. **Cross-currency note** shown to inspectors when job currency differs from their profile currency
+
+### Database Columns
+- `profiles.country_code TEXT DEFAULT 'AU'` — user's country
+- `profiles.default_currency TEXT DEFAULT 'AUD'` — user's preferred currency
+- `inspection_jobs.budget_currency TEXT DEFAULT 'AUD'` — job's currency (already existed)
+- `inspection_payments.currency TEXT DEFAULT 'AUD'` — payment record currency (already existed)
+
+### Currency Library: `src/lib/currency.ts` (key functions)
+| Function | Purpose |
+|----------|---------|
+| `formatPrice(amount, currencyCode)` | Format dollar amount → `$500.00` or `£300.00` |
+| `formatPriceWithCode(amount, currencyCode)` | Format with code → `$500.00 AUD` |
+| `getCurrency(code)` | Get currency object (symbol, name, locale) |
+| `getCurrencyForCountry(countryCode)` | Country → currency mapping (e.g., `US` → `USD`) |
+| `getAllCurrencies()` / `getPopularCurrencies()` | Currency lists for dropdowns |
+
+### Files Modified for Multi-Currency
+| File | Changes |
+|------|---------|
+| `ProfileEdit.tsx` | Country + currency dropdowns, auto-suggest currency from country |
+| `CreateInspectionJob.tsx` | Budget input uses profile currency, `budget_currency` saved to job |
+| `InspectionSpotlightDetail.tsx` | All prices use `formatPrice()` + cross-currency note |
+| `InspectionSpotlights.tsx` | Job card prices use `formatPrice()` |
+| `MyPostedJobs.tsx` | All bid/escrow/payment displays use `formatPrice()` |
+| `MyInspectionWork.tsx` | All earnings/bid displays use `formatPrice()` + cross-currency note |
+| `InspectionReportView.tsx` | Payment amounts use `formatPrice()` |
+| `InspectionReportBuilder.tsx` | Earnings display uses `formatPrice()` |
+| `PayoutSetup.tsx` | Pending job amounts use `formatPrice()` |
+| `accept-bid-with-payment/index.ts` | Checkout currency from job |
+| `stripe-connect-payout/index.ts` | Transfer + payment record currency from job |
+| `stripe-webhook/index.ts` | Escrow, retry payouts, notifications all use job currency |
+
+### Supported Countries (33)
+AU, US, GB, CA, NZ, IE, DE, FR, ES, IT, NL, BE, AT, CH, SE, NO, DK, FI, PT, PL, CZ, HU, RO, BG, HR, GR, SG, HK, JP, MY, TH, MX, BR
 
 ---
 
@@ -669,3 +717,24 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
   - MyPostedJobs: "$X in escrow" / "Inspector paid $X" per card
   - MyInspectionWork: net earnings (90%) on bids, submitted, and completed
   - Stats card correctly shows 90% net totals
+
+### Session: 28 January 2026 (Multi-Currency + International)
+- `e6b250f` - feat: add international country selector for Stripe Connect onboarding
+  - PayoutSetup page: 33-country dropdown for Connect Express
+- `626a297` - feat: add dedicated payout setup page for inspectors
+  - New route `/settings/payouts`, job context from URL params
+- `f746d16` - feat: add multi-currency database support
+  - Migration: `profiles.country_code`, `profiles.default_currency`
+  - `formatPriceWithCode()` in currency.ts
+  - AuthContext Profile updated with new fields
+- `9e6fdab` - feat: add country and currency to user profile
+  - ProfileEdit: country/currency dropdowns with auto-suggest
+- `28b6a1a` - feat: currency-aware job posting
+  - CreateInspectionJob: dynamic currency symbol, `budget_currency` saved
+- `4cf599b` - feat: show job currency throughout marketplace
+  - All 7 display pages use `formatPrice()` with job currency
+  - Removed all hardcoded `$` and `'en-AU'` locale patterns
+- `18c98dd` - feat: multi-currency Stripe checkout and payouts
+  - All 3 Stripe edge functions use dynamic currency from job
+- `fdf14c8` - feat: add cross-currency conversion notes for inspectors
+  - Subtle note when inspector currency differs from job currency
