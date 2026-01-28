@@ -910,6 +910,11 @@ function AcceptedJobCard({
                 </span>
                 <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
               </div>
+              {profile?.default_currency && (job.budget_currency || 'AUD') !== profile.default_currency && (
+                <p className="text-xs text-emerald-600 mt-1">
+                  Earnings will be converted to {profile.default_currency} by Stripe when paid out.
+                </p>
+              )}
             </div>
 
             {/* Inspection Date Status (only for fully assigned jobs) */}

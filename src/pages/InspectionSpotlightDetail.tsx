@@ -766,6 +766,11 @@ export default function InspectionSpotlightDetail() {
                   <span className="font-medium">You'll receive:</span>
                   <span className="font-bold">{formatPrice(job.budget_amount * 0.90, job.budget_currency || 'AUD')}</span>
                 </div>
+                {profile?.default_currency && (job.budget_currency || 'AUD') !== profile.default_currency && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Earnings will be converted to {profile.default_currency} by Stripe when paid out.
+                  </p>
+                )}
               </div>
               {job.payment_status === 'in_escrow' ? (
                 <div className="mt-3 p-2 bg-amber-100 border border-amber-300 rounded text-xs text-amber-700">
@@ -832,6 +837,11 @@ export default function InspectionSpotlightDetail() {
                   </span>
                   <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
                 </div>
+                {profile?.default_currency && (job.budget_currency || 'AUD') !== profile.default_currency && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Earnings will be converted to {profile.default_currency} by Stripe when paid out.
+                  </p>
+                )}
               </div>
               <Button
                 onClick={() => navigate(`/settings/payouts?job=${job.id}`)}
