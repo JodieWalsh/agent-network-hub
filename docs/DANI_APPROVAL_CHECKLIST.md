@@ -466,6 +466,38 @@ Budget you're offering: $200.00
 
 ---
 
+### 21. Inspector Payout Setup Gating
+**Location:** Inspection marketplace — bidding and job assignment flow
+
+**Context:** Inspectors can currently submit bids and be assigned jobs without having set up their payout account (Stripe Connect). If they haven't set up payouts when their report is approved, the payout is held as "pending" and automatically retried when they complete onboarding. However, this creates friction for both parties.
+
+**Current behaviour:**
+- Inspectors see a reminder banner on the job board and in the bid dialog, but it's non-blocking
+- Bids can be submitted without payout setup
+- If an inspector's bid is accepted and they complete the job, payout is held until onboarding is done
+- Automatic retry processes pending payouts when onboarding completes
+
+**Option A: No gate (current)**
+- Pros: Lowest friction for inspectors, maximises bid volume
+- Cons: Inspector could complete a job and then struggle with onboarding, delaying their payment
+- Risk: Low — auto-retry handles this, and inspectors are incentivised to set up payouts
+
+**Option B: Gate at bid submission**
+- Pros: Ensures all bidding inspectors can receive payment
+- Cons: Reduces bid volume, creates friction early in the funnel, may lose inspectors who want to browse first
+
+**Option C: Gate at job assignment (recommended)**
+- Pros: Inspectors can browse and bid freely, but must set up payouts before being officially assigned
+- Cons: Slightly more complex flow — after bid acceptance, redirect inspector to set up payouts before assignment completes
+- This is the Airbnb/Uber model: drivers/hosts must complete payout setup before they can start earning
+
+**Questions for Dani:**
+- [ ] Which gating option should we use? (A, B, or C)
+- [ ] If Option C: Should we block the poster from accepting a bid if the inspector hasn't set up payouts? Or accept the bid and prompt the inspector?
+- [ ] Should there be a time limit for completing payout setup after a bid is accepted?
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
@@ -487,4 +519,4 @@ Budget you're offering: $200.00
 
 ---
 
-*Last updated: 28 January 2026 - Added #20 Stripe Fees Eating Into Platform Fee*
+*Last updated: 28 January 2026 - Added #21 Inspector Payout Setup Gating*
