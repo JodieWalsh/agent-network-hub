@@ -36,6 +36,7 @@ import {
   createConnectOnboardingLink,
   redirectToConnectOnboarding,
 } from "@/lib/stripe";
+import { formatPrice } from "@/lib/currency";
 
 // Countries supported by Stripe Connect Express
 const CONNECT_COUNTRIES = [
@@ -79,6 +80,7 @@ interface PendingJob {
   property_address: string;
   agreed_price: number | null;
   budget_amount: number;
+  budget_currency: string;
   status: string;
 }
 
@@ -110,7 +112,7 @@ export default function PayoutSetup() {
         } catch (_) {}
 
         const response = await fetch(
-          `${supabaseUrl}/rest/v1/inspection_jobs?assigned_inspector_id=eq.${user.id}&status=eq.pending_inspector_setup&select=id,property_address,agreed_price,budget_amount,status&order=created_at.desc`,
+          `${supabaseUrl}/rest/v1/inspection_jobs?assigned_inspector_id=eq.${user.id}&status=eq.pending_inspector_setup&select=id,property_address,agreed_price,budget_amount,budget_currency,status&order=created_at.desc`,
           {
             headers: {
               apikey: supabaseKey,
@@ -152,14 +154,8 @@ export default function PayoutSetup() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-AU", {
-      style: "currency",
-      currency: "AUD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const fmtJobPrice = (amount: number, job: PendingJob) =>
+    formatPrice(amount, job.budget_currency || 'AUD');
 
   // If already onboarded, show success and redirect options
   if (isOnboarded) {
@@ -246,11 +242,12 @@ export default function PayoutSetup() {
                     <DollarSign className="h-4 w-4 text-green-600" />
                     <span className="text-sm text-green-700 font-medium">
                       You'll earn{" "}
-                      {formatCurrency(
+                      {fmtJobPrice(
                         Math.round(
                           (highlightedJob.agreed_price ||
                             highlightedJob.budget_amount) * 0.9
-                        )
+                        ),
+                        highlightedJob
                       )}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -283,10 +280,11 @@ export default function PayoutSetup() {
                             <p className="text-sm">{job.property_address}</p>
                             <p className="text-xs text-green-600">
                               Earn{" "}
-                              {formatCurrency(
+                              {fmtJobPrice(
                                 Math.round(
                                   (job.agreed_price || job.budget_amount) * 0.9
-                                )
+                                ),
+                                job
                               )}
                             </p>
                           </div>

@@ -52,6 +52,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyBidReceived } from '@/lib/notifications';
 import { getOrCreateConversation } from '@/lib/messaging';
+import { formatPrice, getCurrency } from '@/lib/currency';
 
 type UrgencyLevel = 'standard' | 'urgent' | 'express';
 type PropertyType = 'house' | 'apartment' | 'townhouse' | 'land' | 'other';
@@ -68,6 +69,7 @@ interface InspectionJob {
   property_access_notes: string | null;
   urgency_level: UrgencyLevel;
   budget_amount: number;
+  budget_currency: string;
   status: JobStatus;
   payment_status: PaymentStatus | null;
   assigned_inspector_id: string | null;
@@ -623,7 +625,7 @@ export default function InspectionSpotlightDetail() {
             </div>
 
             <p className="text-lg font-semibold text-forest">
-              Budget: ${job.budget_amount.toLocaleString('en-AU')}
+              Budget: {formatPrice(job.budget_amount, job.budget_currency || 'AUD')}
             </p>
           </div>
 
@@ -692,10 +694,10 @@ export default function InspectionSpotlightDetail() {
                   <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-green-800">
-                      Payment complete &mdash; ${Math.round(job.budget_amount * 0.90).toLocaleString('en-AU')} sent to inspector
+                      Payment complete &mdash; {formatPrice(Math.round(job.budget_amount * 0.90), job.budget_currency || 'AUD')} sent to inspector
                     </p>
                     <p className="text-xs text-green-600 mt-1">
-                      Platform fee: ${Math.round(job.budget_amount * 0.10).toLocaleString('en-AU')} (10%)
+                      Platform fee: {formatPrice(Math.round(job.budget_amount * 0.10), job.budget_currency || 'AUD')} (10%)
                     </p>
                   </div>
                 </div>
@@ -707,7 +709,7 @@ export default function InspectionSpotlightDetail() {
                       Waiting for inspector to complete payout setup
                     </p>
                     <p className="text-xs text-amber-600 mt-1">
-                      ${job.budget_amount.toLocaleString('en-AU')} held in escrow &middot; The inspector will be officially assigned once they finish setting up their payout account.
+                      {formatPrice(job.budget_amount, job.budget_currency || 'AUD')} held in escrow &middot; The inspector will be officially assigned once they finish setting up their payout account.
                     </p>
                   </div>
                 </div>
@@ -716,7 +718,7 @@ export default function InspectionSpotlightDetail() {
                   <DollarSign className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-amber-800">
-                      ${job.budget_amount.toLocaleString('en-AU')} held in escrow
+                      {formatPrice(job.budget_amount, job.budget_currency || 'AUD')} held in escrow
                     </p>
                     <p className="text-xs text-amber-600 mt-1">
                       Released when you approve the inspection report
@@ -754,7 +756,7 @@ export default function InspectionSpotlightDetail() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-emerald-800">
                   <span>Job budget:</span>
-                  <span className="font-semibold">${job.budget_amount.toFixed(2)}</span>
+                  <span className="font-semibold">{formatPrice(job.budget_amount, job.budget_currency || 'AUD')}</span>
                 </div>
                 <div className="flex justify-between text-emerald-700">
                   <span>Platform fee:</span>
@@ -762,7 +764,7 @@ export default function InspectionSpotlightDetail() {
                 </div>
                 <div className="pt-2 border-t border-emerald-200 flex justify-between text-emerald-900">
                   <span className="font-medium">You'll receive:</span>
-                  <span className="font-bold">${(job.budget_amount * 0.90).toFixed(2)}</span>
+                  <span className="font-bold">{formatPrice(job.budget_amount * 0.90, job.budget_currency || 'AUD')}</span>
                 </div>
               </div>
               {job.payment_status === 'in_escrow' ? (
@@ -826,7 +828,7 @@ export default function InspectionSpotlightDetail() {
               <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-lg mb-3">
                 <div className="text-sm">
                   <span className="text-emerald-700 font-semibold">
-                    Your earnings: ${Math.round((job.budget_amount) * 0.90).toLocaleString('en-AU')}
+                    Your earnings: {formatPrice(Math.round(job.budget_amount * 0.90), job.budget_currency || 'AUD')}
                   </span>
                   <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
                 </div>
@@ -853,10 +855,10 @@ export default function InspectionSpotlightDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-amber-800 font-medium">
-                ${Math.round((job.budget_amount) * 0.90).toLocaleString('en-AU')} will be released when your report is approved
+                {formatPrice(Math.round(job.budget_amount * 0.90), job.budget_currency || 'AUD')} will be released when your report is approved
               </p>
               <p className="text-xs text-amber-600 mt-1">
-                10% platform fee applies &middot; Job total: ${job.budget_amount.toLocaleString('en-AU')}
+                10% platform fee applies &middot; Job total: {formatPrice(job.budget_amount, job.budget_currency || 'AUD')}
               </p>
             </CardContent>
           </Card>
@@ -873,10 +875,10 @@ export default function InspectionSpotlightDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-green-800 font-medium">
-                ${Math.round((job.budget_amount) * 0.90).toLocaleString('en-AU')} has been sent to your account
+                {formatPrice(Math.round(job.budget_amount * 0.90), job.budget_currency || 'AUD')} has been sent to your account
               </p>
               <p className="text-xs text-green-600 mt-1">
-                10% platform fee: ${Math.round(job.budget_amount * 0.10).toLocaleString('en-AU')} &middot; Job total: ${job.budget_amount.toLocaleString('en-AU')}
+                10% platform fee: {formatPrice(Math.round(job.budget_amount * 0.10), job.budget_currency || 'AUD')} &middot; Job total: {formatPrice(job.budget_amount, job.budget_currency || 'AUD')}
               </p>
             </CardContent>
           </Card>
@@ -932,7 +934,7 @@ export default function InspectionSpotlightDetail() {
                     <div>
                       <Label className="text-xs text-muted-foreground">Budget</Label>
                       <p className="font-medium">
-                        {clientBrief.budget_min ? `$${clientBrief.budget_min.toLocaleString()}` : 'Up to'} - ${clientBrief.budget_max.toLocaleString()}
+                        {clientBrief.budget_min ? formatPrice(clientBrief.budget_min, job.budget_currency || 'AUD') : 'Up to'} - {formatPrice(clientBrief.budget_max, job.budget_currency || 'AUD')}
                       </p>
                     </div>
                   )}
@@ -1069,7 +1071,7 @@ export default function InspectionSpotlightDetail() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-forest">
-                        ${bid.proposed_price.toLocaleString('en-AU')}
+                        {formatPrice(bid.proposed_price, job.budget_currency || 'AUD')}
                       </p>
                       <Badge variant="outline" className="mt-1">
                         {bid.status}
@@ -1142,7 +1144,7 @@ export default function InspectionSpotlightDetail() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Amount:</span>
                   <span className="font-semibold text-forest">
-                    ${existingBid.proposed_price.toLocaleString('en-AU')}
+                    {formatPrice(existingBid.proposed_price, job.budget_currency || 'AUD')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1190,10 +1192,10 @@ export default function InspectionSpotlightDetail() {
             {/* Proposed Amount */}
             <div className="space-y-2">
               <Label>
-                Proposed Amount * <span className="text-xs text-muted-foreground">(Max: ${job.budget_amount})</span>
+                Proposed Amount * <span className="text-xs text-muted-foreground">(Max: {formatPrice(job.budget_amount, job.budget_currency || 'AUD')})</span>
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{getCurrency(job.budget_currency || 'AUD').symbol}</span>
                 <Input
                   type="number"
                   min="0"
@@ -1211,19 +1213,19 @@ export default function InspectionSpotlightDetail() {
             {/* Earnings Breakdown - Live Calculation */}
             {proposedAmount && proposedAmount > 0 && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <p className="text-sm font-medium text-emerald-800 mb-2">📊 Earnings Breakdown</p>
+                <p className="text-sm font-medium text-emerald-800 mb-2">Earnings Breakdown</p>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between text-emerald-800">
                     <span>Your bid:</span>
-                    <span className="font-semibold">${proposedAmount.toFixed(2)}</span>
+                    <span className="font-semibold">{formatPrice(proposedAmount, job.budget_currency || 'AUD')}</span>
                   </div>
                   <div className="flex justify-between text-emerald-700 pl-4">
-                    <span>├── You receive (90%):</span>
-                    <span className="font-medium">${(proposedAmount * 0.90).toFixed(2)}</span>
+                    <span>You receive (90%):</span>
+                    <span className="font-medium">{formatPrice(proposedAmount * 0.90, job.budget_currency || 'AUD')}</span>
                   </div>
                   <div className="flex justify-between text-emerald-700 pl-4">
-                    <span>└── Platform fee (10%):</span>
-                    <span className="font-medium">${(proposedAmount * 0.10).toFixed(2)}</span>
+                    <span>Platform fee (10%):</span>
+                    <span className="font-medium">{formatPrice(proposedAmount * 0.10, job.budget_currency || 'AUD')}</span>
                   </div>
                 </div>
                 <p className="text-xs text-emerald-600 mt-2">

@@ -62,6 +62,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatPrice } from '@/lib/currency';
 import { toast } from 'sonner';
 import { getOrCreateConversation } from '@/lib/messaging';
 
@@ -75,6 +76,7 @@ interface InspectionJob {
   property_address: string;
   property_type: string;
   budget_amount: number;
+  budget_currency: string;
   status: JobStatus;
   created_at: string;
   agreed_price: number | null;
@@ -135,16 +137,6 @@ const getAuthHeaders = () => {
   return { supabaseUrl, supabaseKey, accessToken };
 };
 
-// Format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-AU', {
-    style: 'currency',
-    currency: 'AUD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
 // Calculate days difference
 const getDaysDiff = (dateStr: string, fromNow = true) => {
   const date = new Date(dateStr);
@@ -185,7 +177,7 @@ export default function MyInspectionWork() {
 
       // Fetch all bids by this inspector
       const bidsResponse = await fetch(
-        `${supabaseUrl}/rest/v1/inspection_bids?select=*,job:job_id(id,creator_id,property_address,property_type,budget_amount,status,created_at,agreed_price,agreed_date,assigned_inspector_id,client_brief_id)&inspector_id=eq.${user.id}&order=created_at.desc`,
+        `${supabaseUrl}/rest/v1/inspection_bids?select=*,job:job_id(id,creator_id,property_address,property_type,budget_amount,budget_currency,status,created_at,agreed_price,agreed_date,assigned_inspector_id,client_brief_id)&inspector_id=eq.${user.id}&order=created_at.desc`,
         {
           headers: {
             'apikey': supabaseKey,
@@ -507,7 +499,7 @@ export default function MyInspectionWork() {
                 <DollarSign className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-700">{formatCurrency(stats.totalEarned)}</p>
+                <p className="text-2xl font-bold text-green-700">{formatPrice(stats.totalEarned, 'AUD')}</p>
                 <p className="text-sm text-muted-foreground">Total earned</p>
               </div>
             </div>
@@ -636,7 +628,7 @@ export default function MyInspectionWork() {
           <AlertDialogHeader>
             <AlertDialogTitle>Withdraw this bid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to withdraw your bid of {withdrawBid && formatCurrency(withdrawBid.proposed_price)} for{' '}
+              Are you sure you want to withdraw your bid of {withdrawBid && formatPrice(withdrawBid.proposed_price, withdrawBid.job?.budget_currency || 'AUD')} for{' '}
               {withdrawBid?.job?.property_address}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -734,14 +726,14 @@ function BidCard({
             {/* Budget */}
             <div className="flex items-center gap-2 text-sm mb-3">
               <DollarSign className="h-4 w-4 text-green-600" />
-              <span>Budget: {formatCurrency(bid.job?.budget_amount || 0)}</span>
+              <span>Budget: {formatPrice(bid.job?.budget_amount || 0, bid.job?.budget_currency || 'AUD')}</span>
             </div>
 
             {/* Your Bid Details */}
             <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Your bid:</span>
-                <span className="font-semibold text-forest">{formatCurrency(bid.proposed_price)}</span>
+                <span className="font-semibold text-forest">{formatPrice(bid.proposed_price, bid.job?.budget_currency || 'AUD')}</span>
               </div>
               {bid.proposed_date && (
                 <div className="flex items-center gap-2">
@@ -769,7 +761,7 @@ function BidCard({
             {/* Earnings Preview */}
             <div className="flex items-center gap-1.5 mt-2 text-sm text-emerald-700">
               <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
-              <span>You'll earn <strong>{formatCurrency(Math.round(bid.proposed_price * 0.90))}</strong> if selected</span>
+              <span>You'll earn <strong>{formatPrice(Math.round(bid.proposed_price * 0.90), bid.job?.budget_currency || 'AUD')}</strong> if selected</span>
               <span className="text-emerald-600 text-xs">(10% platform fee)</span>
             </div>
 
@@ -897,7 +889,7 @@ function AcceptedJobCard({
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-green-600" />
                   <span className="text-sm text-muted-foreground">Agreed fee:</span>
-                  <span className="font-medium text-green-700">{formatCurrency(job.agreed_price || 0)}</span>
+                  <span className="font-medium text-green-700">{formatPrice(job.agreed_price || 0, job.budget_currency || 'AUD')}</span>
                 </div>
                 {inspectionDate && (
                   <div className="flex items-center gap-2">
@@ -914,7 +906,7 @@ function AcceptedJobCard({
               </div>
               <div className="text-sm">
                 <span className="text-emerald-700 font-semibold">
-                  Your earnings: {formatCurrency(Math.round((job.agreed_price || 0) * 0.90))}
+                  Your earnings: {formatPrice(Math.round((job.agreed_price || 0) * 0.90), job.budget_currency || 'AUD')}
                 </span>
                 <span className="text-emerald-600 text-xs ml-2">(after 10% platform fee)</span>
               </div>
@@ -994,14 +986,14 @@ function SubmittedJobCard({
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-amber-600" />
               <span className="font-semibold text-amber-700">
-                {formatCurrency(Math.round((job.agreed_price || 0) * 0.90))} pending
+                {formatPrice(Math.round((job.agreed_price || 0) * 0.90), job.budget_currency || 'AUD')} pending
               </span>
               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                 Awaiting Approval
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Job total: {formatCurrency(job.agreed_price || 0)} &middot; 10% platform fee applies
+              Job total: {formatPrice(job.agreed_price || 0, job.budget_currency || 'AUD')} &middot; 10% platform fee applies
             </p>
           </div>
 
@@ -1048,11 +1040,11 @@ function CompletedJobCard({
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="font-semibold text-green-700">
-                {formatCurrency(Math.round((job.agreed_price || 0) * 0.90))} earned
+                {formatPrice(Math.round((job.agreed_price || 0) * 0.90), job.budget_currency || 'AUD')} earned
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-2">
-              Job total: {formatCurrency(job.agreed_price || 0)} &middot; Platform fee: {formatCurrency(Math.round((job.agreed_price || 0) * 0.10))}
+              Job total: {formatPrice(job.agreed_price || 0, job.budget_currency || 'AUD')} &middot; Platform fee: {formatPrice(Math.round((job.agreed_price || 0) * 0.10), job.budget_currency || 'AUD')}
             </p>
 
             {/* Review (if any) */}
@@ -1103,7 +1095,7 @@ function DeclinedBidCard({ bid }: { bid: InspectionBid }) {
             {/* Your Bid */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
               <DollarSign className="h-4 w-4" />
-              <span>Your bid: {formatCurrency(bid.proposed_price)}</span>
+              <span>Your bid: {formatPrice(bid.proposed_price, bid.job?.budget_currency || 'AUD')}</span>
             </div>
 
             <div className="flex items-center gap-2">

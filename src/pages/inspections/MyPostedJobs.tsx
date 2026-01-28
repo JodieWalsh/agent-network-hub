@@ -58,6 +58,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatPrice } from '@/lib/currency';
 import { toast } from 'sonner';
 import { notifyBidDeclined, notifyJobCancelled } from '@/lib/notifications';
 import { getOrCreateConversation } from '@/lib/messaging';
@@ -79,6 +80,7 @@ interface InspectionJob {
   property_type: string;
   budget_min: number;
   budget_max: number;
+  budget_currency: string;
   status: JobStatus;
   payment_status: PaymentStatus | null;
   payout_status: PayoutStatus | null;
@@ -484,14 +486,6 @@ export default function MyPostedJobs() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0,
-    }).format(amount); // Amount is stored in dollars, not cents
-  };
-
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-AU', {
       day: 'numeric',
@@ -631,7 +625,6 @@ export default function MyPostedJobs() {
                       onDeclineBid={(bid, j) => setConfirmAction({ type: 'decline', bid, job: j })}
                       onViewBidDetails={(bid, j) => setViewingBid({ bid, job: j })}
                       onMessage={handleSendMessage}
-                      formatCurrency={formatCurrency}
                       formatDate={formatDate}
                       getDaysRemaining={getDaysRemaining}
                     />
@@ -668,10 +661,10 @@ export default function MyPostedJobs() {
                   <BidCard
                     key={bid.id}
                     bid={bid}
+                    currencyCode={selectedJob?.budget_currency || 'AUD'}
                     onAccept={() => setConfirmAction({ type: 'accept', bid })}
                     onDecline={() => setConfirmAction({ type: 'decline', bid })}
                     onMessage={() => handleSendMessage(bid.inspector_id, selectedJob?.id, selectedJob?.property_address)}
-                    formatCurrency={formatCurrency}
                     formatDate={formatDate}
                   />
                 ))}
@@ -693,7 +686,7 @@ export default function MyPostedJobs() {
                 {confirmAction?.type === 'accept' && confirmAction.bid && (
                   <div className="space-y-4">
                     <p>
-                      You're accepting <strong>{confirmAction.bid.inspector?.full_name}</strong>'s bid of <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong> for this inspection.
+                      You're accepting <strong>{confirmAction.bid.inspector?.full_name}</strong>'s bid of <strong>{formatPrice(confirmAction.bid.proposed_price, confirmAction.job.budget_currency || 'AUD')}</strong> for this inspection.
                     </p>
                     <div className="p-3 bg-blue-50 rounded-lg text-sm border border-blue-200">
                       <div className="flex items-center gap-2 mb-2">
@@ -701,7 +694,7 @@ export default function MyPostedJobs() {
                         <p className="font-medium text-blue-800">Secure Payment via Stripe</p>
                       </div>
                       <p className="text-blue-700">
-                        You'll be redirected to Stripe to complete payment of <strong>{formatCurrency(confirmAction.bid.proposed_price)}</strong>. Funds will be held in escrow until you approve the inspection report.
+                        You'll be redirected to Stripe to complete payment of <strong>{formatPrice(confirmAction.bid.proposed_price, confirmAction.job.budget_currency || 'AUD')}</strong>. Funds will be held in escrow until you approve the inspection report.
                       </p>
                     </div>
                     <div className="p-3 bg-muted/50 rounded-lg text-sm">
@@ -709,11 +702,11 @@ export default function MyPostedJobs() {
                       <div className="space-y-1 text-muted-foreground">
                         <div className="flex justify-between">
                           <span>Inspector receives (90%):</span>
-                          <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.90))}</span>
+                          <span>{formatPrice(Math.round(confirmAction.bid.proposed_price * 0.90), confirmAction.job.budget_currency || 'AUD')}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Platform fee (10%):</span>
-                          <span>{formatCurrency(Math.round(confirmAction.bid.proposed_price * 0.10))}</span>
+                          <span>{formatPrice(Math.round(confirmAction.bid.proposed_price * 0.10), confirmAction.job.budget_currency || 'AUD')}</span>
                         </div>
                       </div>
                     </div>
@@ -769,7 +762,7 @@ export default function MyPostedJobs() {
                   }
                 }}
               >
-                {confirmAction?.type === 'accept' && confirmAction.bid && `Accept & Pay ${formatCurrency(confirmAction.bid.proposed_price)}`}
+                {confirmAction?.type === 'accept' && confirmAction.bid && `Accept & Pay ${formatPrice(confirmAction.bid.proposed_price, confirmAction.job.budget_currency || 'AUD')}`}
                 {confirmAction?.type === 'decline' && 'Decline Bid'}
                 {confirmAction?.type === 'cancel' && 'Cancel Job'}
               </AlertDialogAction>
@@ -823,7 +816,7 @@ export default function MyPostedJobs() {
                   <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                     <p className="text-xs text-green-600 font-medium mb-1">Proposed Price</p>
                     <p className="text-xl font-bold text-green-700">
-                      {formatCurrency(viewingBid.bid.proposed_price)}
+                      {formatPrice(viewingBid.bid.proposed_price, viewingBid.job.budget_currency || 'AUD')}
                     </p>
                   </div>
                   {viewingBid.bid.proposed_date && (
@@ -929,7 +922,6 @@ interface JobCardProps {
   onDeclineBid: (bid: InspectionBid, job: InspectionJob) => void;
   onViewBidDetails: (bid: InspectionBid, job: InspectionJob) => void;
   onMessage: (recipientId: string, jobId: string, jobAddress: string) => void;
-  formatCurrency: (amount: number) => string;
   formatDate: (date: string) => string;
   getDaysRemaining: (expiresAt: string | null, inspectionDateTo: string) => number;
 }
@@ -946,7 +938,6 @@ function JobCard({
   onDeclineBid,
   onViewBidDetails,
   onMessage,
-  formatCurrency,
   formatDate,
   getDaysRemaining,
 }: JobCardProps) {
@@ -1004,7 +995,7 @@ function JobCard({
               <span className="flex items-center gap-1.5">
                 <DollarSign size={14} className="text-green-600" />
                 <span className="font-medium">
-                  {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
+                  {formatPrice(job.budget_min, job.budget_currency || 'AUD')} - {formatPrice(job.budget_max, job.budget_currency || 'AUD')}
                 </span>
               </span>
               <span className="flex items-center gap-1.5">
@@ -1053,14 +1044,14 @@ function JobCard({
             {tabId !== 'completed' && tabId !== 'cancelled' && job.payment_status === 'in_escrow' && job.agreed_price && (
               <div className="flex items-center gap-1.5 mt-2 text-sm text-amber-700">
                 <DollarSign size={14} className="text-amber-600" />
-                <span className="font-medium">{formatCurrency(job.agreed_price)} in escrow</span>
+                <span className="font-medium">{formatPrice(job.agreed_price, job.budget_currency || 'AUD')} in escrow</span>
                 <span className="text-amber-600 text-xs">&middot; Released when you approve the report</span>
               </div>
             )}
             {tabId === 'completed' && job.agreed_price && job.payout_status === 'paid' && (
               <div className="flex items-center gap-1.5 mt-2 text-sm text-green-700">
                 <CheckCircle size={14} className="text-green-600" />
-                <span className="font-medium">Inspector paid {formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                <span className="font-medium">Inspector paid {formatPrice(Math.round(job.agreed_price * 0.90), job.budget_currency || 'AUD')}</span>
               </div>
             )}
           </div>
@@ -1161,7 +1152,7 @@ function JobCard({
                   onDecline={() => onDeclineBid(bid, job)}
                   onViewDetails={() => onViewBidDetails(bid, job)}
                   onMessage={() => onMessage(bid.inspector_id, job.id, job.property_address)}
-                  formatCurrency={formatCurrency}
+                  currencyCode={job.budget_currency || 'AUD'}
                   formatDate={formatDate}
                 />
               ))}
@@ -1176,12 +1167,12 @@ function JobCard({
               <div className="flex items-center gap-2 text-sm">
                 <DollarSign size={14} className="text-muted-foreground" />
                 <span className="text-muted-foreground">Job Total:</span>
-                <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+                <span className="font-semibold">{formatPrice(job.agreed_price, job.budget_currency || 'AUD')}</span>
               </div>
               <div className="text-sm text-muted-foreground">
-                Inspector: <span className="font-medium text-green-700">{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                Inspector: <span className="font-medium text-green-700">{formatPrice(Math.round(job.agreed_price * 0.90), job.budget_currency || 'AUD')}</span>
                 <span className="mx-1">·</span>
-                Platform fee: <span className="font-medium">{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+                Platform fee: <span className="font-medium">{formatPrice(Math.round(job.agreed_price * 0.10), job.budget_currency || 'AUD')}</span>
               </div>
               {job.payout_status && (
                 <Badge className={cn(
@@ -1216,11 +1207,11 @@ interface InlineBidCardProps {
   onDecline: () => void;
   onViewDetails: () => void;
   onMessage: () => void;
-  formatCurrency: (cents: number) => string;
+  currencyCode: string;
   formatDate: (date: string) => string;
 }
 
-function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, onMessage, formatCurrency, formatDate }: InlineBidCardProps) {
+function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, onMessage, currencyCode, formatDate }: InlineBidCardProps) {
   return (
     <div
       className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg border border-border/50 hover:border-forest/30 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -1251,9 +1242,9 @@ function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, onMessage
           )}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="font-semibold text-green-700">{formatCurrency(bid.proposed_price)}</span>
+          <span className="font-semibold text-green-700">{formatPrice(bid.proposed_price, currencyCode)}</span>
           <span className="text-xs text-muted-foreground">
-            (→{formatCurrency(Math.round(bid.proposed_price * 0.90))})
+            ({'\u2192'}{formatPrice(Math.round(bid.proposed_price * 0.90), currencyCode)})
           </span>
           {bid.proposed_date && (
             <span className="text-muted-foreground flex items-center gap-1">
@@ -1300,14 +1291,14 @@ function InlineBidCard({ bid, job, onAccept, onDecline, onViewDetails, onMessage
 // Bid Card Component
 interface BidCardProps {
   bid: InspectionBid;
+  currencyCode: string;
   onAccept: () => void;
   onDecline: () => void;
   onMessage?: () => void;
-  formatCurrency: (cents: number) => string;
   formatDate: (date: string) => string;
 }
 
-function BidCard({ bid, onAccept, onDecline, onMessage, formatCurrency, formatDate }: BidCardProps) {
+function BidCard({ bid, currencyCode, onAccept, onDecline, onMessage, formatDate }: BidCardProps) {
   const [showHistory, setShowHistory] = useState(false);
   const hasHistory = bid.history && bid.history.length > 1;
 
@@ -1359,7 +1350,7 @@ function BidCard({ bid, onAccept, onDecline, onMessage, formatCurrency, formatDa
             <div className="flex flex-wrap items-center gap-4 text-sm mb-2">
               <span className="flex items-center gap-1.5 font-semibold text-green-700">
                 <DollarSign size={14} />
-                Bid: {formatCurrency(bid.proposed_price)}
+                Bid: {formatPrice(bid.proposed_price, currencyCode)}
               </span>
               {bid.proposed_date && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -1383,8 +1374,8 @@ function BidCard({ bid, onAccept, onDecline, onMessage, formatCurrency, formatDa
 
             {/* Fee Breakdown */}
             <div className="text-xs text-muted-foreground mb-2 pl-1">
-              <span className="mr-3">├── They'll receive: {formatCurrency(Math.round(bid.proposed_price * 0.90))}</span>
-              <span>└── Platform fee: {formatCurrency(Math.round(bid.proposed_price * 0.10))}</span>
+              <span className="mr-3">├── They'll receive: {formatPrice(Math.round(bid.proposed_price * 0.90), currencyCode)}</span>
+              <span>└── Platform fee: {formatPrice(Math.round(bid.proposed_price * 0.10), currencyCode)}</span>
             </div>
 
             {bid.message && (
@@ -1409,12 +1400,12 @@ function BidCard({ bid, onAccept, onDecline, onMessage, formatCurrency, formatDa
                     <div>
                       <span className="text-foreground">{formatDate(entry.changed_at)}:</span>{' '}
                       {entry.change_type === 'created' ? (
-                        <span>Initial bid: {formatCurrency(entry.new_price || 0)}</span>
+                        <span>Initial bid: {formatPrice(entry.new_price || 0, currencyCode)}</span>
                       ) : (
                         <>
                           {entry.previous_price !== entry.new_price && (
                             <span>
-                              Price: {formatCurrency(entry.previous_price || 0)} → {formatCurrency(entry.new_price || 0)}
+                              Price: {formatPrice(entry.previous_price || 0, currencyCode)} → {formatPrice(entry.new_price || 0, currencyCode)}
                             </span>
                           )}
                           {entry.change_reason && (

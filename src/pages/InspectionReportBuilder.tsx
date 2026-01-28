@@ -91,6 +91,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyReportSubmitted } from '@/lib/notifications';
 import { uploadInspectionPhotos, validateImageFile } from '@/lib/storage';
+import { formatPrice } from '@/lib/currency';
 
 // Types
 type MatchStatus = 'meets' | 'partial' | 'doesnt';
@@ -226,6 +227,7 @@ interface InspectionJob {
   client_brief_id: string | null;
   status: string;
   agreed_price: number | null;
+  budget_currency: string;
   assigned_inspector_id: string | null;
 }
 
@@ -303,9 +305,6 @@ const getAuthHeaders = () => {
   } catch (e) {}
   return { supabaseUrl, supabaseKey, accessToken };
 };
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0 }).format(amount);
 
 const initialFormData: ReportFormData = {
   inspection_date: new Date().toISOString().split('T')[0],
@@ -935,7 +934,7 @@ export default function InspectionReportBuilder() {
                   {job?.agreed_price && (
                     <div className="p-2 bg-emerald-100 rounded-lg inline-block">
                       <p className="text-sm font-medium text-emerald-800">
-                        Your earnings for this job: ${((job.agreed_price * 0.90) / 100).toFixed(2)}
+                        Your earnings for this job: {formatPrice(Math.round(job.agreed_price * 0.90), job.budget_currency || 'AUD')}
                         <span className="text-xs ml-1">(paid when report is approved)</span>
                       </p>
                     </div>
@@ -2192,7 +2191,7 @@ export default function InspectionReportBuilder() {
           <div className="py-4">
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <span>Your earnings for this job:</span>
-              <span className="font-bold text-green-600 text-lg">{formatCurrency(job.agreed_price || 0)}</span>
+              <span className="font-bold text-green-600 text-lg">{formatPrice(Math.round((job.agreed_price || 0) * 0.90), job.budget_currency || 'AUD')}</span>
             </div>
           </div>
           <DialogFooter>
@@ -2217,7 +2216,7 @@ export default function InspectionReportBuilder() {
             </DialogDescription>
             <div className="mt-6 space-y-3">
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-green-800 font-medium">Earnings: {formatCurrency(job.agreed_price || 0)}</p>
+                <p className="text-green-800 font-medium">Earnings: {formatPrice(Math.round((job.agreed_price || 0) * 0.90), job.budget_currency || 'AUD')}</p>
                 <p className="text-sm text-green-600">Payment will be released after review</p>
               </div>
               <div className="flex justify-center gap-6 text-sm text-muted-foreground">

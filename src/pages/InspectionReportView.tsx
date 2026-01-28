@@ -67,6 +67,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { notifyReportApproved } from '@/lib/notifications';
 import { createConnectPayout } from '@/lib/stripe';
+import { formatPrice } from '@/lib/currency';
 
 // Types (matching InspectionReportBuilder)
 type MatchStatus = 'meets' | 'partial' | 'doesnt';
@@ -185,6 +186,7 @@ interface InspectionJob {
   status: string;
   payment_status: PaymentStatus | null;
   agreed_price: number | null;
+  budget_currency: string;
   client_brief_id: string | null;
 }
 
@@ -211,9 +213,6 @@ const getAuthHeaders = () => {
 };
 
 // Format helpers
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0 }).format(amount);
-
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -1298,15 +1297,15 @@ export default function InspectionReportView() {
                           <div className="space-y-1 text-sm text-emerald-700">
                             <div className="flex justify-between">
                               <span>├── Funds held in escrow:</span>
-                              <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+                              <span className="font-semibold">{formatPrice(job.agreed_price, job.budget_currency || 'AUD')}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>├── {report?.inspector?.full_name || 'Inspector'} receives:</span>
-                              <span>{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                              <span>{formatPrice(Math.round(job.agreed_price * 0.90), job.budget_currency || 'AUD')}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>└── Platform fee:</span>
-                              <span>{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+                              <span>{formatPrice(Math.round(job.agreed_price * 0.10), job.budget_currency || 'AUD')}</span>
                             </div>
                           </div>
                         </>
@@ -1316,15 +1315,15 @@ export default function InspectionReportView() {
                           <div className="space-y-1 text-sm text-emerald-700">
                             <div className="flex justify-between">
                               <span>├── Total charge to you:</span>
-                              <span className="font-semibold">{formatCurrency(job.agreed_price)}</span>
+                              <span className="font-semibold">{formatPrice(job.agreed_price, job.budget_currency || 'AUD')}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>├── {report?.inspector?.full_name || 'Inspector'} receives:</span>
-                              <span>{formatCurrency(Math.round(job.agreed_price * 0.90))}</span>
+                              <span>{formatPrice(Math.round(job.agreed_price * 0.90), job.budget_currency || 'AUD')}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>└── Platform fee:</span>
-                              <span>{formatCurrency(Math.round(job.agreed_price * 0.10))}</span>
+                              <span>{formatPrice(Math.round(job.agreed_price * 0.10), job.budget_currency || 'AUD')}</span>
                             </div>
                           </div>
                         </>
@@ -1346,8 +1345,8 @@ export default function InspectionReportView() {
               >
                 {approving ? 'Releasing...' : (
                   job.payment_status === 'in_escrow'
-                    ? `Approve & Release ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`
-                    : `Approve & Pay ${job.agreed_price ? formatCurrency(job.agreed_price) : ''}`
+                    ? `Approve & Release ${job.agreed_price ? formatPrice(job.agreed_price, job.budget_currency || 'AUD') : ''}`
+                    : `Approve & Pay ${job.agreed_price ? formatPrice(job.agreed_price, job.budget_currency || 'AUD') : ''}`
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { formatPrice } from '@/lib/currency';
 
 type UrgencyLevel = 'standard' | 'urgent' | 'express';
 type PropertyType = 'house' | 'apartment' | 'townhouse' | 'land' | 'other';
@@ -45,6 +46,7 @@ interface InspectionJob {
   property_type: PropertyType;
   urgency_level: UrgencyLevel;
   budget_amount: number;
+  budget_currency: string;
   status: JobStatus;
   created_at: string;
   preferred_inspection_dates: string[] | null;
@@ -235,7 +237,7 @@ export default function InspectionSpotlights() {
             <div className="bg-white rounded-lg p-4 border">
               <p className="text-sm text-muted-foreground">Avg Budget</p>
               <p className="text-2xl font-semibold text-forest">
-                ${jobs.length > 0 ? Math.round(jobs.reduce((sum, j) => sum + j.budget_amount, 0) / jobs.length) : 0}
+                {jobs.length > 0 ? formatPrice(Math.round(jobs.reduce((sum, j) => sum + j.budget_amount, 0) / jobs.length), 'AUD') : formatPrice(0, 'AUD')}
               </p>
             </div>
           </div>
@@ -372,7 +374,7 @@ export default function InspectionSpotlights() {
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-forest" />
                       <p className="text-lg font-semibold text-forest">
-                        ${job.budget_amount.toLocaleString('en-AU')}
+                        {formatPrice(job.budget_amount, job.budget_currency || 'AUD')}
                       </p>
                     </div>
 
