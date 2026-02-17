@@ -339,12 +339,6 @@ export default function ForumPostView() {
                   <span>{getUserTypeLabel(post.author?.user_type || '')}</span>
                   <span>·</span>
                   <span>{formatPostDate(post.created_at)}</span>
-                  {post.author?.reputation_score > 0 && (
-                    <>
-                      <span>·</span>
-                      <span>{post.author.reputation_score} rep</span>
-                    </>
-                  )}
                 </div>
               </div>
             </div>

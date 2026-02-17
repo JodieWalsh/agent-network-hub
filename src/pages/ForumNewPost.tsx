@@ -188,17 +188,18 @@ export default function ForumNewPost() {
               <div className="space-y-2">
                 <Label>Category</Label>
                 <Select
-                  value={selectedCategoryId}
+                  value={selectedCategoryId || 'none'}
                   onValueChange={(v) => {
-                    setSelectedCategoryId(v);
-                    if (v) setSelectedBoardId('');
+                    const val = v === 'none' ? '' : v;
+                    setSelectedCategoryId(val);
+                    if (val) setSelectedBoardId('');
                   }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
@@ -211,17 +212,18 @@ export default function ForumNewPost() {
               <div className="space-y-2">
                 <Label>Regional Board</Label>
                 <Select
-                  value={selectedBoardId}
+                  value={selectedBoardId || 'none'}
                   onValueChange={(v) => {
-                    setSelectedBoardId(v);
-                    if (v) setSelectedCategoryId('');
+                    const val = v === 'none' ? '' : v;
+                    setSelectedBoardId(val);
+                    if (val) setSelectedCategoryId('');
                   }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select board" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {boards.map((board) => (
                       <SelectItem key={board.id} value={board.id}>
                         {board.name}

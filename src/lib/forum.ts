@@ -93,7 +93,6 @@ export interface PostAuthor {
   full_name: string | null;
   avatar_url: string | null;
   user_type: string;
-  reputation_score: number;
 }
 
 export interface ForumReply {
@@ -272,18 +271,7 @@ export async function toggleBoardMembership(
         }
       );
       // Decrement member count
-      await fetch(
-        `${supabaseUrl}/rest/v1/rpc/decrement_board_member_count`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ board_id: boardId }),
-        }
-      ).catch(() => {}); // Non-critical
+      supabase.rpc('decrement_board_member_count', { p_board_id: boardId }).catch(() => {});
       return { joined: false };
     } else {
       // Join
@@ -300,6 +288,8 @@ export async function toggleBoardMembership(
           body: JSON.stringify({ user_id: userId, board_id: boardId }),
         }
       );
+      // Increment member count
+      supabase.rpc('increment_board_member_count', { p_board_id: boardId }).catch(() => {});
       return { joined: true };
     }
   } catch (error) {
@@ -530,20 +520,14 @@ export async function createPost(
 
     const [post] = await response.json();
 
-    // Update category/board post count
+    // Update category post count
     if (params.category_id) {
-      await fetch(
-        `${supabaseUrl}/rest/v1/rpc/increment_category_post_count`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ cat_id: params.category_id }),
-        }
-      ).catch(() => {});
+      supabase.rpc('increment_category_post_count', { cat_id: params.category_id }).catch(() => {});
+    }
+
+    // Update board post count
+    if (params.regional_board_id) {
+      supabase.rpc('increment_board_post_count', { p_board_id: params.regional_board_id }).catch(() => {});
     }
 
     // Handle tags
@@ -554,20 +538,12 @@ export async function createPost(
     // Auto-follow the post
     await toggleForumFollow(userId, post.id);
 
-    // Update user stats
-    await fetch(`${supabaseUrl}/rest/v1/forum_user_stats`, {
-      method: 'POST',
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        post_count: 1,
-        reputation_points: 5,
-      }),
+    // Update user stats (+1 post, +5 reputation)
+    supabase.rpc('increment_forum_user_stats', {
+      p_user_id: userId,
+      p_posts: 1,
+      p_replies: 0,
+      p_reputation: 5,
     }).catch(() => {});
 
     return post;
@@ -674,54 +650,15 @@ export async function createReply(
 
     const [reply] = await response.json();
 
-    // Update post reply_count and last_activity_at
-    await fetch(
-      `${supabaseUrl}/rest/v1/forum_posts?id=eq.${postId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({
-          reply_count: undefined, // Will use RPC instead
-          last_activity_at: new Date().toISOString(),
-        }),
-      }
-    ).catch(() => {});
+    // Increment reply_count + update last_activity_at via RPC
+    supabase.rpc('increment_post_reply_count', { p_post_id: postId }).catch(() => {});
 
-    // Increment reply_count via direct PATCH (simpler than RPC)
-    await fetch(
-      `${supabaseUrl}/rest/v1/rpc/increment_post_reply_count`,
-      {
-        method: 'POST',
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ p_post_id: postId }),
-      }
-    ).catch(() => {
-      // Fallback: just update last_activity
-    });
-
-    // Update user stats
-    await fetch(`${supabaseUrl}/rest/v1/forum_user_stats`, {
-      method: 'POST',
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        reply_count: 1,
-        reputation_points: 2,
-      }),
+    // Update user stats (+1 reply, +2 reputation)
+    supabase.rpc('increment_forum_user_stats', {
+      p_user_id: userId,
+      p_posts: 0,
+      p_replies: 1,
+      p_reputation: 2,
     }).catch(() => {});
 
     return reply;
@@ -1122,7 +1059,7 @@ async function fetchProfiles(userIds: string[]): Promise<PostAuthor[]> {
 
   try {
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?id=in.(${userIds.join(',')})&select=id,full_name,avatar_url,user_type,reputation_score`,
+      `${supabaseUrl}/rest/v1/profiles?id=in.(${userIds.join(',')})&select=id,full_name,avatar_url,user_type`,
       {
         headers: {
           apikey: supabaseKey,
