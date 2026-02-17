@@ -49,7 +49,13 @@ export type NotificationType =
   | 'user_approved'
   | 'user_rejected'
   | 'user_promoted_admin'
-  | 'job_posted_nearby';
+  | 'job_posted_nearby'
+  | 'forum_reply'
+  | 'forum_mention'
+  | 'forum_like'
+  | 'forum_solution'
+  | 'forum_follow_reply'
+  | 'forum_badge_earned';
 
 export interface Notification {
   id: string;
@@ -780,6 +786,12 @@ export function getNotificationIcon(type: NotificationType): string {
     user_rejected: 'XCircle',
     user_promoted_admin: 'Shield',
     job_posted_nearby: 'MapPin',
+    forum_reply: 'MessageCircle',
+    forum_mention: 'AtSign',
+    forum_like: 'Heart',
+    forum_solution: 'CheckCircle2',
+    forum_follow_reply: 'Bell',
+    forum_badge_earned: 'Award',
   };
   return icons[type] || 'Bell';
 }
@@ -811,6 +823,12 @@ export function getNotificationColor(type: NotificationType): string {
     user_rejected: 'text-red-600 bg-red-50',
     user_promoted_admin: 'text-purple-600 bg-purple-50',
     job_posted_nearby: 'text-blue-600 bg-blue-50',
+    forum_reply: 'text-forest bg-forest/10',
+    forum_mention: 'text-indigo-600 bg-indigo-50',
+    forum_like: 'text-red-500 bg-red-50',
+    forum_solution: 'text-green-600 bg-green-50',
+    forum_follow_reply: 'text-forest bg-forest/10',
+    forum_badge_earned: 'text-pink-600 bg-pink-50',
   };
   return colors[type] || 'text-gray-600 bg-gray-50';
 }
@@ -879,6 +897,18 @@ export function getNotificationLink(notification: Notification): string {
       return '/settings/profile';
     case 'user_promoted_admin':
       return '/admin';
+
+    case 'forum_reply':
+    case 'forum_mention':
+    case 'forum_like':
+    case 'forum_solution':
+    case 'forum_follow_reply':
+      if ((notification as any).forum_post_id) {
+        return `/forums/post/${(notification as any).forum_post_id}`;
+      }
+      return '/forums';
+    case 'forum_badge_earned':
+      return '/forums';
 
     default:
       // Default: go to job spotlight if job_id exists

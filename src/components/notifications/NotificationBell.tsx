@@ -12,6 +12,7 @@ import {
   Bell,
   Sparkles,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   Edit,
   Briefcase,
@@ -22,8 +23,11 @@ import {
   Clock,
   Check,
   MessageSquare,
+  MessageCircle,
   RefreshCw,
   MapPin,
+  Heart,
+  AtSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -56,6 +60,12 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   job_cancelled: XCircle,
   new_message: MessageSquare,
   job_posted_nearby: MapPin,
+  forum_reply: MessageCircle,
+  forum_mention: AtSign,
+  forum_like: Heart,
+  forum_solution: CheckCircle2,
+  forum_follow_reply: Bell,
+  forum_badge_earned: Award,
 };
 
 export function NotificationBell() {

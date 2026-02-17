@@ -15,7 +15,7 @@ Read this first before doing any work on this project.
 - **Backend:** Supabase (Auth, PostgreSQL, Real-time, Storage, Edge Functions)
 - **Geospatial:** PostGIS + Mapbox Geocoding API
 - **Payments:** Stripe (subscriptions + Connect for inspector payouts + marketplace escrow)
-- **Hosting:** Deployed via Supabase
+- **Hosting:** Vercel (frontend) + Supabase (backend/Edge Functions)
 
 ### Key User Types (stored as `user_type` on profiles)
 `buyers_agent`, `real_estate_agent`, `building_inspector`, `conveyancer`, `mortgage_broker`, `stylist`
@@ -667,11 +667,11 @@ Used to apply migrations and run ad-hoc SQL when the Supabase CLI isn't availabl
 ```
 # Get service role key
 GET https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/api-keys
-Authorization: Bearer sbp_27c59fda6094c95b9ed679e7d4b5c65c6a40e038
+Authorization: Bearer sbp_fbb3d371e81e96d2646f29d96191f334a480fa05
 
 # Execute SQL
 POST https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/database/query
-Authorization: Bearer sbp_27c59fda6094c95b9ed679e7d4b5c65c6a40e038
+Authorization: Bearer sbp_fbb3d371e81e96d2646f29d96191f334a480fa05
 Content-Type: application/json
 Body: { "query": "SELECT 1" }
 ```
@@ -706,6 +706,24 @@ serve(async (req: Request) => {
 
 ---
 
+## Deployment (Live URL for Dani)
+
+### Vercel Deployment (Set up 17 Feb 2026)
+- **Live URL:** https://agent-network-hub-1ynd.vercel.app
+- **Platform:** Vercel (free tier), auto-deploys from `main` branch on GitHub
+- **GitHub repo:** https://github.com/JodieWalsh/agent-network-hub
+- **Environment variables** are configured in Vercel project settings (same 5 `VITE_` vars as local .env)
+- **Supabase redirect URL** added: `https://agent-network-hub-1ynd.vercel.app/**` (in Supabase Auth URL Configuration)
+- **Backend:** Supabase Edge Functions are deployed separately (already live)
+- **Auto-deploy:** Every push to `main` triggers a new Vercel build and deploy
+
+### Previous Deployment Attempts
+- **Lovable.dev:** Original deployment method (README says "Share → Publish"), but version was out of date after local development
+- **Netlify:** Attempted but had issues with environment variables not being picked up
+- **GitHub Pages:** Attempted but YAML workflow file had paste formatting issues
+
+---
+
 ## Environment Variables
 ```
 VITE_SUPABASE_URL=https://yrjtdunljzxasyohjdnw.supabase.co
@@ -723,12 +741,89 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 
 ---
 
+## Community Forum (Built 17 Feb 2026)
+
+### Overview
+Professional discussion forum integrated into the platform. Phase 1 delivers categories, regional boards, posts, replies, likes, bookmarks, follows, search, notifications, and reputation.
+
+### Database Tables (17)
+**Core (9):** `forum_categories`, `forum_regional_boards`, `forum_posts`, `forum_replies`, `forum_post_media`, `forum_likes`, `forum_bookmarks`, `forum_follows`, `forum_user_regional_memberships`
+
+**Supporting (8):** `forum_tags`, `forum_post_tags`, `forum_expert_badges`, `forum_polls`, `forum_poll_options`, `forum_poll_votes`, `forum_reports`, `forum_user_stats`
+
+### Pages & Routes
+| Route | Page | Purpose |
+|-------|------|---------|
+| `/forums` | ForumHome | Landing with categories, regional boards, trending, search |
+| `/forums/category/:slug` | ForumCategoryView | Posts filtered by category |
+| `/forums/region/:slug` | ForumRegionalBoard | Posts filtered by regional board, join/leave |
+| `/forums/post/:id` | ForumPostView | Post detail, replies, like/bookmark/follow, report |
+| `/forums/new` | ForumNewPost | Create post (protected, requires auth) |
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/lib/forum.ts` | All types + API functions (following messaging.ts pattern) |
+| `src/components/forum/PostCard.tsx` | Reusable post card for lists |
+| `src/components/forum/ReplyThread.tsx` | Reply with 2-level nested children |
+| `src/components/forum/ReplyEditor.tsx` | Reply input component |
+| `src/components/forum/ForumSidebar.tsx` | Sidebar: stats, top contributors, unanswered |
+
+### RPC Functions
+| Function | Purpose |
+|----------|---------|
+| `toggle_forum_like` | Like/unlike posts and replies, updates user stats + reputation |
+| `toggle_forum_bookmark` | Bookmark/unbookmark posts |
+| `toggle_forum_follow` | Follow/unfollow posts for reply notifications |
+| `increment_post_view_count` | Increment view counter |
+| `mark_reply_as_solution` | Mark reply as accepted answer (question posts only), awards +10 reputation |
+| `search_forum_posts` | Full-text search using `tsvector` + GIN index |
+
+### Notification Types (6 new)
+| Type | Trigger | Icon | Color |
+|------|---------|------|-------|
+| `forum_reply` | Reply to your post | MessageCircle | forest/green |
+| `forum_mention` | @mention (Phase 2) | AtSign | indigo |
+| `forum_like` | Like on your post | Heart | red |
+| `forum_solution` | Reply marked as solution | CheckCircle2 | green |
+| `forum_follow_reply` | Reply on followed post | Bell | forest/green |
+| `forum_badge_earned` | Expert badge awarded | Award | pink |
+
+### Reputation Points
+| Action | Points |
+|--------|--------|
+| Create post | +5 |
+| Reply | +2 |
+| Like received (post) | +3 |
+| Like received (reply) | +1 |
+| Solution marked | +10 |
+
+### Seed Data
+- **10 categories:** Market Trends, Legal & Compliance, Inspection Tips, Buyer Strategies, Technology & Tools, Networking & Events, Finance & Lending, Styling & Presentation, Career & Business, General Discussion
+- **10 regional boards:** Sydney, Melbourne, Brisbane, Perth, Adelaide, Hobart, Canberra, Darwin, Gold Coast, Newcastle
+
+### Migrations
+```
+20260217010000_create_forum_core_tables.sql       9 core tables + RLS + indexes + triggers
+20260217020000_create_forum_supporting_tables.sql  8 supporting tables + seed data
+20260217030000_create_forum_functions_and_search.sql  RPC functions + full-text search + notification types
+```
+
+### Phase 2 (Planned)
+AI suggestions, poll UI, case study post type, @mentions, weekly digest emails
+
+### Phase 3 (Planned)
+Admin moderation dashboard, premium categories, pinned posts, email digests
+
+---
+
 ## Documentation Files
 | File | Purpose |
 |------|---------|
 | `docs/TECHNICAL_DOCUMENTATION.md` | Architecture reference |
 | `docs/KEY_FEATURES.md` | Feature list |
 | `docs/COMMUNICATION_SYSTEM_PLAN.md` | Messaging system design doc |
+| `docs/FORUM_SYSTEM.md` | Forum system design doc |
 | `docs/PROJECT_TODO.md` | Outstanding work items |
 | `docs/DANI_APPROVAL_CHECKLIST.md` | Business decisions needing stakeholder approval |
 

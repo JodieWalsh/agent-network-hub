@@ -153,6 +153,32 @@ Make Stripe invoices professional and tax-compliant before launch.
 
 ---
 
+## 💬 COMMUNITY FORUM
+
+### 12. Forum Phase 2 - Engagement
+**Priority:** Medium
+**Status:** To Do
+
+- [ ] AI-powered post suggestions and smart tagging
+- [ ] Poll creation and voting UI (tables already exist)
+- [ ] Case study post type with structured format
+- [ ] @mention support with autocomplete
+- [ ] Weekly digest emails
+- [ ] Trending algorithm improvements
+
+### 13. Forum Phase 3 - Moderation & Premium
+**Priority:** Low
+**Status:** Future
+
+- [ ] Admin moderation dashboard (report queue, content actions)
+- [ ] Premium-only categories/boards
+- [ ] Pinned/featured posts (admin UI - DB supports this already)
+- [ ] User reputation levels and badge UI
+- [ ] Email notification digests
+- [ ] Content quality scoring
+
+---
+
 ## 💡 IDEAS TO EXPLORE
 
 - AI matching of properties to client briefs
@@ -174,7 +200,8 @@ Make Stripe invoices professional and tax-compliant before launch.
 - [x] Notification system (in-app + preferences)
 - [x] Dani's Approval Checklist
 - [x] Key Features documentation
+- [x] Community Forum Phase 1 (categories, regional boards, posts, replies, likes, bookmarks, follows, search, notifications, reputation)
 
 ---
 
-*Last updated: 28 January 2026*
+*Last updated: 17 February 2026*

@@ -36,6 +36,11 @@ import Activity from "./pages/Activity";
 import Pricing from "./pages/Pricing";
 import Messaging from "./pages/Messaging";
 import PublicProfile from "./pages/PublicProfile";
+import ForumHome from "./pages/ForumHome";
+import ForumCategoryView from "./pages/ForumCategoryView";
+import ForumRegionalBoard from "./pages/ForumRegionalBoard";
+import ForumPostView from "./pages/ForumPostView";
+import ForumNewPost from "./pages/ForumNewPost";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +67,20 @@ const App = () => (
             <Route path="/activity" element={<Activity />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/profiles/:userId" element={<PublicProfile />} />
+
+            {/* Forum Routes */}
+            <Route path="/forums" element={<ForumHome />} />
+            <Route path="/forums/category/:slug" element={<ForumCategoryView />} />
+            <Route path="/forums/region/:slug" element={<ForumRegionalBoard />} />
+            <Route path="/forums/post/:id" element={<ForumPostView />} />
+            <Route
+              path="/forums/new"
+              element={
+                <ProtectedRoute showForbidden>
+                  <ForumNewPost />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected Routes */}
             <Route
