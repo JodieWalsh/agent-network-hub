@@ -74,22 +74,56 @@ Phase 1 delivers the core forum experience:
 | Like received (reply) | +1 |
 | Solution marked | +10 |
 
+### Bugs Found & Fixed (18 Feb 2026 Code Review)
+
+| Bug | Severity | Fix |
+|-----|----------|-----|
+| `createReply()` sent `reply_count: undefined` in PATCH body, nulling post reply counts | Critical | Removed broken PATCH, use `increment_post_reply_count` RPC |
+| `increment_post_reply_count` RPC didn't exist — reply counts never updated | Critical | Created RPC in migration `20260218010000` |
+| `increment_category_post_count` RPC didn't exist — category counts never updated | Critical | Created RPC in migration |
+| `decrement_board_member_count` RPC didn't exist — member counts never decremented on leave | Medium | Created RPC in migration |
+| Board member count not incremented on join | Medium | Added `increment_board_member_count` RPC call |
+| Board post count not incremented when posting to a regional board | Medium | Added `increment_board_post_count` RPC call |
+| User stats upsert used `resolution=merge-duplicates` which overwrites instead of incrementing | Critical | Replaced with `increment_forum_user_stats` RPC using proper ON CONFLICT DO UPDATE |
+| `fetchProfiles()` queried `reputation_score` which doesn't exist on `profiles` table | Low | Removed field from query and PostAuthor interface |
+| `SelectItem value=""` in ForumNewPost caused Radix Select issues | Low | Changed to sentinel value `"none"` |
+
+### Known Limitations (Phase 1)
+
+- **Follower notifications** are not yet server-side — `forum_follow_reply` notifications require fetching all followers client-side (skipped for Phase 1)
+- **Post media uploads** — `forum_post_media` table exists but no upload UI yet
+- **Pagination** — Posts use offset-based pagination but no "Load More" button on list pages
+- **Edit/Delete posts** — RLS policies allow it but no UI exists
+- **Trending algorithm** — Currently just sorts by `like_count` in the last week; no decay function
+- **View count** — Increments on every page visit (no deduplication per user/session)
+
 ---
 
 ## Phase 2 — Engagement (Planned)
 
 - AI-powered post suggestions and smart tagging
-- Poll creation and voting UI
+- Poll creation and voting UI (tables already exist)
 - Case study post type with structured format
 - Weekly digest emails
-- Trending algorithm improvements
+- Trending algorithm improvements (time-decay scoring)
 - @mention support with autocomplete
+
+### Phase 1 Changes Needed for Phase 2
+
+| Phase 2 Feature | Phase 1 Prep Needed |
+|-----------------|---------------------|
+| Poll UI | Tables ready (`forum_polls`, `forum_poll_options`, `forum_poll_votes`). Need to add `has_poll` flag to post creation form and poll rendering in ForumPostView |
+| @mentions | Need `forum_mention` notification trigger. Add user search/autocomplete to ReplyEditor and post content editor |
+| Post media | `forum_post_media` table ready. Need file upload component (can reuse `uploadAttachment()` pattern from messaging) |
+| Edit/Delete | RLS policies already permit. Need edit button in ForumPostView + inline editor, delete confirmation dialog |
+| Pagination | Add "Load More" button to ForumCategoryView, ForumRegionalBoard, and ForumHome trending tab |
+| Follower notifications | Move to database trigger or RPC (currently noted as TODO in ForumPostView) |
 
 ## Phase 3 — Moderation & Premium (Planned)
 
 - Admin moderation dashboard (report queue, content actions)
 - Premium-only categories/boards
-- Pinned/featured posts
+- Pinned/featured posts (pin UI for admins — `is_pinned` column already exists)
 - User reputation levels and badges
 - Email notification digests
 - Content quality scoring
@@ -113,3 +147,4 @@ Phase 1 delivers the core forum experience:
 | `supabase/migrations/20260217010000_create_forum_core_tables.sql` | Core tables |
 | `supabase/migrations/20260217020000_create_forum_supporting_tables.sql` | Supporting tables + seed |
 | `supabase/migrations/20260217030000_create_forum_functions_and_search.sql` | RPC + search + notifications |
+| `supabase/migrations/20260218010000_add_forum_counter_rpcs.sql` | Counter increment RPCs (bug fix) |
