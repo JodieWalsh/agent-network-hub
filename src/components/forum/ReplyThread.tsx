@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ForumReply, formatPostDate, getUserTypeLabel } from '@/lib/forum';
 import { ReplyEditor } from './ReplyEditor';
+import { UserBadges } from './UserBadges';
 
 interface ReplyThreadProps {
   reply: ForumReply;
@@ -66,6 +67,7 @@ export function ReplyThread({
             <span className="font-medium text-sm">
               {reply.author?.full_name || 'Unknown'}
             </span>
+            {reply.author && <UserBadges userId={reply.author.id} />}
             <span className="text-xs text-muted-foreground">
               {getUserTypeLabel(reply.author?.user_type || '')}
             </span>

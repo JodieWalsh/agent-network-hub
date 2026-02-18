@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ForumPost, formatPostDate, truncateContent, getUserTypeLabel } from '@/lib/forum';
+import { UserBadges } from './UserBadges';
 
 interface PostCardProps {
   post: ForumPost;
@@ -89,6 +90,7 @@ export function PostCard({ post }: PostCardProps) {
               <span className="font-medium text-foreground/80">
                 {post.author?.full_name || 'Unknown'}
               </span>
+              {post.author && <UserBadges userId={post.author.id} />}
               <span className="hidden sm:inline">
                 · {getUserTypeLabel(post.author?.user_type || '')}
               </span>

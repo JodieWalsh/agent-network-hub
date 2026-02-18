@@ -41,6 +41,7 @@ import { ReplyThread } from '@/components/forum/ReplyThread';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { PollDisplay } from '@/components/forum/PollDisplay';
 import { CaseStudyDisplay } from '@/components/forum/CaseStudyDisplay';
+import { UserBadges } from '@/components/forum/UserBadges';
 import {
   ForumPost,
   ForumReply,
@@ -59,6 +60,7 @@ import {
   notifyForumLike,
   notifyForumSolution,
   notifyForumFollowReply,
+  checkAndAwardBadges,
 } from '@/lib/forum';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -198,6 +200,8 @@ export default function ForumPostView() {
 
       if (solutionReply && solutionReply.author_id !== user.id) {
         notifyForumSolution(solutionReply.author_id, post.title, user.id);
+        // Check if the reply author earned any badges
+        checkAndAwardBadges(solutionReply.author_id);
       }
 
       // Reload
@@ -338,8 +342,9 @@ export default function ForumPostView() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-medium text-sm">
+                <div className="font-medium text-sm flex items-center gap-1.5">
                   {post.author?.full_name || 'Unknown'}
+                  {post.author && <UserBadges userId={post.author.id} />}
                 </div>
                 <div className="text-xs text-muted-foreground flex items-center gap-2">
                   <span>{getUserTypeLabel(post.author?.user_type || '')}</span>
