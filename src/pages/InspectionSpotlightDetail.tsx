@@ -181,11 +181,13 @@ export default function InspectionSpotlightDetail() {
   // Bid form state
   const [proposedAmount, setProposedAmount] = useState<number | null>(null);
   const [proposedDate, setProposedDate] = useState('');
+  const [bidDateError, setBidDateError] = useState('');
   const [bidMessage, setBidMessage] = useState('');
 
   // Edit bid form state
   const [editProposedAmount, setEditProposedAmount] = useState<number | null>(null);
   const [editProposedDate, setEditProposedDate] = useState('');
+  const [editBidDateError, setEditBidDateError] = useState('');
   const [editBidMessage, setEditBidMessage] = useState('');
   const [editChangeReason, setEditChangeReason] = useState('');
 
@@ -1292,9 +1294,18 @@ export default function InspectionSpotlightDetail() {
               <Input
                 type="date"
                 value={proposedDate}
-                onChange={(e) => setProposedDate(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setProposedDate(val);
+                  if (!val) setBidDateError('');
+                  else if (!isValidDate(val)) setBidDateError('This is not a valid calendar date');
+                  else if (!isDateTodayOrFuture(val)) setBidDateError('Date must be today or in the future');
+                  else setBidDateError('');
+                }}
+                className={bidDateError ? 'border-red-500' : ''}
                 min={new Date().toISOString().split('T')[0]}
               />
+              {bidDateError && <p className="text-xs text-red-500">{bidDateError}</p>}
             </div>
 
             {/* Message */}
@@ -1313,7 +1324,7 @@ export default function InspectionSpotlightDetail() {
             <Button variant="outline" onClick={() => setShowBidDialog(false)} disabled={submittingBid}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitBid} disabled={submittingBid} className="bg-forest hover:bg-forest/90">
+            <Button onClick={handleSubmitBid} disabled={submittingBid || !!bidDateError} className="bg-forest hover:bg-forest/90">
               {submittingBid ? 'Submitting...' : 'Submit Bid'}
             </Button>
           </DialogFooter>
@@ -1352,9 +1363,18 @@ export default function InspectionSpotlightDetail() {
                 id="editDate"
                 type="date"
                 value={editProposedDate}
-                onChange={(e) => setEditProposedDate(e.target.value)}
-                className="mt-1"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditProposedDate(val);
+                  if (!val) setEditBidDateError('');
+                  else if (!isValidDate(val)) setEditBidDateError('This is not a valid calendar date');
+                  else if (!isDateTodayOrFuture(val)) setEditBidDateError('Date must be today or in the future');
+                  else setEditBidDateError('');
+                }}
+                className={`mt-1 ${editBidDateError ? 'border-red-500' : ''}`}
+                min={new Date().toISOString().split('T')[0]}
               />
+              {editBidDateError && <p className="text-xs text-red-500 mt-1">{editBidDateError}</p>}
             </div>
 
             <div>
@@ -1389,7 +1409,7 @@ export default function InspectionSpotlightDetail() {
             <Button variant="outline" onClick={() => setShowEditBidDialog(false)} disabled={submittingBid}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateBid} disabled={submittingBid} className="bg-forest hover:bg-forest/90">
+            <Button onClick={handleUpdateBid} disabled={submittingBid || !!editBidDateError} className="bg-forest hover:bg-forest/90">
               {submittingBid ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>

@@ -7,6 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from './notifications';
+import { isValidDate } from './dateUtils';
 
 // ===========================================
 // AUTH HEADERS (shared pattern)
@@ -1268,7 +1269,7 @@ async function createPollForPost(
       question: params.question,
       allows_multiple: params.allows_multiple,
     };
-    if (params.ends_at) pollData.ends_at = params.ends_at;
+    if (params.ends_at && isValidDate(params.ends_at)) pollData.ends_at = params.ends_at;
 
     const pollResponse = await fetch(`${supabaseUrl}/rest/v1/forum_polls`, {
       method: 'POST',

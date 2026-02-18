@@ -50,6 +50,7 @@ export default function ForumNewPost() {
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [pollAllowsMultiple, setPollAllowsMultiple] = useState(false);
   const [pollEndsAt, setPollEndsAt] = useState('');
+  const [pollDateError, setPollDateError] = useState('');
 
   // Case study fields
   const [csPropertyType, setCsPropertyType] = useState('');
@@ -432,15 +433,32 @@ export default function ForumNewPost() {
                     />
                     Allow multiple votes
                   </label>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm whitespace-nowrap">End date</Label>
-                    <Input
-                      type="date"
-                      value={pollEndsAt}
-                      onChange={(e) => setPollEndsAt(e.target.value)}
-                      className="text-sm w-auto"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm whitespace-nowrap">End date</Label>
+                      <Input
+                        type="date"
+                        value={pollEndsAt}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPollEndsAt(val);
+                          if (!val) {
+                            setPollDateError('');
+                          } else if (!isValidDate(val)) {
+                            setPollDateError('This is not a valid calendar date');
+                          } else if (!isDateInFuture(val)) {
+                            setPollDateError('End date must be in the future');
+                          } else {
+                            setPollDateError('');
+                          }
+                        }}
+                        className={`text-sm w-auto ${pollDateError ? 'border-red-500' : ''}`}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    {pollDateError && (
+                      <p className="text-xs text-red-500">{pollDateError}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -566,7 +584,7 @@ export default function ForumNewPost() {
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={submitting || !title.trim() || !content.trim()}
+                disabled={submitting || !title.trim() || !content.trim() || !!pollDateError}
                 className="bg-forest hover:bg-forest/90"
               >
                 {submitting ? 'Posting...' : 'Publish Post'}
