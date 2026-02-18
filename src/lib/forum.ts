@@ -271,7 +271,7 @@ export async function toggleBoardMembership(
         }
       );
       // Decrement member count
-      supabase.rpc('decrement_board_member_count', { p_board_id: boardId });
+      await supabase.rpc('decrement_board_member_count', { p_board_id: boardId });
       return { joined: false };
     } else {
       // Join
@@ -289,7 +289,7 @@ export async function toggleBoardMembership(
         }
       );
       // Increment member count
-      supabase.rpc('increment_board_member_count', { p_board_id: boardId });
+      await supabase.rpc('increment_board_member_count', { p_board_id: boardId });
       return { joined: true };
     }
   } catch (error) {
@@ -522,12 +522,12 @@ export async function createPost(
 
     // Update category post count
     if (params.category_id) {
-      supabase.rpc('increment_category_post_count', { cat_id: params.category_id });
+      await supabase.rpc('increment_category_post_count', { cat_id: params.category_id });
     }
 
     // Update board post count
     if (params.regional_board_id) {
-      supabase.rpc('increment_board_post_count', { p_board_id: params.regional_board_id });
+      await supabase.rpc('increment_board_post_count', { p_board_id: params.regional_board_id });
     }
 
     // Handle tags
@@ -539,7 +539,7 @@ export async function createPost(
     await toggleForumFollow(userId, post.id);
 
     // Update user stats (+1 post, +5 reputation)
-    supabase.rpc('increment_forum_user_stats', {
+    await supabase.rpc('increment_forum_user_stats', {
       p_user_id: userId,
       p_posts: 1,
       p_replies: 0,
@@ -651,10 +651,10 @@ export async function createReply(
     const [reply] = await response.json();
 
     // Increment reply_count + update last_activity_at via RPC
-    supabase.rpc('increment_post_reply_count', { p_post_id: postId });
+    await supabase.rpc('increment_post_reply_count', { p_post_id: postId });
 
     // Update user stats (+1 reply, +2 reputation)
-    supabase.rpc('increment_forum_user_stats', {
+    await supabase.rpc('increment_forum_user_stats', {
       p_user_id: userId,
       p_posts: 0,
       p_replies: 1,
