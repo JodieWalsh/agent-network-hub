@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X, Plus, Trash2 } from 'lucide-react';
-import { isValidDate, isDateInFuture, normaliseToISO } from '@/lib/dateUtils';
+import { isValidDate, isDateInFuture } from '@/lib/dateUtils';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -51,6 +51,39 @@ export default function ForumNewPost() {
   const [pollAllowsMultiple, setPollAllowsMultiple] = useState(false);
   const [pollEndsAt, setPollEndsAt] = useState('');
   const [pollDateError, setPollDateError] = useState('');
+  const [pollDay, setPollDay] = useState('');
+  const [pollMonth, setPollMonth] = useState('');
+  const [pollYear, setPollYear] = useState('');
+
+  // Assemble and validate the poll end date from day/month/year selects
+  const updatePollDate = (day: string, month: string, year: string) => {
+    setPollDay(day);
+    setPollMonth(month);
+    setPollYear(year);
+    if (!day && !month && !year) {
+      setPollEndsAt('');
+      setPollDateError('');
+      return;
+    }
+    if (!day || !month || !year) {
+      setPollEndsAt('');
+      setPollDateError('Please select day, month, and year');
+      return;
+    }
+    const dateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    if (!isValidDate(dateStr)) {
+      setPollEndsAt('');
+      setPollDateError(`${day}/${month}/${year} is not a valid date`);
+      return;
+    }
+    if (!isDateInFuture(dateStr)) {
+      setPollEndsAt('');
+      setPollDateError('End date must be in the future');
+      return;
+    }
+    setPollEndsAt(dateStr);
+    setPollDateError('');
+  };
 
   // Case study fields
   const [csPropertyType, setCsPropertyType] = useState('');
@@ -140,27 +173,21 @@ export default function ForumNewPost() {
       return;
     }
 
-    // Normalise poll end date (handles DD/MM/YYYY → YYYY-MM-DD)
-    let normalisedPollDate: string | undefined;
     if (postType === 'poll') {
       const validOptions = pollOptions.filter((o) => o.trim());
       if (validOptions.length < 2) {
         toast.error('Polls need at least 2 options');
         return;
       }
-      if (pollEndsAt) {
-        console.log('[ForumNewPost] Raw poll end date value:', JSON.stringify(pollEndsAt));
-        if (!isValidDate(pollEndsAt)) {
-          console.log('[ForumNewPost] isValidDate returned false');
-          toast.error('Please enter a valid poll end date (e.g. February 30 does not exist)');
-          return;
-        }
-        if (!isDateInFuture(pollEndsAt)) {
-          toast.error('Poll end date must be in the future');
-          return;
-        }
-        normalisedPollDate = normaliseToISO(pollEndsAt) || undefined;
-        console.log('[ForumNewPost] Normalised poll date:', normalisedPollDate);
+      // If user partially filled the date selects but not all three
+      if (pollDateError) {
+        toast.error(pollDateError);
+        return;
+      }
+      // If some selects are filled but pollEndsAt is empty, date was invalid
+      if ((pollDay || pollMonth || pollYear) && !pollEndsAt) {
+        toast.error('Please enter a valid poll end date');
+        return;
       }
     }
 
@@ -177,7 +204,7 @@ export default function ForumNewPost() {
         poll_question: title.trim(),
         poll_options: pollOptions.filter((o) => o.trim()),
         poll_allows_multiple: pollAllowsMultiple,
-        poll_ends_at: normalisedPollDate,
+        poll_ends_at: pollEndsAt || undefined,
       }),
       // Case study data
       ...(postType === 'case_study' && {
@@ -442,27 +469,38 @@ export default function ForumNewPost() {
                     Allow multiple votes
                   </label>
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm whitespace-nowrap">End date</Label>
-                      <Input
-                        type="date"
-                        value={pollEndsAt}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setPollEndsAt(val);
-                          if (!val) {
-                            setPollDateError('');
-                          } else if (!isValidDate(val)) {
-                            setPollDateError('This is not a valid calendar date');
-                          } else if (!isDateInFuture(val)) {
-                            setPollDateError('End date must be in the future');
-                          } else {
-                            setPollDateError('');
-                          }
-                        }}
-                        className={`text-sm w-auto ${pollDateError ? 'border-red-500' : ''}`}
-                        min={new Date().toISOString().split('T')[0]}
-                      />
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-sm whitespace-nowrap mr-1">End date</Label>
+                      <Select value={pollDay} onValueChange={(v) => updatePollDate(v, pollMonth, pollYear)}>
+                        <SelectTrigger className={`w-[70px] text-sm ${pollDateError ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Day" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                            <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={pollMonth} onValueChange={(v) => updatePollDate(pollDay, v, pollYear)}>
+                        <SelectTrigger className={`w-[100px] text-sm ${pollDateError ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m, i) => (
+                            <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={pollYear} onValueChange={(v) => updatePollDate(pollDay, pollMonth, v)}>
+                        <SelectTrigger className={`w-[80px] text-sm ${pollDateError ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map((y) => (
+                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {pollDateError && (
                       <p className="text-xs text-red-500">{pollDateError}</p>
