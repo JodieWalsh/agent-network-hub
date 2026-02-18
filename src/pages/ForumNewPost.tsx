@@ -48,6 +48,13 @@ export default function ForumNewPost() {
   const [pollAllowsMultiple, setPollAllowsMultiple] = useState(false);
   const [pollEndsAt, setPollEndsAt] = useState('');
 
+  // Case study fields
+  const [csPropertyType, setCsPropertyType] = useState('');
+  const [csLocation, setCsLocation] = useState('');
+  const [csSituation, setCsSituation] = useState('');
+  const [csFindings, setCsFindings] = useState('');
+  const [csLessons, setCsLessons] = useState('');
+
   useEffect(() => {
     loadOptions();
   }, []);
@@ -133,6 +140,14 @@ export default function ForumNewPost() {
         poll_options: pollOptions.filter((o) => o.trim()),
         poll_allows_multiple: pollAllowsMultiple,
         poll_ends_at: pollEndsAt || undefined,
+      }),
+      // Case study data
+      ...(postType === 'case_study' && {
+        case_study_property_type: csPropertyType || undefined,
+        case_study_location: csLocation || undefined,
+        case_study_situation: csSituation || undefined,
+        case_study_findings: csFindings || undefined,
+        case_study_lessons: csLessons || undefined,
       }),
     });
 
@@ -364,6 +379,75 @@ export default function ForumNewPost() {
                       min={new Date().toISOString().split('T')[0]}
                     />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Case Study Fields */}
+            {postType === 'case_study' && (
+              <div className="space-y-4 border border-indigo-200 rounded-lg p-4 bg-indigo-50/30">
+                <Label className="text-indigo-700">Case Study Details</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Property Type</Label>
+                    <Select
+                      value={csPropertyType || 'none'}
+                      onValueChange={(v) => setCsPropertyType(v === 'none' ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Not specified</SelectItem>
+                        <SelectItem value="House">House</SelectItem>
+                        <SelectItem value="Apartment">Apartment</SelectItem>
+                        <SelectItem value="Townhouse">Townhouse</SelectItem>
+                        <SelectItem value="Villa">Villa</SelectItem>
+                        <SelectItem value="Land">Land</SelectItem>
+                        <SelectItem value="Commercial">Commercial</SelectItem>
+                        <SelectItem value="Rural">Rural</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Location</Label>
+                    <Input
+                      value={csLocation}
+                      onChange={(e) => setCsLocation(e.target.value)}
+                      placeholder="e.g. Sydney CBD, Melbourne Inner East"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">The Situation</Label>
+                  <Textarea
+                    value={csSituation}
+                    onChange={(e) => setCsSituation(e.target.value)}
+                    placeholder="Describe the context and what you were looking at..."
+                    rows={3}
+                    className="resize-y text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">What I Found</Label>
+                  <Textarea
+                    value={csFindings}
+                    onChange={(e) => setCsFindings(e.target.value)}
+                    placeholder="Share your key findings and observations..."
+                    rows={3}
+                    className="resize-y text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Lessons Learned</Label>
+                  <Textarea
+                    value={csLessons}
+                    onChange={(e) => setCsLessons(e.target.value)}
+                    placeholder="What did you learn? What would you do differently?"
+                    rows={3}
+                    className="resize-y text-sm"
+                  />
                 </div>
               </div>
             )}

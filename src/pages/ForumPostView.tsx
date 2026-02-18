@@ -40,6 +40,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ReplyThread } from '@/components/forum/ReplyThread';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { PollDisplay } from '@/components/forum/PollDisplay';
+import { CaseStudyDisplay } from '@/components/forum/CaseStudyDisplay';
 import {
   ForumPost,
   ForumReply,
@@ -356,6 +357,11 @@ export default function ForumPostView() {
             {/* Poll (if poll post) */}
             {post.post_type === 'poll' && (
               <PollDisplay postId={post.id} userId={user?.id} />
+            )}
+
+            {/* Case Study (if case_study post) */}
+            {post.post_type === 'case_study' && (
+              <CaseStudyDisplay post={post} />
             )}
 
             {/* Stats */}
