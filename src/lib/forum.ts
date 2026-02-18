@@ -92,6 +92,8 @@ export interface ForumPost {
   regional_board?: ForumRegionalBoard;
   tags?: ForumTag[];
   poll?: ForumPoll;
+  media?: ForumPostMedia[];
+  media_count?: number;
   user_has_liked?: boolean;
   user_has_bookmarked?: boolean;
   user_is_following?: boolean;
@@ -162,6 +164,18 @@ export interface ForumPollVote {
   poll_id: string;
   option_id: string;
   user_id: string;
+  created_at: string;
+}
+
+export interface ForumPostMedia {
+  id: string;
+  post_id: string;
+  file_url: string;
+  file_type: string;
+  file_name: string;
+  file_size: number;
+  caption: string | null;
+  display_order: number;
   created_at: string;
 }
 
@@ -448,13 +462,19 @@ export async function fetchPosts(options: {
     if (!response.ok) return [];
     const posts: ForumPost[] = await response.json();
 
-    // Fetch authors for all posts
+    // Fetch authors and media counts for all posts
     if (posts.length > 0) {
       const authorIds = [...new Set(posts.map((p) => p.author_id))];
-      const authors = await fetchProfiles(authorIds);
+      const postIds = posts.map((p) => p.id);
+      const [authors, mediaCounts] = await Promise.all([
+        fetchProfiles(authorIds),
+        fetchMediaCountsForPosts(postIds),
+      ]);
       const authorMap = new Map(authors.map((a) => [a.id, a]));
       posts.forEach((p) => {
         p.author = authorMap.get(p.author_id);
+        const mc = mediaCounts.get(p.id);
+        if (mc) p.media_count = mc;
       });
     }
 
@@ -517,8 +537,13 @@ export async function fetchPostById(postId: string, userId?: string): Promise<Fo
       if (boardResponse.ok) post.regional_board = await boardResponse.json();
     }
 
-    // Fetch tags
-    post.tags = await fetchPostTags(postId);
+    // Fetch tags and media
+    const [tags, media] = await Promise.all([
+      fetchPostTags(postId),
+      fetchPostMedia(postId),
+    ]);
+    post.tags = tags;
+    post.media = media;
 
     // If user is logged in, check their interactions
     if (userId) {
@@ -1636,10 +1661,16 @@ export async function fetchUserPosts(
 
     if (posts.length > 0) {
       const authorIds = [...new Set(posts.map((p) => p.author_id))];
-      const authors = await fetchProfiles(authorIds);
+      const postIds = posts.map((p) => p.id);
+      const [authors, mediaCounts] = await Promise.all([
+        fetchProfiles(authorIds),
+        fetchMediaCountsForPosts(postIds),
+      ]);
       const authorMap = new Map(authors.map((a) => [a.id, a]));
       posts.forEach((p) => {
         p.author = authorMap.get(p.author_id);
+        const mc = mediaCounts.get(p.id);
+        if (mc) p.media_count = mc;
       });
     }
 
@@ -1692,13 +1723,19 @@ export async function fetchUserBookmarks(
     const postMap = new Map(posts.map((p) => [p.id, p]));
     const ordered = postIds.map((id: string) => postMap.get(id)).filter(Boolean) as ForumPost[];
 
-    // Fetch authors
+    // Fetch authors and media counts
     if (ordered.length > 0) {
       const authorIds = [...new Set(ordered.map((p) => p.author_id))];
-      const authors = await fetchProfiles(authorIds);
+      const postIds = ordered.map((p) => p.id);
+      const [authors, mediaCounts] = await Promise.all([
+        fetchProfiles(authorIds),
+        fetchMediaCountsForPosts(postIds),
+      ]);
       const authorMap = new Map(authors.map((a) => [a.id, a]));
       ordered.forEach((p) => {
         p.author = authorMap.get(p.author_id);
+        const mc = mediaCounts.get(p.id);
+        if (mc) p.media_count = mc;
       });
     }
 
@@ -1776,10 +1813,29 @@ function getBadgeLabel(badgeType: string): string {
 // MEDIA UPLOAD
 // ===========================================
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
+export function validateForumImage(file: File): string | null {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return 'Only JPEG, PNG, GIF, and WebP images are allowed';
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    return 'Image must be under 5MB';
+  }
+  return null;
+}
+
 export async function uploadForumMedia(
   file: File,
   userId: string
-): Promise<{ url: string } | null> {
+): Promise<{ url: string; type: string; name: string; size: number } | null> {
+  const validationError = validateForumImage(file);
+  if (validationError) {
+    console.error('[Forum] Validation error:', validationError);
+    return null;
+  }
+
   const fileExt = file.name.split('.').pop();
   const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
@@ -1796,7 +1852,94 @@ export async function uploadForumMedia(
     .from('forum-media')
     .getPublicUrl(fileName);
 
-  return { url: urlData.publicUrl };
+  return { url: urlData.publicUrl, type: file.type, name: file.name, size: file.size };
+}
+
+export async function savePostMedia(
+  postId: string,
+  userId: string,
+  media: Array<{ url: string; file_name: string; file_type: string; file_size: number; caption?: string }>
+): Promise<boolean> {
+  if (media.length === 0) return true;
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  const rows = media.map((m, i) => ({
+    post_id: postId,
+    uploader_id: userId,
+    file_url: m.url,
+    file_type: m.file_type,
+    file_name: m.file_name,
+    file_size: m.file_size,
+    caption: m.caption || null,
+    display_order: i,
+  }));
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/forum_post_media`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(rows),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('[Forum] Error saving post media:', error);
+    return false;
+  }
+}
+
+export async function fetchPostMedia(postId: string): Promise<ForumPostMedia[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_post_media?post_id=eq.${postId}&order=display_order.asc`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error('[Forum] Error fetching post media:', error);
+    return [];
+  }
+}
+
+export async function fetchMediaCountsForPosts(
+  postIds: string[]
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (postIds.length === 0) return result;
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const filter = postIds.map((id) => `"${id}"`).join(',');
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_post_media?post_id=in.(${filter})&select=post_id`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (!response.ok) return result;
+    const rows: Array<{ post_id: string }> = await response.json();
+    for (const row of rows) {
+      result.set(row.post_id, (result.get(row.post_id) || 0) + 1);
+    }
+    return result;
+  } catch (error) {
+    console.error('[Forum] Error fetching media counts:', error);
+    return result;
+  }
 }
 
 // ===========================================

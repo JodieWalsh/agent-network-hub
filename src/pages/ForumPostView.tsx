@@ -45,6 +45,7 @@ import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { PollDisplay } from '@/components/forum/PollDisplay';
 import { CaseStudyDisplay } from '@/components/forum/CaseStudyDisplay';
 import { UserBadges } from '@/components/forum/UserBadges';
+import { PhotoGallery } from '@/components/forum/PhotoGallery';
 import {
   ForumPost,
   ForumReply,
@@ -434,6 +435,11 @@ export default function ForumPostView() {
                 <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap mb-4">
                   {post.content}
                 </div>
+
+                {/* Photo Gallery */}
+                {post.media && post.media.length > 0 && (
+                  <PhotoGallery photos={post.media} />
+                )}
               </>
             )}
 

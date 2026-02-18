@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, Bookmark, Pin, CheckCircle2 } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Bookmark, Pin, CheckCircle2, Camera } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
@@ -9,9 +9,10 @@ import { UserBadges } from './UserBadges';
 
 interface PostCardProps {
   post: ForumPost;
+  mediaCount?: number;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, mediaCount }: PostCardProps) {
   const navigate = useNavigate();
 
   const authorInitials = post.author?.full_name
@@ -99,6 +100,12 @@ export function PostCard({ post }: PostCardProps) {
             <span>{formatPostDate(post.created_at)}</span>
 
             <div className="flex items-center gap-3 ml-auto">
+              {(mediaCount ?? post.media_count ?? 0) > 0 && (
+                <span className="flex items-center gap-1 text-forest">
+                  <Camera size={13} />
+                  {mediaCount ?? post.media_count}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Heart size={13} />
                 {post.like_count}

@@ -22,7 +22,9 @@ import {
   fetchTags,
   createPost,
   searchPosts,
+  savePostMedia,
 } from '@/lib/forum';
+import { PhotoUploader, PhotoItem } from '@/components/forum/PhotoUploader';
 import { toast } from 'sonner';
 
 export default function ForumNewPost() {
@@ -45,6 +47,7 @@ export default function ForumNewPost() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
   // Poll fields
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -217,6 +220,11 @@ export default function ForumNewPost() {
     });
 
     if (post) {
+      // Save photos if any
+      const uploadedPhotos = photos.filter((p) => !p.uploading);
+      if (uploadedPhotos.length > 0) {
+        await savePostMedia(post.id, user.id, uploadedPhotos);
+      }
       toast.success('Post created!');
       navigate(`/forums/post/${post.id}`);
     } else {
@@ -418,6 +426,16 @@ export default function ForumNewPost() {
                 placeholder="Share your thoughts, insights, or question details..."
                 rows={10}
                 className="resize-y"
+              />
+            </div>
+
+            {/* Photos */}
+            <div className="space-y-2">
+              <Label>Photos</Label>
+              <PhotoUploader
+                photos={photos}
+                onPhotosChange={setPhotos}
+                userId={user.id}
               />
             </div>
 
