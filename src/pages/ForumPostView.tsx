@@ -13,6 +13,10 @@ import {
   ArrowLeft,
   Pencil,
   Trash2,
+  Pin,
+  Lock,
+  Star,
+  BadgeCheck,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -67,6 +71,7 @@ import {
   checkAndAwardBadges,
   updatePost,
   deletePost,
+  adminUpdatePost,
 } from '@/lib/forum';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -259,6 +264,21 @@ export default function ForumPostView() {
     toast.success('Link copied to clipboard');
   };
 
+  const isAdmin = profile?.role === 'admin';
+
+  const handleAdminToggle = async (field: 'is_pinned' | 'is_locked' | 'is_featured' | 'is_endorsed') => {
+    if (!post) return;
+    const newValue = !(post as any)[field];
+    const success = await adminUpdatePost(post.id, { [field]: newValue });
+    if (success) {
+      setPost({ ...post, [field]: newValue } as any);
+      const label = field.replace('is_', '');
+      toast.success(`Post ${newValue ? label : `un${label}`}`);
+    } else {
+      toast.error('Failed to update post');
+    }
+  };
+
   const handleReport = async () => {
     if (!user || !post) return;
     const success = await reportContent(user.id, reportReason, post.id, undefined, reportDetails);
@@ -349,11 +369,29 @@ export default function ForumPostView() {
         {/* Post Card */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            {/* Solved banner */}
+            {/* Status banners */}
             {post.is_solved && (
               <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg px-3 py-2 mb-4 text-sm font-medium">
                 <CheckCircle2 size={16} />
                 This question has an accepted solution
+              </div>
+            )}
+            {post.is_locked && (
+              <div className="flex items-center gap-2 text-red-700 bg-red-50 rounded-lg px-3 py-2 mb-4 text-sm font-medium">
+                <Lock size={16} />
+                This post is locked — no new replies
+              </div>
+            )}
+            {post.is_featured && (
+              <div className="flex items-center gap-2 text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-4 text-sm font-medium">
+                <Star size={16} />
+                Featured by Staff
+              </div>
+            )}
+            {post.is_endorsed && (
+              <div className="flex items-center gap-2 text-forest bg-green-50 rounded-lg px-3 py-2 mb-4 text-sm font-medium">
+                <BadgeCheck size={16} />
+                Staff Endorsed
               </div>
             )}
 
@@ -559,6 +597,44 @@ export default function ForumPostView() {
                   Report
                 </Button>
               )}
+
+              {/* Admin actions */}
+              {isAdmin && (
+                <div className="flex items-center gap-1 ml-auto border-l pl-2">
+                  <Button
+                    variant="ghost" size="sm"
+                    className={cn('gap-1 text-xs', post.is_pinned ? 'text-amber-500' : 'text-muted-foreground')}
+                    onClick={() => handleAdminToggle('is_pinned')}
+                  >
+                    <Pin size={14} />
+                    {post.is_pinned ? 'Unpin' : 'Pin'}
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm"
+                    className={cn('gap-1 text-xs', post.is_locked ? 'text-red-500' : 'text-muted-foreground')}
+                    onClick={() => handleAdminToggle('is_locked')}
+                  >
+                    <Lock size={14} />
+                    {post.is_locked ? 'Unlock' : 'Lock'}
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm"
+                    className={cn('gap-1 text-xs', post.is_featured ? 'text-yellow-500' : 'text-muted-foreground')}
+                    onClick={() => handleAdminToggle('is_featured')}
+                  >
+                    <Star size={14} />
+                    {post.is_featured ? 'Unfeature' : 'Feature'}
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm"
+                    className={cn('gap-1 text-xs', post.is_endorsed ? 'text-forest' : 'text-muted-foreground')}
+                    onClick={() => handleAdminToggle('is_endorsed')}
+                  >
+                    <BadgeCheck size={14} />
+                    {post.is_endorsed ? 'Unendorse' : 'Endorse'}
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -593,7 +669,14 @@ export default function ForumPostView() {
           )}
 
           {/* Reply Editor */}
-          {user ? (
+          {post.is_locked ? (
+            <Card>
+              <CardContent className="py-6 text-center text-muted-foreground">
+                <Lock size={20} className="mx-auto mb-2" />
+                <p className="text-sm">This post is locked. No new replies can be added.</p>
+              </CardContent>
+            </Card>
+          ) : user ? (
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-medium mb-3">Write a reply</h3>

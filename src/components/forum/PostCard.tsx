@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, Bookmark, Pin, CheckCircle2, Camera } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Bookmark, Pin, CheckCircle2, Camera, Lock, Star, BadgeCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
@@ -42,6 +42,15 @@ export function PostCard({ post, mediaCount }: PostCardProps) {
             {post.is_pinned && (
               <Pin size={14} className="text-amber-500 flex-shrink-0 mt-1" />
             )}
+            {post.is_locked && (
+              <Lock size={14} className="text-red-500 flex-shrink-0 mt-1" />
+            )}
+            {post.is_featured && (
+              <Star size={14} className="text-yellow-500 flex-shrink-0 mt-1" />
+            )}
+            {post.is_endorsed && (
+              <BadgeCheck size={14} className="text-forest flex-shrink-0 mt-1" />
+            )}
             <h3 className="font-semibold text-foreground line-clamp-1 flex-1">
               {post.title}
             </h3>
@@ -76,6 +85,22 @@ export function PostCard({ post, mediaCount }: PostCardProps) {
                 className="flex-shrink-0 text-xs border-indigo-300 text-indigo-700 bg-indigo-50"
               >
                 Case Study
+              </Badge>
+            )}
+            {post.is_endorsed && (
+              <Badge
+                variant="outline"
+                className="flex-shrink-0 text-xs border-green-300 text-green-700 bg-green-50"
+              >
+                Staff Endorsed
+              </Badge>
+            )}
+            {post.like_count >= 10 && post.is_solved && (
+              <Badge
+                variant="outline"
+                className="flex-shrink-0 text-xs border-blue-300 text-blue-700 bg-blue-50"
+              >
+                Community Validated
               </Badge>
             )}
           </div>

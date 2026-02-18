@@ -23,6 +23,7 @@ import {
   createPost,
   searchPosts,
   savePostMedia,
+  userHasPremium,
 } from '@/lib/forum';
 import { PhotoUploader, PhotoItem } from '@/components/forum/PhotoUploader';
 import { toast } from 'sonner';
@@ -30,7 +31,7 @@ import { toast } from 'sonner';
 export default function ForumNewPost() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const preselectedCategory = searchParams.get('category');
   const preselectedBoard = searchParams.get('board');
@@ -329,11 +330,14 @@ export default function ForumNewPost() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
+                    {categories.map((cat) => {
+                      const locked = cat.is_premium_only && !userHasPremium(profile?.subscription_tier) && profile?.role !== 'admin';
+                      return (
+                        <SelectItem key={cat.id} value={cat.id} disabled={locked}>
+                          {cat.name}{locked ? ' (Premium)' : ''}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

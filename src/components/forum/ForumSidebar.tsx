@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Trophy, HelpCircle, FileText, Bookmark } from 'lucide-react';
+import { Trophy, HelpCircle, FileText, Bookmark, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,6 +78,15 @@ export function ForumSidebar({
                 Bookmarks
               </Button>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs gap-1 mt-2"
+              onClick={() => navigate('/forums/featured')}
+            >
+              <Star size={13} className="text-yellow-500" />
+              Featured & Best Of
+            </Button>
           </CardContent>
         </Card>
       )}

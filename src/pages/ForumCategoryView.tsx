@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, Crown, Lock } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostCard } from '@/components/forum/PostCard';
 import {
@@ -23,12 +24,14 @@ import {
   TimeRangeOption,
   fetchCategoryBySlug,
   fetchPosts,
+  isPremiumCategory,
+  userHasPremium,
 } from '@/lib/forum';
 
 export default function ForumCategoryView() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [category, setCategory] = useState<ForumCategory | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -87,6 +90,9 @@ export default function ForumCategoryView() {
     setLoadingMore(false);
   };
 
+  const isPremium = isPremiumCategory(category);
+  const hasAccess = !isPremium || userHasPremium(profile?.subscription_tier) || profile?.role === 'admin';
+
   if (!loading && !category) {
     return (
       <DashboardLayout>
@@ -95,6 +101,29 @@ export default function ForumCategoryView() {
           <Button variant="outline" onClick={() => navigate('/forums')}>
             Back to Forums
           </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!loading && isPremium && !hasAccess) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+          <Crown className="mx-auto mb-4 text-amber-500" size={48} />
+          <h1 className="text-xl font-bold mb-2">Premium Category</h1>
+          <p className="text-muted-foreground mb-6">
+            <strong>{category?.name}</strong> is a Premium category. Upgrade your subscription to access exclusive content and discussions.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => navigate('/forums')}>
+              Back to Forums
+            </Button>
+            <Button onClick={() => navigate('/pricing')} className="bg-amber-500 hover:bg-amber-600">
+              <Crown size={16} className="mr-1" />
+              Upgrade to Premium
+            </Button>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -120,7 +149,14 @@ export default function ForumCategoryView() {
         {category && (
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-bold">{category.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">{category.name}</h1>
+                {category.is_premium_only && (
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-300 gap-1">
+                    <Crown size={12} /> Premium
+                  </Badge>
+                )}
+              </div>
               <p className="text-muted-foreground mt-1">{category.description}</p>
               <p className="text-sm text-muted-foreground mt-1">
                 {category.post_count} posts

@@ -167,6 +167,7 @@ export function AppSidebar() {
     // Admin-only navigation
     ...(profile?.role === 'admin' ? [
       { label: "Admin Dashboard", icon: Shield, path: "/admin" },
+      { label: "Forum Moderation", icon: Shield, path: "/forums/admin" },
     ] : []),
     { label: "Agent Directory", icon: Users, path: "/directory" },
     { label: "Property Marketplace", icon: Building2, path: "/marketplace" },

@@ -140,16 +140,39 @@ Phase 1 delivers the core forum experience:
 | Expert | 500+ reputation |
 | Community Leader | 1000+ reputation |
 
-## Phase 3 — Moderation & Premium (Planned)
+## Phase 3 — Moderation & Premium (Completed 18 Feb 2026)
 
-- Admin moderation dashboard (report queue, content actions)
-- Premium-only categories/boards
-- Pinned/featured posts (pin UI for admins — `is_pinned` column already exists)
+### Features Added
+- **Admin Moderation Dashboard** — `/forums/admin` with reports queue (dismiss/action), content search with quick actions (pin/lock/feature/delete), most reported users list, forum stats dashboard
+- **Pin, Lock, Feature, Endorse** — Admin action buttons on ForumPostView. Locked posts hide reply editor. Visual indicators (pin/lock/star/badge icons) on PostCard and post detail
+- **Premium Categories** — Categories marked `is_premium_only` show crown icon, non-premium users see upgrade CTA, category dropdown in ForumNewPost disables premium categories for non-premium users
+- **Email Preferences** — `/settings/notifications` page with digest frequency (never/daily/weekly), toggles for replies/mentions/follows. Stored in `forum_email_preferences` table
+- **Weekly Digest Stub** — Edge function `send-forum-digest` prepares digest content (new replies, trending posts, user stats). Logs output, Resend integration commented/ready
+- **Content Quality Indicators** — "Staff Endorsed" badge (admin-set), "Community Validated" badge (10+ likes + solved), visual badges on PostCard and ForumPostView
+- **Featured / Best Of Page** — `/forums/featured` with tabs: Staff Picks, Community Favorites, Most Helpful, This Week's Best. Linked from ForumSidebar
+- **Photo Uploads** — PhotoUploader component on ForumNewPost (up to 10 images, 5MB each), PhotoGallery with lightbox on ForumPostView, camera icon with count on PostCard
+
+### New Database Changes (Migration `20260218050000_forum_phase3.sql`)
+- `forum_posts`: added `is_locked`, `is_featured`, `is_endorsed` columns
+- `forum_categories`: added `is_premium_only` column (2 categories marked premium)
+- `forum_email_preferences` table with RLS
+- Indexes on `forum_reports` for status and date
+
+### New Pages & Components
+| File | Purpose |
+|------|---------|
+| `src/pages/ForumAdmin.tsx` | Admin moderation dashboard |
+| `src/pages/ForumFeatured.tsx` | Featured / Best Of page |
+| `src/pages/settings/NotificationSettings.tsx` | Email notification preferences |
+| `src/components/forum/PhotoUploader.tsx` | Photo upload with preview grid |
+| `src/components/forum/PhotoGallery.tsx` | Photo gallery with lightbox |
+| `supabase/functions/send-forum-digest/index.ts` | Digest email edge function stub |
+
+### Not Yet Implemented (Future)
 - @mention support with autocomplete
-- Weekly digest emails
 - Trending algorithm improvements (time-decay scoring)
-- Content quality scoring
-- Post media upload UI
+- Resend email integration for digests
+- Admin user warning system
 
 ---
 
@@ -167,6 +190,11 @@ Phase 1 delivers the core forum experience:
 | `src/components/forum/ReplyThread.tsx` | Reply with nested children |
 | `src/components/forum/ReplyEditor.tsx` | Reply input component |
 | `src/components/forum/ForumSidebar.tsx` | Sidebar with stats and contributors |
+| `src/components/forum/PhotoUploader.tsx` | Photo upload with preview grid |
+| `src/components/forum/PhotoGallery.tsx` | Photo gallery with built-in lightbox |
+| `src/pages/ForumAdmin.tsx` | Admin moderation dashboard |
+| `src/pages/ForumFeatured.tsx` | Featured / Best Of page |
+| `src/pages/settings/NotificationSettings.tsx` | Email notification preferences |
 | `supabase/migrations/20260217010000_create_forum_core_tables.sql` | Core tables |
 | `supabase/migrations/20260217020000_create_forum_supporting_tables.sql` | Supporting tables + seed |
 | `supabase/migrations/20260217030000_create_forum_functions_and_search.sql` | RPC + search + notifications |

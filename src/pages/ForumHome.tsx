@@ -15,6 +15,8 @@ import {
   Palette,
   Briefcase,
   MessageCircle,
+  Crown,
+  Star,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -254,12 +256,18 @@ export default function ForumHome() {
                                 <Icon size={20} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-sm">{category.name}</h3>
+                                <div className="flex items-center gap-1.5">
+                                  <h3 className="font-semibold text-sm">{category.name}</h3>
+                                  {category.is_premium_only && (
+                                    <Crown size={13} className="text-amber-500 flex-shrink-0" />
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                                   {category.description}
                                 </p>
                                 <div className="text-xs text-muted-foreground mt-1">
                                   {category.post_count} posts
+                                  {category.is_premium_only && <span className="ml-1 text-amber-600 font-medium">· Premium</span>}
                                 </div>
                               </div>
                             </CardContent>

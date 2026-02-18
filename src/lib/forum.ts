@@ -44,6 +44,7 @@ export interface ForumCategory {
   display_order: number;
   post_count: number;
   is_active: boolean;
+  is_premium_only: boolean;
   created_at: string;
 }
 
@@ -70,6 +71,9 @@ export interface ForumPost {
   post_type: 'discussion' | 'question' | 'poll' | 'case_study';
   status: 'draft' | 'published' | 'closed' | 'removed';
   is_pinned: boolean;
+  is_locked: boolean;
+  is_featured: boolean;
+  is_endorsed: boolean;
   is_solved: boolean;
   solved_reply_id: string | null;
   view_count: number;
@@ -1940,6 +1944,467 @@ export async function fetchMediaCountsForPosts(
     console.error('[Forum] Error fetching media counts:', error);
     return result;
   }
+}
+
+// ===========================================
+// ADMIN / MODERATION
+// ===========================================
+
+export interface ForumReport {
+  id: string;
+  reporter_id: string;
+  post_id: string | null;
+  reply_id: string | null;
+  reason: string;
+  details: string | null;
+  status: 'pending' | 'reviewed' | 'dismissed' | 'actioned';
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  reporter?: PostAuthor;
+  post?: ForumPost;
+  reply?: ForumReply;
+}
+
+export interface ForumEmailPreferences {
+  user_id: string;
+  digest_frequency: 'never' | 'daily' | 'weekly';
+  notify_replies: boolean;
+  notify_mentions: boolean;
+  notify_follows: boolean;
+}
+
+export async function fetchPendingReports(): Promise<ForumReport[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_reports?status=eq.pending&order=created_at.desc`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (!response.ok) return [];
+    const reports: ForumReport[] = await response.json();
+
+    // Enrich with reporter profiles
+    if (reports.length > 0) {
+      const reporterIds = [...new Set(reports.map((r) => r.reporter_id))];
+      const reporters = await fetchProfiles(reporterIds);
+      const reporterMap = new Map(reporters.map((a) => [a.id, a]));
+      reports.forEach((r) => {
+        r.reporter = reporterMap.get(r.reporter_id);
+      });
+    }
+
+    return reports;
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchAllReports(statusFilter?: string): Promise<ForumReport[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    let url = `${supabaseUrl}/rest/v1/forum_reports?order=created_at.desc&limit=100`;
+    if (statusFilter && statusFilter !== 'all') url += `&status=eq.${statusFilter}`;
+
+    const response = await fetch(url, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) return [];
+    const reports: ForumReport[] = await response.json();
+
+    if (reports.length > 0) {
+      const reporterIds = [...new Set(reports.map((r) => r.reporter_id))];
+      const reporters = await fetchProfiles(reporterIds);
+      const reporterMap = new Map(reporters.map((a) => [a.id, a]));
+      reports.forEach((r) => {
+        r.reporter = reporterMap.get(r.reporter_id);
+      });
+    }
+
+    return reports;
+  } catch {
+    return [];
+  }
+}
+
+export async function dismissReport(reportId: string, reviewerId: string): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_reports?id=eq.${reportId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          status: 'dismissed',
+          reviewed_by: reviewerId,
+          reviewed_at: new Date().toISOString(),
+        }),
+      }
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function actionReport(reportId: string, reviewerId: string): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    // First get the report to know what to remove
+    const reportRes = await fetch(
+      `${supabaseUrl}/rest/v1/forum_reports?id=eq.${reportId}&limit=1`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.pgrst.object+json',
+        },
+      }
+    );
+    if (!reportRes.ok) return false;
+    const report: ForumReport = await reportRes.json();
+
+    // Remove the content
+    if (report.post_id) {
+      await adminUpdatePost(report.post_id, { status: 'removed' });
+    } else if (report.reply_id) {
+      await fetch(
+        `${supabaseUrl}/rest/v1/forum_replies?id=eq.${report.reply_id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+    }
+
+    // Mark report as actioned
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_reports?id=eq.${reportId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          status: 'actioned',
+          reviewed_by: reviewerId,
+          reviewed_at: new Date().toISOString(),
+        }),
+      }
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function adminUpdatePost(
+  postId: string,
+  updates: { is_pinned?: boolean; is_locked?: boolean; is_featured?: boolean; is_endorsed?: boolean; status?: string }
+): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?id=eq.${postId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchForumStats(): Promise<{
+  postsThisWeek: number;
+  postsThisMonth: number;
+  pendingReports: number;
+  totalUsers: number;
+}> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+  const monthAgo = new Date(now.getTime() - 30 * 86400000).toISOString();
+
+  try {
+    const [weekRes, monthRes, reportsRes, usersRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/forum_posts?status=eq.published&created_at=gte.${weekAgo}&select=id`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` },
+      }),
+      fetch(`${supabaseUrl}/rest/v1/forum_posts?status=eq.published&created_at=gte.${monthAgo}&select=id`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` },
+      }),
+      fetch(`${supabaseUrl}/rest/v1/forum_reports?status=eq.pending&select=id`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` },
+      }),
+      fetch(`${supabaseUrl}/rest/v1/forum_user_stats?select=user_id`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` },
+      }),
+    ]);
+
+    const week = weekRes.ok ? (await weekRes.json()).length : 0;
+    const month = monthRes.ok ? (await monthRes.json()).length : 0;
+    const pending = reportsRes.ok ? (await reportsRes.json()).length : 0;
+    const users = usersRes.ok ? (await usersRes.json()).length : 0;
+
+    return { postsThisWeek: week, postsThisMonth: month, pendingReports: pending, totalUsers: users };
+  } catch {
+    return { postsThisWeek: 0, postsThisMonth: 0, pendingReports: 0, totalUsers: 0 };
+  }
+}
+
+export async function fetchReportedUsers(): Promise<Array<{ user_id: string; report_count: number; author?: PostAuthor }>> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    // Get all reports and aggregate by target author
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_reports?select=post_id&status=eq.pending`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) return [];
+    const reports = await response.json();
+    if (reports.length === 0) return [];
+
+    const postIds = reports.map((r: { post_id: string }) => r.post_id).filter(Boolean);
+    if (postIds.length === 0) return [];
+
+    // Get post authors
+    const postsRes = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?id=in.(${postIds.join(',')})&select=id,author_id`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!postsRes.ok) return [];
+    const posts = await postsRes.json();
+
+    // Count by author
+    const countMap = new Map<string, number>();
+    posts.forEach((p: { author_id: string }) => {
+      countMap.set(p.author_id, (countMap.get(p.author_id) || 0) + 1);
+    });
+
+    const userIds = [...countMap.keys()];
+    const authors = await fetchProfiles(userIds);
+    const authorMap = new Map(authors.map((a) => [a.id, a]));
+
+    return [...countMap.entries()]
+      .map(([userId, count]) => ({
+        user_id: userId,
+        report_count: count,
+        author: authorMap.get(userId),
+      }))
+      .sort((a, b) => b.report_count - a.report_count);
+  } catch {
+    return [];
+  }
+}
+
+// Admin search posts by keyword
+export async function adminSearchPosts(query: string, limit = 20): Promise<ForumPost[]> {
+  // Uses existing search
+  return searchPosts(query, limit);
+}
+
+export async function fetchFeaturedPosts(): Promise<ForumPost[]> {
+  return fetchPosts({ sort: 'latest', limit: 20 }).then(async (posts) => {
+    // We need to fetch featured specifically
+    const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+    try {
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/forum_posts?is_featured=eq.true&status=eq.published&order=updated_at.desc&limit=20`,
+        { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+      );
+      if (!response.ok) return [];
+      const featuredPosts: ForumPost[] = await response.json();
+      if (featuredPosts.length > 0) {
+        const authorIds = [...new Set(featuredPosts.map((p) => p.author_id))];
+        const authors = await fetchProfiles(authorIds);
+        const authorMap = new Map(authors.map((a) => [a.id, a]));
+        featuredPosts.forEach((p) => { p.author = authorMap.get(p.author_id); });
+      }
+      return featuredPosts;
+    } catch { return []; }
+  });
+}
+
+export async function fetchStaffPicks(): Promise<ForumPost[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?is_featured=eq.true&status=eq.published&order=updated_at.desc&limit=10`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) return [];
+    const posts: ForumPost[] = await response.json();
+    if (posts.length > 0) {
+      const authorIds = [...new Set(posts.map((p) => p.author_id))];
+      const authors = await fetchProfiles(authorIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      posts.forEach((p) => { p.author = authorMap.get(p.author_id); });
+    }
+    return posts;
+  } catch { return []; }
+}
+
+export async function fetchCommunityFavorites(): Promise<ForumPost[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?status=eq.published&order=like_count.desc&limit=10`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) return [];
+    const posts: ForumPost[] = await response.json();
+    if (posts.length > 0) {
+      const authorIds = [...new Set(posts.map((p) => p.author_id))];
+      const authors = await fetchProfiles(authorIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      posts.forEach((p) => { p.author = authorMap.get(p.author_id); });
+    }
+    return posts;
+  } catch { return []; }
+}
+
+export async function fetchMostHelpful(): Promise<ForumPost[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?status=eq.published&is_solved=eq.true&order=reply_count.desc&limit=10`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) return [];
+    const posts: ForumPost[] = await response.json();
+    if (posts.length > 0) {
+      const authorIds = [...new Set(posts.map((p) => p.author_id))];
+      const authors = await fetchProfiles(authorIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      posts.forEach((p) => { p.author = authorMap.get(p.author_id); });
+    }
+    return posts;
+  } catch { return []; }
+}
+
+export async function fetchWeeksBest(): Promise<ForumPost[]> {
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?status=eq.published&created_at=gte.${weekAgo}&order=like_count.desc&limit=10`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) return [];
+    const posts: ForumPost[] = await response.json();
+    if (posts.length > 0) {
+      const authorIds = [...new Set(posts.map((p) => p.author_id))];
+      const authors = await fetchProfiles(authorIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      posts.forEach((p) => { p.author = authorMap.get(p.author_id); });
+    }
+    return posts;
+  } catch { return []; }
+}
+
+// ===========================================
+// EMAIL PREFERENCES
+// ===========================================
+
+export async function fetchEmailPreferences(userId: string): Promise<ForumEmailPreferences | null> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_email_preferences?user_id=eq.${userId}&limit=1`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.pgrst.object+json',
+        },
+      }
+    );
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function upsertEmailPreferences(
+  userId: string,
+  prefs: Partial<ForumEmailPreferences>
+): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_email_preferences`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          ...prefs,
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ===========================================
+// PREMIUM CATEGORY CHECK
+// ===========================================
+
+export function isPremiumCategory(category: ForumCategory | null | undefined): boolean {
+  return category?.is_premium_only === true;
+}
+
+export function userHasPremium(subscriptionTier?: string | null): boolean {
+  return subscriptionTier === 'premium' || subscriptionTier === 'pro';
 }
 
 // ===========================================

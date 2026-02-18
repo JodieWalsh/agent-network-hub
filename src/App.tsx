@@ -44,6 +44,9 @@ import ForumNewPost from "./pages/ForumNewPost";
 import ForumLeaderboard from "./pages/ForumLeaderboard";
 import ForumMyPosts from "./pages/ForumMyPosts";
 import ForumMyBookmarks from "./pages/ForumMyBookmarks";
+import ForumAdmin from "./pages/ForumAdmin";
+import ForumFeatured from "./pages/ForumFeatured";
+import NotificationSettings from "./pages/settings/NotificationSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +82,15 @@ const App = () => (
             <Route path="/forums/leaderboard" element={<ForumLeaderboard />} />
             <Route path="/forums/my-posts" element={<ProtectedRoute showForbidden><ForumMyPosts /></ProtectedRoute>} />
             <Route path="/forums/my-bookmarks" element={<ProtectedRoute showForbidden><ForumMyBookmarks /></ProtectedRoute>} />
+            <Route path="/forums/featured" element={<ForumFeatured />} />
+            <Route
+              path="/forums/admin"
+              element={
+                <ProtectedRoute requiredRole="admin" showForbidden>
+                  <ForumAdmin />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/forums/new"
               element={
@@ -197,6 +209,7 @@ const App = () => (
             />
             <Route path="/settings/profile" element={<ProfileEdit />} />
             <Route path="/settings/billing" element={<Billing />} />
+            <Route path="/settings/notifications" element={<NotificationSettings />} />
             <Route path="/settings/payouts" element={<PayoutSetup />} />
             <Route path="/settings/connect-return" element={<ConnectReturn />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
