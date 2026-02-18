@@ -744,12 +744,12 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 ## Community Forum (Built 17 Feb 2026)
 
 ### Overview
-Professional discussion forum integrated into the platform. Phase 1 (17 Feb) delivers categories, regional boards, posts, replies, likes, bookmarks, follows, search, notifications, and reputation. Phase 2 (18 Feb) adds polls, case studies, expert badges, similar post suggestions, leaderboard, personal pages, edit/delete, and load more pagination.
+Professional discussion forum integrated into the platform. Phase 1 (17 Feb) delivers categories, regional boards, posts, replies, likes, bookmarks, follows, search, notifications, and reputation. Phase 2 (18 Feb) adds polls, case studies, expert badges, similar post suggestions, leaderboard, personal pages, edit/delete, and load more pagination. Phase 3 (18 Feb) adds admin moderation dashboard, pin/lock/feature/endorse posts, premium categories, photo uploads with gallery/lightbox, email notification preferences, weekly digest stub, content quality indicators, and featured/best-of page.
 
-### Database Tables (17)
+### Database Tables (18)
 **Core (9):** `forum_categories`, `forum_regional_boards`, `forum_posts`, `forum_replies`, `forum_post_media`, `forum_likes`, `forum_bookmarks`, `forum_follows`, `forum_user_regional_memberships`
 
-**Supporting (8):** `forum_tags`, `forum_post_tags`, `forum_expert_badges`, `forum_polls`, `forum_poll_options`, `forum_poll_votes`, `forum_reports`, `forum_user_stats`
+**Supporting (9):** `forum_tags`, `forum_post_tags`, `forum_expert_badges`, `forum_polls`, `forum_poll_options`, `forum_poll_votes`, `forum_reports`, `forum_user_stats`, `forum_email_preferences`
 
 ### Post Types
 `discussion`, `question`, `poll`, `case_study`
@@ -758,25 +758,34 @@ Professional discussion forum integrated into the platform. Phase 1 (17 Feb) del
 | Route | Page | Purpose |
 |-------|------|---------|
 | `/forums` | ForumHome | Landing with categories, regional boards, trending, search |
-| `/forums/category/:slug` | ForumCategoryView | Posts filtered by category with load more |
+| `/forums/category/:slug` | ForumCategoryView | Posts filtered by category with load more, premium gate |
 | `/forums/region/:slug` | ForumRegionalBoard | Posts filtered by regional board, join/leave, load more |
-| `/forums/post/:id` | ForumPostView | Post detail, replies, like/bookmark/follow, edit/delete, report |
-| `/forums/new` | ForumNewPost | Create post with polls, case studies, similar suggestions |
+| `/forums/post/:id` | ForumPostView | Post detail, replies, like/bookmark/follow, edit/delete, report, admin actions, photo gallery |
+| `/forums/new` | ForumNewPost | Create post with polls, case studies, similar suggestions, photo upload |
 | `/forums/leaderboard` | ForumLeaderboard | Reputation leaderboard with all-time/monthly tabs |
 | `/forums/my-posts` | ForumMyPosts | User's own posts with type/sort filters |
 | `/forums/my-bookmarks` | ForumMyBookmarks | Bookmarked posts with remove action |
+| `/forums/admin` | ForumAdmin | Admin moderation dashboard (reports, content search, stats) |
+| `/forums/featured` | ForumFeatured | Featured/Best Of (Staff Picks, Community Favorites, Most Helpful, This Week's Best) |
+| `/settings/notifications` | NotificationSettings | Email digest frequency + notification toggles |
 
 ### Key Files
 | File | Purpose |
 |------|---------|
 | `src/lib/forum.ts` | All types + API functions (following messaging.ts pattern) |
-| `src/components/forum/PostCard.tsx` | Reusable post card for lists with poll/case study badges |
+| `src/components/forum/PostCard.tsx` | Reusable post card with poll/case study/media badges, quality indicators |
 | `src/components/forum/ReplyThread.tsx` | Reply with 2-level nested children, edit/delete |
 | `src/components/forum/ReplyEditor.tsx` | Reply input component |
-| `src/components/forum/ForumSidebar.tsx` | Sidebar: stats, top contributors, unanswered, my posts/bookmarks links |
+| `src/components/forum/ForumSidebar.tsx` | Sidebar: stats, top contributors, unanswered, featured link |
 | `src/components/forum/PollDisplay.tsx` | Poll voting and results with progress bars |
 | `src/components/forum/CaseStudyDisplay.tsx` | Structured case study sections (Situation/Findings/Lessons) |
 | `src/components/forum/UserBadges.tsx` | Expert badge icons with tooltips |
+| `src/components/forum/PhotoUploader.tsx` | Photo upload with preview grid (max 10, 5MB each) |
+| `src/components/forum/PhotoGallery.tsx` | Photo gallery with built-in lightbox + keyboard nav |
+| `src/pages/ForumAdmin.tsx` | Admin moderation dashboard |
+| `src/pages/ForumFeatured.tsx` | Featured / Best Of page |
+| `src/pages/settings/NotificationSettings.tsx` | Email notification preferences |
+| `supabase/functions/send-forum-digest/index.ts` | Digest email edge function stub |
 
 ### RPC Functions
 | Function | Purpose |
@@ -830,13 +839,62 @@ Professional discussion forum integrated into the platform. Phase 1 (17 Feb) del
 20260217030000_create_forum_functions_and_search.sql  RPC functions + full-text search + notification types
 20260218010000_add_forum_counter_rpcs.sql          Counter increment RPCs (bug fix)
 20260218020000_forum_phase2.sql                    Phase 2: post_type expansion, case study columns, edited_at, poll/badge RLS, vote_forum_poll RPC, check_and_award_badges RPC, forum-media bucket
+20260218040000_forum_media_enhancements.sql        Photo uploads: display_order + caption on forum_post_media, index on post_id
+20260218050000_forum_phase3.sql                    Phase 3: is_locked/is_featured/is_endorsed on posts, is_premium_only on categories, forum_email_preferences table, indexes on forum_reports
 ```
 
 ### Phase 2 (Completed 18 Feb 2026)
 Polls, case studies, expert badges, similar post suggestions, leaderboard, my posts/bookmarks pages, edit/delete for posts and replies, load more pagination on all list pages
 
-### Phase 3 (Planned)
-Admin moderation dashboard, premium categories, pinned posts, @mention support, weekly digest emails, trending algorithm improvements, post media upload UI
+### Phase 3 — Moderation & Premium (Completed 18 Feb 2026)
+
+**Admin Moderation Dashboard** (`/forums/admin`):
+- Reports queue with dismiss/action controls, status filters
+- Content search with quick actions (pin/lock/feature/delete)
+- Most reported users list
+- Forum stats dashboard (posts this week/month, pending reports, forum users)
+
+**Post Actions** (admin-only):
+- Pin, Lock, Feature, Endorse — toggle buttons on ForumPostView
+- Visual indicators on PostCard (Lock/Star icons in title row)
+- Locked posts hide reply editor, show lock message
+- Featured/endorsed banners on post detail view
+
+**Premium Categories**:
+- `is_premium_only` flag on `forum_categories` (Networking & Events, Career & Business marked premium)
+- Crown icon on ForumHome category list
+- Non-premium users see upgrade CTA on ForumCategoryView
+- Premium categories disabled in ForumNewPost dropdown for non-premium users
+
+**Photo Uploads** (all post types):
+- PhotoUploader component: up to 10 images, 5MB each, image type validation
+- Uploads to `forum-media` Supabase Storage bucket
+- `forum_post_media` table stores file_url, file_type, file_name, file_size, caption, display_order
+- PhotoGallery with responsive grid (1/2/3 columns) and built-in lightbox
+- Lightbox: keyboard nav (Escape, ArrowLeft/Right), click overlay to close, counter
+- Camera icon + count on PostCard (batch-fetched via `fetchMediaCountsForPosts()`)
+
+**Content Quality Indicators** (PostCard + ForumPostView):
+- "Staff Endorsed" badge — admin-set via `is_endorsed` flag
+- "Community Validated" badge — auto when post has 10+ likes AND is solved
+
+**Featured / Best Of** (`/forums/featured`):
+- Tabs: Staff Picks (is_featured), Community Favorites (most likes), Most Helpful (most solutions), This Week's Best (new + most likes)
+
+**Email Notification Preferences** (`/settings/notifications`):
+- Digest frequency: never, daily, weekly
+- Toggle switches: replies, mentions, follows
+- Stored in `forum_email_preferences` table with RLS
+
+**Weekly Digest Stub** (`supabase/functions/send-forum-digest/index.ts`):
+- Edge function prepares digest content (new replies, trending posts, user stats)
+- Logs output; Resend email integration commented/ready for activation
+
+### Not Yet Implemented (Future)
+- @mention support with autocomplete
+- Trending algorithm improvements (time-decay scoring)
+- Resend email integration for digests
+- Admin user warning system
 
 ---
 
@@ -978,3 +1036,21 @@ Admin moderation dashboard, premium categories, pinned posts, @mention support, 
   - Inline edit, soft-delete posts, hard-delete replies, (edited) indicator
 - `b891417` - feat: add load more pagination to forum list pages
   - PAGE_SIZE=10, Load More button on category, regional board, and trending pages
+
+### Session: 18 February 2026 (Forum Phase 3 + Photo Uploads)
+- Various date validation fixes (`9d3dab5` through `9e6e33c`)
+- `6211118` - feat: add photo uploads and gallery to forum posts
+  - Migration: display_order + caption columns on forum_post_media
+  - PhotoUploader + PhotoGallery components with lightbox
+  - Wired into ForumNewPost (upload) and ForumPostView (gallery)
+  - Camera icon + media count on PostCard, batch-fetched counts
+- `8a2cc02` - feat: add Forum Phase 3 — admin moderation, premium categories, email preferences, featured page
+  - Migration: is_locked/is_featured/is_endorsed on posts, is_premium_only on categories, forum_email_preferences table
+  - ForumAdmin page with reports queue, content search, stats
+  - Admin post actions (pin/lock/feature/endorse) on ForumPostView
+  - Premium category gates on ForumCategoryView + ForumNewPost
+  - NotificationSettings page with digest prefs
+  - ForumFeatured page (Staff Picks, Community Favorites, Most Helpful, This Week's Best)
+  - Content quality indicators (Staff Endorsed, Community Validated badges)
+  - send-forum-digest edge function stub
+  - Updated AppSidebar with Forum Moderation link for admins

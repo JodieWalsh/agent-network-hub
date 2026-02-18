@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Eye, Bookmark, Pin, CheckCircle2, Camera, Lock, Star, BadgeCheck } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Pin, CheckCircle2, Camera, Lock, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
@@ -47,9 +47,6 @@ export function PostCard({ post, mediaCount }: PostCardProps) {
             )}
             {post.is_featured && (
               <Star size={14} className="text-yellow-500 flex-shrink-0 mt-1" />
-            )}
-            {post.is_endorsed && (
-              <BadgeCheck size={14} className="text-forest flex-shrink-0 mt-1" />
             )}
             <h3 className="font-semibold text-foreground line-clamp-1 flex-1">
               {post.title}

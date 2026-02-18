@@ -2241,28 +2241,6 @@ export async function adminSearchPosts(query: string, limit = 20): Promise<Forum
   return searchPosts(query, limit);
 }
 
-export async function fetchFeaturedPosts(): Promise<ForumPost[]> {
-  return fetchPosts({ sort: 'latest', limit: 20 }).then(async (posts) => {
-    // We need to fetch featured specifically
-    const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
-    try {
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/forum_posts?is_featured=eq.true&status=eq.published&order=updated_at.desc&limit=20`,
-        { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
-      );
-      if (!response.ok) return [];
-      const featuredPosts: ForumPost[] = await response.json();
-      if (featuredPosts.length > 0) {
-        const authorIds = [...new Set(featuredPosts.map((p) => p.author_id))];
-        const authors = await fetchProfiles(authorIds);
-        const authorMap = new Map(authors.map((a) => [a.id, a]));
-        featuredPosts.forEach((p) => { p.author = authorMap.get(p.author_id); });
-      }
-      return featuredPosts;
-    } catch { return []; }
-  });
-}
-
 export async function fetchStaffPicks(): Promise<ForumPost[]> {
   const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
   try {
