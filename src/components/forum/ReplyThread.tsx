@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Heart, Reply, CheckCircle2 } from 'lucide-react';
+import { Heart, Reply, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ForumReply, formatPostDate, getUserTypeLabel } from '@/lib/forum';
+import { ForumReply, formatPostDate, getUserTypeLabel, updateReply, deleteReply } from '@/lib/forum';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import { ReplyEditor } from './ReplyEditor';
 import { UserBadges } from './UserBadges';
 
@@ -17,6 +19,7 @@ interface ReplyThreadProps {
   onLike: (replyId: string) => void;
   onReply: (content: string, parentReplyId: string) => Promise<void>;
   onMarkSolution: (replyId: string) => void;
+  onReplyUpdated?: () => void;
 }
 
 export function ReplyThread({
@@ -28,8 +31,12 @@ export function ReplyThread({
   onLike,
   onReply,
   onMarkSolution,
+  onReplyUpdated,
 }: ReplyThreadProps) {
   const [showReplyEditor, setShowReplyEditor] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const authorInitials = reply.author?.full_name
     ?.split(' ')
@@ -38,8 +45,33 @@ export function ReplyThread({
     .toUpperCase() || '?';
 
   const isPostAuthor = reply.author_id === postAuthorId;
+  const isOwnReply = currentUserId === reply.author_id;
   const canMarkSolution = isQuestion && currentUserId === postAuthorId && !reply.is_solution;
   const canReply = depth < 1; // Max 2-level nesting
+
+  const handleSaveEdit = async () => {
+    if (!currentUserId) return;
+    const success = await updateReply(reply.id, currentUserId, editContent.trim());
+    if (success) {
+      toast.success('Reply updated');
+      setIsEditing(false);
+      onReplyUpdated?.();
+    } else {
+      toast.error('Failed to update reply');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!currentUserId) return;
+    const success = await deleteReply(reply.id, currentUserId);
+    if (success) {
+      toast.success('Reply deleted');
+      setShowDeleteConfirm(false);
+      onReplyUpdated?.();
+    } else {
+      toast.error('Failed to delete reply');
+    }
+  };
 
   return (
     <div className={cn('relative', depth > 0 && 'ml-8 pl-4 border-l-2 border-muted')}>
@@ -83,8 +115,44 @@ export function ReplyThread({
         </div>
 
         {/* Content */}
-        <div className="text-sm text-foreground whitespace-pre-wrap pl-10">
-          {reply.content}
+        <div className="pl-10">
+          {isEditing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={3}
+                className="text-sm resize-y"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-forest hover:bg-forest/90"
+                  onClick={handleSaveEdit}
+                  disabled={!editContent.trim()}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-foreground whitespace-pre-wrap">
+              {reply.content}
+              {reply.edited_at && (
+                <span className="text-xs text-muted-foreground italic ml-2">
+                  (edited)
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -125,6 +193,52 @@ export function ReplyThread({
               Mark as Solution
             </Button>
           )}
+
+          {isOwnReply && !isEditing && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1 text-muted-foreground"
+                onClick={() => {
+                  setEditContent(reply.content);
+                  setIsEditing(true);
+                }}
+              >
+                <Pencil size={13} />
+              </Button>
+              {showDeleteConfirm ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-red-500">Delete?</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs text-red-500"
+                    onClick={handleDelete}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    No
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-500"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 size={13} />
+                </Button>
+              )}
+            </>
+          )}
         </div>
 
         {/* Reply editor */}
@@ -158,6 +272,7 @@ export function ReplyThread({
               onLike={onLike}
               onReply={onReply}
               onMarkSolution={onMarkSolution}
+              onReplyUpdated={onReplyUpdated}
             />
           ))}
         </div>

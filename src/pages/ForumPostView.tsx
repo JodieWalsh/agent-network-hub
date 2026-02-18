@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   MessageCircle,
   ArrowLeft,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -61,6 +64,8 @@ import {
   notifyForumSolution,
   notifyForumFollowReply,
   checkAndAwardBadges,
+  updatePost,
+  deletePost,
 } from '@/lib/forum';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -76,6 +81,10 @@ export default function ForumPostView() {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportReason, setReportReason] = useState('spam');
   const [reportDetails, setReportDetails] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -211,6 +220,39 @@ export default function ForumPostView() {
     }
   };
 
+  const handleStartEdit = () => {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!user || !post) return;
+    const success = await updatePost(post.id, user.id, {
+      title: editTitle.trim(),
+      content: editContent.trim(),
+    });
+    if (success) {
+      toast.success('Post updated');
+      setIsEditing(false);
+      loadPost();
+    } else {
+      toast.error('Failed to update post');
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!user || !post) return;
+    const success = await deletePost(post.id, user.id);
+    if (success) {
+      toast.success('Post deleted');
+      navigate('/forums');
+    } else {
+      toast.error('Failed to delete post');
+    }
+  };
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success('Link copied to clipboard');
@@ -315,49 +357,85 @@ export default function ForumPostView() {
             )}
 
             {/* Title */}
-            <h1 className="text-xl font-bold mb-2">{post.title}</h1>
-
-            {/* Post type badge + tags */}
-            <div className="flex items-center gap-2 flex-wrap mb-4">
-              <Badge variant="outline" className={cn(
-                'text-xs',
-                post.post_type === 'poll' && 'border-purple-300 text-purple-700 bg-purple-50',
-                post.post_type === 'case_study' && 'border-indigo-300 text-indigo-700 bg-indigo-50',
-              )}>
-                {post.post_type === 'question' ? 'Question' : post.post_type === 'poll' ? 'Poll' : post.post_type === 'case_study' ? 'Case Study' : 'Discussion'}
-              </Badge>
-              {post.tags?.map((tag) => (
-                <Badge key={tag.id} variant="secondary" className="text-xs">
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Author */}
-            <div className="flex items-center gap-3 mb-4">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={post.author?.avatar_url || undefined} />
-                <AvatarFallback className="bg-forest/10 text-forest">
-                  {authorInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="font-medium text-sm flex items-center gap-1.5">
-                  {post.author?.full_name || 'Unknown'}
-                  {post.author && <UserBadges userId={post.author.id} />}
-                </div>
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span>{getUserTypeLabel(post.author?.user_type || '')}</span>
-                  <span>·</span>
-                  <span>{formatPostDate(post.created_at)}</span>
+            {isEditing ? (
+              <div className="space-y-3 mb-4">
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="text-xl font-bold"
+                />
+                <Textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={8}
+                  className="resize-y"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-forest hover:bg-forest/90"
+                    onClick={handleSaveEdit}
+                    disabled={!editTitle.trim() || !editContent.trim()}
+                  >
+                    Save Changes
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+                    Cancel
+                  </Button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <h1 className="text-xl font-bold mb-2">{post.title}</h1>
 
-            {/* Content */}
-            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap mb-4">
-              {post.content}
-            </div>
+                {/* Post type badge + tags */}
+                <div className="flex items-center gap-2 flex-wrap mb-4">
+                  <Badge variant="outline" className={cn(
+                    'text-xs',
+                    post.post_type === 'poll' && 'border-purple-300 text-purple-700 bg-purple-50',
+                    post.post_type === 'case_study' && 'border-indigo-300 text-indigo-700 bg-indigo-50',
+                  )}>
+                    {post.post_type === 'question' ? 'Question' : post.post_type === 'poll' ? 'Poll' : post.post_type === 'case_study' ? 'Case Study' : 'Discussion'}
+                  </Badge>
+                  {post.tags?.map((tag) => (
+                    <Badge key={tag.id} variant="secondary" className="text-xs">
+                      {tag.name}
+                    </Badge>
+                  ))}
+                  {post.edited_at && (
+                    <span className="text-xs text-muted-foreground italic">
+                      (edited {formatPostDate(post.edited_at)})
+                    </span>
+                  )}
+                </div>
+
+                {/* Author */}
+                <div className="flex items-center gap-3 mb-4">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={post.author?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-forest/10 text-forest">
+                      {authorInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium text-sm flex items-center gap-1.5">
+                      {post.author?.full_name || 'Unknown'}
+                      {post.author && <UserBadges userId={post.author.id} />}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span>{getUserTypeLabel(post.author?.user_type || '')}</span>
+                      <span>·</span>
+                      <span>{formatPostDate(post.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap mb-4">
+                  {post.content}
+                </div>
+              </>
+            )}
 
             {/* Poll (if poll post) */}
             {post.post_type === 'poll' && (
@@ -441,6 +519,29 @@ export default function ForumPostView() {
                 Share
               </Button>
 
+              {user && post.author_id === user.id && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-muted-foreground"
+                    onClick={handleStartEdit}
+                  >
+                    <Pencil size={16} />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-red-500 hover:text-red-700"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </Button>
+                </>
+              )}
+
               {user && post.author_id !== user.id && (
                 <Button
                   variant="ghost"
@@ -478,6 +579,7 @@ export default function ForumPostView() {
                     onLike={handleLikeReply}
                     onReply={handleReply}
                     onMarkSolution={handleMarkSolution}
+                    onReplyUpdated={loadPost}
                   />
                 ))}
               </CardContent>
@@ -552,6 +654,29 @@ export default function ForumPostView() {
                   Submit Report
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Post</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this post? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeletePost}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete Post
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
