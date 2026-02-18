@@ -66,7 +66,7 @@ export interface ForumPost {
   regional_board_id: string | null;
   title: string;
   content: string;
-  post_type: 'discussion' | 'question';
+  post_type: 'discussion' | 'question' | 'poll' | 'case_study';
   status: 'draft' | 'published' | 'closed' | 'removed';
   is_pinned: boolean;
   is_solved: boolean;
@@ -78,11 +78,19 @@ export interface ForumPost {
   last_activity_at: string;
   created_at: string;
   updated_at: string;
+  edited_at: string | null;
+  // Case study fields
+  case_study_property_type: string | null;
+  case_study_location: string | null;
+  case_study_situation: string | null;
+  case_study_findings: string | null;
+  case_study_lessons: string | null;
   // Joined data
   author?: PostAuthor;
   category?: ForumCategory;
   regional_board?: ForumRegionalBoard;
   tags?: ForumTag[];
+  poll?: ForumPoll;
   user_has_liked?: boolean;
   user_has_bookmarked?: boolean;
   user_is_following?: boolean;
@@ -105,6 +113,7 @@ export interface ForumReply {
   like_count: number;
   created_at: string;
   updated_at: string;
+  edited_at: string | null;
   // Joined data
   author?: PostAuthor;
   children?: ForumReply[];
@@ -128,13 +137,59 @@ export interface ForumUserStats {
   reputation_points: number;
 }
 
+export interface ForumPoll {
+  id: string;
+  post_id: string;
+  question: string;
+  allows_multiple: boolean;
+  ends_at: string | null;
+  total_votes: number;
+  created_at: string;
+  options: ForumPollOption[];
+}
+
+export interface ForumPollOption {
+  id: string;
+  poll_id: string;
+  option_text: string;
+  vote_count: number;
+  display_order: number;
+}
+
+export interface ForumPollVote {
+  id: string;
+  poll_id: string;
+  option_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface ForumExpertBadge {
+  id: string;
+  user_id: string;
+  badge_type: string;
+  badge_label: string;
+  awarded_at: string;
+}
+
 export interface CreatePostParams {
   title: string;
   content: string;
-  post_type: 'discussion' | 'question';
+  post_type: 'discussion' | 'question' | 'poll' | 'case_study';
   category_id?: string;
   regional_board_id?: string;
   tags?: string[];
+  // Case study fields
+  case_study_property_type?: string;
+  case_study_location?: string;
+  case_study_situation?: string;
+  case_study_findings?: string;
+  case_study_lessons?: string;
+  // Poll fields
+  poll_question?: string;
+  poll_options?: string[];
+  poll_allows_multiple?: boolean;
+  poll_ends_at?: string;
 }
 
 export type PostSortOption = 'latest' | 'popular' | 'unanswered';
@@ -501,6 +556,15 @@ export async function createPost(
     if (params.category_id) postData.category_id = params.category_id;
     if (params.regional_board_id) postData.regional_board_id = params.regional_board_id;
 
+    // Case study fields
+    if (params.post_type === 'case_study') {
+      if (params.case_study_property_type) postData.case_study_property_type = params.case_study_property_type;
+      if (params.case_study_location) postData.case_study_location = params.case_study_location;
+      if (params.case_study_situation) postData.case_study_situation = params.case_study_situation;
+      if (params.case_study_findings) postData.case_study_findings = params.case_study_findings;
+      if (params.case_study_lessons) postData.case_study_lessons = params.case_study_lessons;
+    }
+
     const response = await fetch(`${supabaseUrl}/rest/v1/forum_posts`, {
       method: 'POST',
       headers: {
@@ -528,6 +592,16 @@ export async function createPost(
     // Update board post count
     if (params.regional_board_id) {
       await supabase.rpc('increment_board_post_count', { p_board_id: params.regional_board_id });
+    }
+
+    // Create poll if poll post
+    if (params.post_type === 'poll' && params.poll_options && params.poll_options.length >= 2) {
+      await createPollForPost(post.id, {
+        question: params.poll_question || params.title,
+        options: params.poll_options,
+        allows_multiple: params.poll_allows_multiple || false,
+        ends_at: params.poll_ends_at,
+      });
     }
 
     // Handle tags
@@ -1175,6 +1249,488 @@ async function fetchUserLikedReplyIds(userId: string, postId: string): Promise<s
   } catch {
     return [];
   }
+}
+
+// ===========================================
+// POLLS
+// ===========================================
+
+async function createPollForPost(
+  postId: string,
+  params: { question: string; options: string[]; allows_multiple: boolean; ends_at?: string }
+): Promise<void> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    // Create poll
+    const pollData: Record<string, unknown> = {
+      post_id: postId,
+      question: params.question,
+      allows_multiple: params.allows_multiple,
+    };
+    if (params.ends_at) pollData.ends_at = params.ends_at;
+
+    const pollResponse = await fetch(`${supabaseUrl}/rest/v1/forum_polls`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(pollData),
+    });
+
+    if (!pollResponse.ok) return;
+    const [poll] = await pollResponse.json();
+
+    // Create options
+    const optionRows = params.options.map((text, i) => ({
+      poll_id: poll.id,
+      option_text: text,
+      display_order: i,
+    }));
+
+    await fetch(`${supabaseUrl}/rest/v1/forum_poll_options`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(optionRows),
+    });
+  } catch (error) {
+    console.error('[Forum] Error creating poll:', error);
+  }
+}
+
+export async function getPollForPost(postId: string): Promise<ForumPoll | null> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_polls?post_id=eq.${postId}&limit=1`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.pgrst.object+json',
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+    const poll: ForumPoll = await response.json();
+
+    // Fetch options
+    const optionsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/forum_poll_options?poll_id=eq.${poll.id}&order=display_order.asc`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    poll.options = optionsResponse.ok ? await optionsResponse.json() : [];
+    return poll;
+  } catch {
+    return null;
+  }
+}
+
+export async function getUserPollVotes(pollId: string, userId: string): Promise<string[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_poll_votes?poll_id=eq.${pollId}&user_id=eq.${userId}&select=option_id`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) return [];
+    const votes = await response.json();
+    return votes.map((v: { option_id: string }) => v.option_id);
+  } catch {
+    return [];
+  }
+}
+
+export async function votePoll(
+  pollId: string,
+  optionIds: string[],
+  userId: string
+): Promise<boolean> {
+  const { error } = await supabase.rpc('vote_forum_poll', {
+    p_poll_id: pollId,
+    p_option_ids: optionIds,
+    p_user_id: userId,
+  });
+
+  if (error) {
+    console.error('[Forum] Error voting on poll:', error);
+    return false;
+  }
+  return true;
+}
+
+// ===========================================
+// EDIT & DELETE
+// ===========================================
+
+export async function updatePost(
+  postId: string,
+  userId: string,
+  updates: { title?: string; content?: string }
+): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?id=eq.${postId}&author_id=eq.${userId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          ...updates,
+          edited_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deletePost(postId: string, userId: string): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    // Soft delete by setting status to 'removed'
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?id=eq.${postId}&author_id=eq.${userId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ status: 'removed' }),
+      }
+    );
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateReply(
+  replyId: string,
+  userId: string,
+  content: string
+): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_replies?id=eq.${replyId}&author_id=eq.${userId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          content,
+          edited_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteReply(replyId: string, userId: string): Promise<boolean> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_replies?id=eq.${replyId}&author_id=eq.${userId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ===========================================
+// LEADERBOARD & USER PAGES
+// ===========================================
+
+export async function fetchLeaderboard(
+  period: 'all' | 'month' = 'all',
+  limit = 20
+): Promise<(ForumUserStats & { author?: PostAuthor })[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_user_stats?order=reputation_points.desc&limit=${limit}`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) return [];
+    const stats: (ForumUserStats & { author?: PostAuthor })[] = await response.json();
+
+    if (stats.length > 0) {
+      const userIds = stats.map((s) => s.user_id);
+      const authors = await fetchProfiles(userIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      stats.forEach((s) => {
+        s.author = authorMap.get(s.user_id);
+      });
+    }
+
+    return stats;
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchUserPosts(
+  userId: string,
+  options?: { postType?: string; sort?: string; limit?: number; offset?: number }
+): Promise<ForumPost[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+  const { postType, sort = 'latest', limit = 20, offset = 0 } = options || {};
+
+  try {
+    let url = `${supabaseUrl}/rest/v1/forum_posts?author_id=eq.${userId}&status=eq.published&limit=${limit}&offset=${offset}`;
+
+    if (postType) url += `&post_type=eq.${postType}`;
+
+    switch (sort) {
+      case 'replies':
+        url += '&order=reply_count.desc';
+        break;
+      case 'likes':
+        url += '&order=like_count.desc';
+        break;
+      default:
+        url += '&order=created_at.desc';
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) return [];
+    const posts: ForumPost[] = await response.json();
+
+    if (posts.length > 0) {
+      const authorIds = [...new Set(posts.map((p) => p.author_id))];
+      const authors = await fetchProfiles(authorIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      posts.forEach((p) => {
+        p.author = authorMap.get(p.author_id);
+      });
+    }
+
+    return posts;
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchUserBookmarks(
+  userId: string,
+  limit = 20,
+  offset = 0
+): Promise<ForumPost[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    // Get bookmarked post IDs
+    const bmResponse = await fetch(
+      `${supabaseUrl}/rest/v1/forum_bookmarks?user_id=eq.${userId}&select=post_id&order=created_at.desc&limit=${limit}&offset=${offset}`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!bmResponse.ok) return [];
+    const bookmarks = await bmResponse.json();
+    if (bookmarks.length === 0) return [];
+
+    const postIds = bookmarks.map((b: { post_id: string }) => b.post_id);
+
+    // Fetch posts
+    const postsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?id=in.(${postIds.join(',')})&status=eq.published`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!postsResponse.ok) return [];
+    const posts: ForumPost[] = await postsResponse.json();
+
+    // Maintain bookmark order
+    const postMap = new Map(posts.map((p) => [p.id, p]));
+    const ordered = postIds.map((id: string) => postMap.get(id)).filter(Boolean) as ForumPost[];
+
+    // Fetch authors
+    if (ordered.length > 0) {
+      const authorIds = [...new Set(ordered.map((p) => p.author_id))];
+      const authors = await fetchProfiles(authorIds);
+      const authorMap = new Map(authors.map((a) => [a.id, a]));
+      ordered.forEach((p) => {
+        p.author = authorMap.get(p.author_id);
+      });
+    }
+
+    return ordered;
+  } catch {
+    return [];
+  }
+}
+
+// ===========================================
+// EXPERT BADGES
+// ===========================================
+
+export async function fetchUserBadges(userId: string): Promise<ForumExpertBadge[]> {
+  const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/forum_expert_badges?user_id=eq.${userId}&order=awarded_at.asc`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) return [];
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function checkAndAwardBadges(userId: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc('check_and_award_badges', {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    console.error('[Forum] Error checking badges:', error);
+    return [];
+  }
+
+  const awarded = (data as string[]) || [];
+
+  // Send notifications for newly awarded badges
+  for (const badgeType of awarded) {
+    const label = getBadgeLabel(badgeType);
+    await createNotification({
+      userId,
+      type: 'forum_badge_earned' as any,
+      title: 'New badge earned!',
+      message: `You've earned the "${label}" badge for your forum contributions`,
+      fromUserId: userId,
+    });
+  }
+
+  return awarded;
+}
+
+function getBadgeLabel(badgeType: string): string {
+  const labels: Record<string, string> = {
+    helpful_member: 'Helpful Member',
+    problem_solver: 'Problem Solver',
+    top_contributor: 'Top Contributor',
+    rising_star: 'Rising Star',
+    expert: 'Expert',
+    community_leader: 'Community Leader',
+  };
+  return labels[badgeType] || badgeType;
+}
+
+// ===========================================
+// MEDIA UPLOAD
+// ===========================================
+
+export async function uploadForumMedia(
+  file: File,
+  userId: string
+): Promise<{ url: string } | null> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+  const { error } = await supabase.storage
+    .from('forum-media')
+    .upload(fileName, file);
+
+  if (error) {
+    console.error('[Forum] Error uploading media:', error);
+    return null;
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('forum-media')
+    .getPublicUrl(fileName);
+
+  return { url: urlData.publicUrl };
 }
 
 // ===========================================
