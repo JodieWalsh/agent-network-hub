@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Plus, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,7 +34,7 @@ export default function ForumNewPost() {
   const [boards, setBoards] = useState<ForumRegionalBoard[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<ForumTag[]>([]);
 
-  const [postType, setPostType] = useState<'discussion' | 'question'>('discussion');
+  const [postType, setPostType] = useState<'discussion' | 'question' | 'poll' | 'case_study'>('discussion');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -41,6 +42,11 @@ export default function ForumNewPost() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Poll fields
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollAllowsMultiple, setPollAllowsMultiple] = useState(false);
+  const [pollEndsAt, setPollEndsAt] = useState('');
 
   useEffect(() => {
     loadOptions();
@@ -105,6 +111,14 @@ export default function ForumNewPost() {
       return;
     }
 
+    if (postType === 'poll') {
+      const validOptions = pollOptions.filter((o) => o.trim());
+      if (validOptions.length < 2) {
+        toast.error('Polls need at least 2 options');
+        return;
+      }
+    }
+
     setSubmitting(true);
     const post = await createPost(user.id, {
       title: title.trim(),
@@ -113,6 +127,13 @@ export default function ForumNewPost() {
       category_id: selectedCategoryId || undefined,
       regional_board_id: selectedBoardId || undefined,
       tags: tags.length > 0 ? tags : undefined,
+      // Poll data
+      ...(postType === 'poll' && {
+        poll_question: title.trim(),
+        poll_options: pollOptions.filter((o) => o.trim()),
+        poll_allows_multiple: pollAllowsMultiple,
+        poll_ends_at: pollEndsAt || undefined,
+      }),
     });
 
     if (post) {
@@ -158,7 +179,7 @@ export default function ForumNewPost() {
             {/* Post Type */}
             <div className="space-y-2">
               <Label>Post Type</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant={postType === 'discussion' ? 'default' : 'outline'}
                   size="sm"
@@ -175,10 +196,30 @@ export default function ForumNewPost() {
                 >
                   Question
                 </Button>
+                <Button
+                  variant={postType === 'poll' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPostType('poll')}
+                  className={postType === 'poll' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                >
+                  Poll
+                </Button>
+                <Button
+                  variant={postType === 'case_study' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPostType('case_study')}
+                  className={postType === 'case_study' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}
+                >
+                  Case Study
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
                 {postType === 'question'
                   ? 'Questions can have a reply marked as the accepted solution.'
+                  : postType === 'poll'
+                  ? 'Create a poll to gather opinions from the community.'
+                  : postType === 'case_study'
+                  ? 'Share a detailed property case study with structured findings.'
                   : 'Discussions are open-ended conversations on a topic.'}
               </p>
             </div>
@@ -265,6 +306,67 @@ export default function ForumNewPost() {
                 className="resize-y"
               />
             </div>
+
+            {/* Poll Builder */}
+            {postType === 'poll' && (
+              <div className="space-y-3 border border-purple-200 rounded-lg p-4 bg-purple-50/30">
+                <Label className="text-purple-700">Poll Options</Label>
+                {pollOptions.map((option, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={option}
+                      onChange={(e) => {
+                        const updated = [...pollOptions];
+                        updated[index] = e.target.value;
+                        setPollOptions(updated);
+                      }}
+                      placeholder={`Option ${index + 1}`}
+                      className="text-sm"
+                    />
+                    {pollOptions.length > 2 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== index))}
+                        className="text-red-500 hover:text-red-700 flex-shrink-0"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {pollOptions.length < 6 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPollOptions([...pollOptions, ''])}
+                    className="gap-1"
+                  >
+                    <Plus size={14} />
+                    Add Option
+                  </Button>
+                )}
+                <div className="flex items-center gap-4 pt-2">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={pollAllowsMultiple}
+                      onCheckedChange={(checked) => setPollAllowsMultiple(checked === true)}
+                    />
+                    Allow multiple votes
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm whitespace-nowrap">End date</Label>
+                    <Input
+                      type="date"
+                      value={pollEndsAt}
+                      onChange={(e) => setPollEndsAt(e.target.value)}
+                      className="text-sm w-auto"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Tags */}
             <div className="space-y-2">

@@ -60,6 +60,22 @@ export function PostCard({ post }: PostCardProps) {
                 )}
               </Badge>
             )}
+            {post.post_type === 'poll' && (
+              <Badge
+                variant="outline"
+                className="flex-shrink-0 text-xs border-purple-300 text-purple-700 bg-purple-50"
+              >
+                Poll
+              </Badge>
+            )}
+            {post.post_type === 'case_study' && (
+              <Badge
+                variant="outline"
+                className="flex-shrink-0 text-xs border-indigo-300 text-indigo-700 bg-indigo-50"
+              >
+                Case Study
+              </Badge>
+            )}
           </div>
 
           {/* Preview */}

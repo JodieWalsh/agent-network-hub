@@ -39,6 +39,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { ReplyThread } from '@/components/forum/ReplyThread';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
+import { PollDisplay } from '@/components/forum/PollDisplay';
 import {
   ForumPost,
   ForumReply,
@@ -313,8 +314,12 @@ export default function ForumPostView() {
 
             {/* Post type badge + tags */}
             <div className="flex items-center gap-2 flex-wrap mb-4">
-              <Badge variant="outline" className="text-xs">
-                {post.post_type === 'question' ? 'Question' : 'Discussion'}
+              <Badge variant="outline" className={cn(
+                'text-xs',
+                post.post_type === 'poll' && 'border-purple-300 text-purple-700 bg-purple-50',
+                post.post_type === 'case_study' && 'border-indigo-300 text-indigo-700 bg-indigo-50',
+              )}>
+                {post.post_type === 'question' ? 'Question' : post.post_type === 'poll' ? 'Poll' : post.post_type === 'case_study' ? 'Case Study' : 'Discussion'}
               </Badge>
               {post.tags?.map((tag) => (
                 <Badge key={tag.id} variant="secondary" className="text-xs">
@@ -347,6 +352,11 @@ export default function ForumPostView() {
             <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap mb-4">
               {post.content}
             </div>
+
+            {/* Poll (if poll post) */}
+            {post.post_type === 'poll' && (
+              <PollDisplay postId={post.id} userId={user?.id} />
+            )}
 
             {/* Stats */}
             <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
