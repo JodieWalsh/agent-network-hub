@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X, Plus, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -15,10 +15,12 @@ import {
   ForumCategory,
   ForumRegionalBoard,
   ForumTag,
+  ForumPost,
   fetchCategories,
   fetchRegionalBoards,
   fetchTags,
   createPost,
+  searchPosts,
 } from '@/lib/forum';
 import { toast } from 'sonner';
 
@@ -54,6 +56,24 @@ export default function ForumNewPost() {
   const [csSituation, setCsSituation] = useState('');
   const [csFindings, setCsFindings] = useState('');
   const [csLessons, setCsLessons] = useState('');
+
+  // Similar post suggestions
+  const [similarPosts, setSimilarPosts] = useState<ForumPost[]>([]);
+  const [showSimilar, setShowSimilar] = useState(true);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  const debouncedSearch = useCallback((query: string) => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (query.length < 15) {
+      setSimilarPosts([]);
+      return;
+    }
+    searchTimeout.current = setTimeout(async () => {
+      const results = await searchPosts(query, 5);
+      setSimilarPosts(results);
+      setShowSimilar(true);
+    }, 300);
+  }, []);
 
   useEffect(() => {
     loadOptions();
@@ -291,12 +311,15 @@ export default function ForumNewPost() {
             </div>
 
             {/* Title */}
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  debouncedSearch(e.target.value);
+                }}
                 placeholder={
                   postType === 'question'
                     ? 'What would you like to know?'
@@ -307,6 +330,37 @@ export default function ForumNewPost() {
               <p className="text-xs text-muted-foreground text-right">
                 {title.length}/200
               </p>
+
+              {/* Similar post suggestions */}
+              {showSimilar && similarPosts.length > 0 && (
+                <div className="border rounded-lg bg-amber-50 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-amber-800">
+                      Similar posts that might help:
+                    </span>
+                    <button
+                      onClick={() => setShowSimilar(false)}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                  {similarPosts.map((p) => (
+                    <a
+                      key={p.id}
+                      href={`/forums/post/${p.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-forest hover:underline"
+                    >
+                      {p.title}
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {p.reply_count} {p.reply_count === 1 ? 'reply' : 'replies'}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Content */}
