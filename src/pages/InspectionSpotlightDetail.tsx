@@ -13,7 +13,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { isValidDate, isDateTodayOrFuture } from '@/lib/dateUtils';
+import { isValidDate, isDateTodayOrFuture, normaliseToISO } from '@/lib/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -382,7 +382,7 @@ export default function InspectionSpotlightDetail() {
         job_id: job.id,
         inspector_id: user.id,
         proposed_price: proposedAmount,
-        proposed_date: proposedDate || null,
+        proposed_date: (proposedDate && normaliseToISO(proposedDate)) || null,
         message: bidMessage || null,
         status: 'pending',
       };
@@ -500,7 +500,7 @@ export default function InspectionSpotlightDetail() {
         previous_price: existingBid.proposed_price,
         new_price: editProposedAmount,
         previous_date: existingBid.proposed_date,
-        new_date: editProposedDate || null,
+        new_date: (editProposedDate && normaliseToISO(editProposedDate)) || null,
         previous_message: existingBid.message,
         new_message: editBidMessage || null,
         change_reason: editChangeReason,
@@ -526,7 +526,7 @@ export default function InspectionSpotlightDetail() {
       // Now update the bid
       const updateData = {
         proposed_price: editProposedAmount,
-        proposed_date: editProposedDate || null,
+        proposed_date: (editProposedDate && normaliseToISO(editProposedDate)) || null,
         message: editBidMessage || null,
         updated_at: new Date().toISOString(),
       };

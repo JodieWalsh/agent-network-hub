@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X, Plus, Trash2 } from 'lucide-react';
-import { isValidDate, isDateInFuture } from '@/lib/dateUtils';
+import { isValidDate, isDateInFuture, normaliseToISO } from '@/lib/dateUtils';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -140,19 +140,27 @@ export default function ForumNewPost() {
       return;
     }
 
+    // Normalise poll end date (handles DD/MM/YYYY → YYYY-MM-DD)
+    let normalisedPollDate: string | undefined;
     if (postType === 'poll') {
       const validOptions = pollOptions.filter((o) => o.trim());
       if (validOptions.length < 2) {
         toast.error('Polls need at least 2 options');
         return;
       }
-      if (pollEndsAt && !isValidDate(pollEndsAt)) {
-        toast.error('Please enter a valid poll end date');
-        return;
-      }
-      if (pollEndsAt && !isDateInFuture(pollEndsAt)) {
-        toast.error('Poll end date must be in the future');
-        return;
+      if (pollEndsAt) {
+        console.log('[ForumNewPost] Raw poll end date value:', JSON.stringify(pollEndsAt));
+        if (!isValidDate(pollEndsAt)) {
+          console.log('[ForumNewPost] isValidDate returned false');
+          toast.error('Please enter a valid poll end date (e.g. February 30 does not exist)');
+          return;
+        }
+        if (!isDateInFuture(pollEndsAt)) {
+          toast.error('Poll end date must be in the future');
+          return;
+        }
+        normalisedPollDate = normaliseToISO(pollEndsAt) || undefined;
+        console.log('[ForumNewPost] Normalised poll date:', normalisedPollDate);
       }
     }
 
@@ -169,7 +177,7 @@ export default function ForumNewPost() {
         poll_question: title.trim(),
         poll_options: pollOptions.filter((o) => o.trim()),
         poll_allows_multiple: pollAllowsMultiple,
-        poll_ends_at: pollEndsAt || undefined,
+        poll_ends_at: normalisedPollDate,
       }),
       // Case study data
       ...(postType === 'case_study' && {

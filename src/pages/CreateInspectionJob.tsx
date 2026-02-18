@@ -13,7 +13,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { isValidDate, isDateTodayOrFuture } from '@/lib/dateUtils';
+import { isValidDate, isDateTodayOrFuture, normaliseToISO } from '@/lib/dateUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -379,8 +379,8 @@ export default function CreateInspectionJob() {
 
     setSubmitting(true);
     try {
-      // Collect preferred dates
-      const dates = rawDates;
+      // Collect and normalise preferred dates to YYYY-MM-DD
+      const dates = rawDates.map(d => normaliseToISO(d)).filter((d): d is string => d !== null);
 
       // Use general area if address is unknown, otherwise use exact address
       const propertyAddress = addressUnknown
