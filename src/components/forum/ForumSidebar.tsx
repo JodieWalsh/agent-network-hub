@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Trophy, HelpCircle, MessageCircle } from 'lucide-react';
+import { Trophy, HelpCircle, FileText, Bookmark } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +58,26 @@ export function ForumSidebar({
                 <div className="text-xs text-muted-foreground">Solutions</div>
               </div>
             </div>
+            <div className="flex gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs gap-1"
+                onClick={() => navigate('/forums/my-posts')}
+              >
+                <FileText size={13} />
+                My Posts
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs gap-1"
+                onClick={() => navigate('/forums/my-bookmarks')}
+              >
+                <Bookmark size={13} />
+                Bookmarks
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -100,6 +121,14 @@ export function ForumSidebar({
                 </div>
               );
             })}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-forest mt-1"
+              onClick={() => navigate('/forums/leaderboard')}
+            >
+              View Full Leaderboard
+            </Button>
           </CardContent>
         </Card>
       )}

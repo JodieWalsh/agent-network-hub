@@ -41,6 +41,9 @@ import ForumCategoryView from "./pages/ForumCategoryView";
 import ForumRegionalBoard from "./pages/ForumRegionalBoard";
 import ForumPostView from "./pages/ForumPostView";
 import ForumNewPost from "./pages/ForumNewPost";
+import ForumLeaderboard from "./pages/ForumLeaderboard";
+import ForumMyPosts from "./pages/ForumMyPosts";
+import ForumMyBookmarks from "./pages/ForumMyBookmarks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +76,9 @@ const App = () => (
             <Route path="/forums/category/:slug" element={<ForumCategoryView />} />
             <Route path="/forums/region/:slug" element={<ForumRegionalBoard />} />
             <Route path="/forums/post/:id" element={<ForumPostView />} />
+            <Route path="/forums/leaderboard" element={<ForumLeaderboard />} />
+            <Route path="/forums/my-posts" element={<ProtectedRoute showForbidden><ForumMyPosts /></ProtectedRoute>} />
+            <Route path="/forums/my-bookmarks" element={<ProtectedRoute showForbidden><ForumMyBookmarks /></ProtectedRoute>} />
             <Route
               path="/forums/new"
               element={
