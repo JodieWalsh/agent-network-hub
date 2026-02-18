@@ -271,7 +271,7 @@ export async function toggleBoardMembership(
         }
       );
       // Decrement member count
-      supabase.rpc('decrement_board_member_count', { p_board_id: boardId }).catch(() => {});
+      supabase.rpc('decrement_board_member_count', { p_board_id: boardId });
       return { joined: false };
     } else {
       // Join
@@ -289,7 +289,7 @@ export async function toggleBoardMembership(
         }
       );
       // Increment member count
-      supabase.rpc('increment_board_member_count', { p_board_id: boardId }).catch(() => {});
+      supabase.rpc('increment_board_member_count', { p_board_id: boardId });
       return { joined: true };
     }
   } catch (error) {
@@ -522,12 +522,12 @@ export async function createPost(
 
     // Update category post count
     if (params.category_id) {
-      supabase.rpc('increment_category_post_count', { cat_id: params.category_id }).catch(() => {});
+      supabase.rpc('increment_category_post_count', { cat_id: params.category_id });
     }
 
     // Update board post count
     if (params.regional_board_id) {
-      supabase.rpc('increment_board_post_count', { p_board_id: params.regional_board_id }).catch(() => {});
+      supabase.rpc('increment_board_post_count', { p_board_id: params.regional_board_id });
     }
 
     // Handle tags
@@ -544,7 +544,7 @@ export async function createPost(
       p_posts: 1,
       p_replies: 0,
       p_reputation: 5,
-    }).catch(() => {});
+    });
 
     return post;
   } catch (error) {
@@ -651,7 +651,7 @@ export async function createReply(
     const [reply] = await response.json();
 
     // Increment reply_count + update last_activity_at via RPC
-    supabase.rpc('increment_post_reply_count', { p_post_id: postId }).catch(() => {});
+    supabase.rpc('increment_post_reply_count', { p_post_id: postId });
 
     // Update user stats (+1 reply, +2 reputation)
     supabase.rpc('increment_forum_user_stats', {
@@ -659,7 +659,7 @@ export async function createReply(
       p_posts: 0,
       p_replies: 1,
       p_reputation: 2,
-    }).catch(() => {});
+    });
 
     return reply;
   } catch (error) {
@@ -745,7 +745,7 @@ export async function markAsSolution(
 }
 
 export async function incrementViewCount(postId: string): Promise<void> {
-  await supabase.rpc('increment_post_view_count', { p_post_id: postId }).catch(() => {});
+  await supabase.rpc('increment_post_view_count', { p_post_id: postId });
 }
 
 // ===========================================
