@@ -69,6 +69,9 @@ export default function ForumHome() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ForumPost[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [loadingMoreTrending, setLoadingMoreTrending] = useState(false);
+  const [hasMoreTrending, setHasMoreTrending] = useState(true);
+  const TRENDING_PAGE_SIZE = 10;
 
   useEffect(() => {
     loadData();
@@ -87,6 +90,7 @@ export default function ForumHome() {
     setCategories(cats);
     setBoards(bds);
     setTrendingPosts(trending);
+    setHasMoreTrending(trending.length >= TRENDING_PAGE_SIZE);
     setUnansweredPosts(unanswered);
     setTopContributors(contributors);
 
@@ -112,6 +116,20 @@ export default function ForumHome() {
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSearch();
+  };
+
+  const loadMoreTrending = async () => {
+    if (loadingMoreTrending) return;
+    setLoadingMoreTrending(true);
+    const more = await fetchPosts({
+      sort: 'popular',
+      limit: TRENDING_PAGE_SIZE,
+      offset: trendingPosts.length,
+      timeRange: 'week',
+    });
+    setTrendingPosts((prev) => [...prev, ...more]);
+    setHasMoreTrending(more.length >= TRENDING_PAGE_SIZE);
+    setLoadingMoreTrending(false);
   };
 
   const totalPosts = categories.reduce((sum, c) => sum + c.post_count, 0);
@@ -319,6 +337,17 @@ export default function ForumHome() {
                       {trendingPosts.map((post) => (
                         <PostCard key={post.id} post={post} />
                       ))}
+                      {hasMoreTrending && (
+                        <div className="text-center pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={loadMoreTrending}
+                            disabled={loadingMoreTrending}
+                          >
+                            {loadingMoreTrending ? 'Loading...' : 'Load More'}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </TabsContent>

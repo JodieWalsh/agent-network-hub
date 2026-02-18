@@ -37,11 +37,14 @@ export default function ForumRegionalBoard() {
   const [board, setBoard] = useState<RegionalBoard | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [isMember, setIsMember] = useState(false);
   const [togglingMembership, setTogglingMembership] = useState(false);
   const [sort, setSort] = useState<PostSortOption>('latest');
   const [timeRange, setTimeRange] = useState<TimeRangeOption>('all');
   const [postType, setPostType] = useState<string>('all');
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     if (slug) loadBoard();
@@ -72,9 +75,28 @@ export default function ForumRegionalBoard() {
       sort,
       timeRange,
       postType: postType !== 'all' ? postType : undefined,
+      limit: PAGE_SIZE,
+      offset: 0,
     });
     setPosts(result);
+    setHasMore(result.length >= PAGE_SIZE);
     setLoading(false);
+  };
+
+  const loadMore = async () => {
+    if (!board || loadingMore) return;
+    setLoadingMore(true);
+    const result = await fetchPosts({
+      regionalBoardId: board.id,
+      sort,
+      timeRange,
+      postType: postType !== 'all' ? postType : undefined,
+      limit: PAGE_SIZE,
+      offset: posts.length,
+    });
+    setPosts((prev) => [...prev, ...result]);
+    setHasMore(result.length >= PAGE_SIZE);
+    setLoadingMore(false);
   };
 
   const handleToggleMembership = async () => {
@@ -189,6 +211,8 @@ export default function ForumRegionalBoard() {
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="discussion">Discussions</SelectItem>
               <SelectItem value="question">Questions</SelectItem>
+              <SelectItem value="poll">Polls</SelectItem>
+              <SelectItem value="case_study">Case Studies</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -227,6 +251,17 @@ export default function ForumRegionalBoard() {
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
+            {hasMore && (
+              <div className="text-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -33,9 +33,12 @@ export default function ForumCategoryView() {
   const [category, setCategory] = useState<ForumCategory | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [sort, setSort] = useState<PostSortOption>('latest');
   const [timeRange, setTimeRange] = useState<TimeRangeOption>('all');
   const [postType, setPostType] = useState<string>('all');
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     if (slug) loadCategory();
@@ -60,9 +63,28 @@ export default function ForumCategoryView() {
       sort,
       timeRange,
       postType: postType !== 'all' ? postType : undefined,
+      limit: PAGE_SIZE,
+      offset: 0,
     });
     setPosts(result);
+    setHasMore(result.length >= PAGE_SIZE);
     setLoading(false);
+  };
+
+  const loadMore = async () => {
+    if (!category || loadingMore) return;
+    setLoadingMore(true);
+    const result = await fetchPosts({
+      categoryId: category.id,
+      sort,
+      timeRange,
+      postType: postType !== 'all' ? postType : undefined,
+      limit: PAGE_SIZE,
+      offset: posts.length,
+    });
+    setPosts((prev) => [...prev, ...result]);
+    setHasMore(result.length >= PAGE_SIZE);
+    setLoadingMore(false);
   };
 
   if (!loading && !category) {
@@ -149,6 +171,8 @@ export default function ForumCategoryView() {
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="discussion">Discussions</SelectItem>
               <SelectItem value="question">Questions</SelectItem>
+              <SelectItem value="poll">Polls</SelectItem>
+              <SelectItem value="case_study">Case Studies</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -187,6 +211,17 @@ export default function ForumCategoryView() {
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
+            {hasMore && (
+              <div className="text-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
