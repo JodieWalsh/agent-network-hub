@@ -1422,6 +1422,21 @@ export async function deletePost(postId: string, userId: string): Promise<boolea
   const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
 
   try {
+    // Fetch post first so we know which category/board to decrement
+    const fetchRes = await fetch(
+      `${supabaseUrl}/rest/v1/forum_posts?id=eq.${postId}&author_id=eq.${userId}&select=id,category_id,regional_board_id,author_id`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (!fetchRes.ok) return false;
+    const posts = await fetchRes.json();
+    if (posts.length === 0) return false;
+    const post = posts[0];
+
     // Soft delete by setting status to 'removed'
     const response = await fetch(
       `${supabaseUrl}/rest/v1/forum_posts?id=eq.${postId}&author_id=eq.${userId}`,
@@ -1437,7 +1452,25 @@ export async function deletePost(postId: string, userId: string): Promise<boolea
       }
     );
 
-    return response.ok;
+    if (!response.ok) return false;
+
+    // Decrement category/board post counts
+    if (post.category_id) {
+      await supabase.rpc('decrement_category_post_count', { cat_id: post.category_id });
+    }
+    if (post.regional_board_id) {
+      await supabase.rpc('decrement_board_post_count', { p_board_id: post.regional_board_id });
+    }
+
+    // Decrement user stats (post_count -1, reputation -5 for post creation)
+    await supabase.rpc('decrement_forum_user_stats', {
+      p_user_id: post.author_id,
+      p_posts: 1,
+      p_replies: 0,
+      p_reputation: 5,
+    });
+
+    return true;
   } catch {
     return false;
   }
@@ -1479,6 +1512,21 @@ export async function deleteReply(replyId: string, userId: string): Promise<bool
   const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
 
   try {
+    // Fetch reply first so we know which post to decrement
+    const fetchRes = await fetch(
+      `${supabaseUrl}/rest/v1/forum_replies?id=eq.${replyId}&author_id=eq.${userId}&select=id,post_id,author_id`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (!fetchRes.ok) return false;
+    const replies = await fetchRes.json();
+    if (replies.length === 0) return false;
+    const reply = replies[0];
+
     const response = await fetch(
       `${supabaseUrl}/rest/v1/forum_replies?id=eq.${replyId}&author_id=eq.${userId}`,
       {
@@ -1490,7 +1538,20 @@ export async function deleteReply(replyId: string, userId: string): Promise<bool
       }
     );
 
-    return response.ok;
+    if (!response.ok) return false;
+
+    // Decrement post reply count
+    await supabase.rpc('decrement_post_reply_count', { p_post_id: reply.post_id });
+
+    // Decrement user stats (reply_count -1, reputation -2 for reply creation)
+    await supabase.rpc('decrement_forum_user_stats', {
+      p_user_id: reply.author_id,
+      p_posts: 0,
+      p_replies: 1,
+      p_reputation: 2,
+    });
+
+    return true;
   } catch {
     return false;
   }
