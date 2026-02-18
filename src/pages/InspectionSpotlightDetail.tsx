@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isValidDate, isDateTodayOrFuture } from '@/lib/dateUtils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -362,6 +363,15 @@ export default function InspectionSpotlightDetail() {
       return;
     }
 
+    if (proposedDate && !isValidDate(proposedDate)) {
+      toast.error('Please enter a valid proposed date');
+      return;
+    }
+    if (proposedDate && !isDateTodayOrFuture(proposedDate)) {
+      toast.error('Proposed date must be today or in the future');
+      return;
+    }
+
     setSubmittingBid(true);
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
@@ -464,6 +474,15 @@ export default function InspectionSpotlightDetail() {
 
     if (!editChangeReason.trim()) {
       toast.error('Please provide a reason for this change');
+      return;
+    }
+
+    if (editProposedDate && !isValidDate(editProposedDate)) {
+      toast.error('Please enter a valid proposed date');
+      return;
+    }
+    if (editProposedDate && !isDateTodayOrFuture(editProposedDate)) {
+      toast.error('Proposed date must be today or in the future');
       return;
     }
 

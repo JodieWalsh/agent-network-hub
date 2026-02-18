@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { isValidDate } from '@/lib/dateUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -655,6 +656,10 @@ export default function InspectionReportBuilder() {
 
   const handleSubmit = async () => {
     if (!user || !jobId || !job || !canSubmit()) return;
+    if (formData.inspection_date && !isValidDate(formData.inspection_date)) {
+      toast.error('Please enter a valid inspection date');
+      return;
+    }
     setSubmitting(true);
     try {
       const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();

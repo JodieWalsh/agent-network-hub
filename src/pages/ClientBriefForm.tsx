@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { isValidDate } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -438,6 +439,11 @@ export default function ClientBriefForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (formData.expiry_date && !isValidDate(formData.expiry_date)) {
+      toast({ title: 'Invalid date', description: 'Please enter a valid expiry date', variant: 'destructive' });
+      return;
+    }
 
     setSubmitting(true);
     try {

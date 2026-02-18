@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X, Plus, Trash2 } from 'lucide-react';
+import { isValidDate, isDateInFuture } from '@/lib/dateUtils';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -142,6 +143,14 @@ export default function ForumNewPost() {
       const validOptions = pollOptions.filter((o) => o.trim());
       if (validOptions.length < 2) {
         toast.error('Polls need at least 2 options');
+        return;
+      }
+      if (pollEndsAt && !isValidDate(pollEndsAt)) {
+        toast.error('Please enter a valid poll end date');
+        return;
+      }
+      if (pollEndsAt && !isDateInFuture(pollEndsAt)) {
+        toast.error('Poll end date must be in the future');
         return;
       }
     }

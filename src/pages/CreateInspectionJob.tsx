@@ -13,6 +13,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isValidDate, isDateTodayOrFuture } from '@/lib/dateUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -363,10 +364,23 @@ export default function CreateInspectionJob() {
       return;
     }
 
+    // Validate preferred dates
+    const rawDates = [preferredDate1, preferredDate2, preferredDate3].filter(d => d);
+    for (const d of rawDates) {
+      if (!isValidDate(d)) {
+        toast.error('One of your preferred dates is not a valid calendar date');
+        return;
+      }
+      if (!isDateTodayOrFuture(d)) {
+        toast.error('Preferred dates must be today or in the future');
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       // Collect preferred dates
-      const dates = [preferredDate1, preferredDate2, preferredDate3].filter(d => d);
+      const dates = rawDates;
 
       // Use general area if address is unknown, otherwise use exact address
       const propertyAddress = addressUnknown
