@@ -744,30 +744,39 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 ## Community Forum (Built 17 Feb 2026)
 
 ### Overview
-Professional discussion forum integrated into the platform. Phase 1 delivers categories, regional boards, posts, replies, likes, bookmarks, follows, search, notifications, and reputation.
+Professional discussion forum integrated into the platform. Phase 1 (17 Feb) delivers categories, regional boards, posts, replies, likes, bookmarks, follows, search, notifications, and reputation. Phase 2 (18 Feb) adds polls, case studies, expert badges, similar post suggestions, leaderboard, personal pages, edit/delete, and load more pagination.
 
 ### Database Tables (17)
 **Core (9):** `forum_categories`, `forum_regional_boards`, `forum_posts`, `forum_replies`, `forum_post_media`, `forum_likes`, `forum_bookmarks`, `forum_follows`, `forum_user_regional_memberships`
 
 **Supporting (8):** `forum_tags`, `forum_post_tags`, `forum_expert_badges`, `forum_polls`, `forum_poll_options`, `forum_poll_votes`, `forum_reports`, `forum_user_stats`
 
+### Post Types
+`discussion`, `question`, `poll`, `case_study`
+
 ### Pages & Routes
 | Route | Page | Purpose |
 |-------|------|---------|
 | `/forums` | ForumHome | Landing with categories, regional boards, trending, search |
-| `/forums/category/:slug` | ForumCategoryView | Posts filtered by category |
-| `/forums/region/:slug` | ForumRegionalBoard | Posts filtered by regional board, join/leave |
-| `/forums/post/:id` | ForumPostView | Post detail, replies, like/bookmark/follow, report |
-| `/forums/new` | ForumNewPost | Create post (protected, requires auth) |
+| `/forums/category/:slug` | ForumCategoryView | Posts filtered by category with load more |
+| `/forums/region/:slug` | ForumRegionalBoard | Posts filtered by regional board, join/leave, load more |
+| `/forums/post/:id` | ForumPostView | Post detail, replies, like/bookmark/follow, edit/delete, report |
+| `/forums/new` | ForumNewPost | Create post with polls, case studies, similar suggestions |
+| `/forums/leaderboard` | ForumLeaderboard | Reputation leaderboard with all-time/monthly tabs |
+| `/forums/my-posts` | ForumMyPosts | User's own posts with type/sort filters |
+| `/forums/my-bookmarks` | ForumMyBookmarks | Bookmarked posts with remove action |
 
 ### Key Files
 | File | Purpose |
 |------|---------|
 | `src/lib/forum.ts` | All types + API functions (following messaging.ts pattern) |
-| `src/components/forum/PostCard.tsx` | Reusable post card for lists |
-| `src/components/forum/ReplyThread.tsx` | Reply with 2-level nested children |
+| `src/components/forum/PostCard.tsx` | Reusable post card for lists with poll/case study badges |
+| `src/components/forum/ReplyThread.tsx` | Reply with 2-level nested children, edit/delete |
 | `src/components/forum/ReplyEditor.tsx` | Reply input component |
-| `src/components/forum/ForumSidebar.tsx` | Sidebar: stats, top contributors, unanswered |
+| `src/components/forum/ForumSidebar.tsx` | Sidebar: stats, top contributors, unanswered, my posts/bookmarks links |
+| `src/components/forum/PollDisplay.tsx` | Poll voting and results with progress bars |
+| `src/components/forum/CaseStudyDisplay.tsx` | Structured case study sections (Situation/Findings/Lessons) |
+| `src/components/forum/UserBadges.tsx` | Expert badge icons with tooltips |
 
 ### RPC Functions
 | Function | Purpose |
@@ -778,6 +787,8 @@ Professional discussion forum integrated into the platform. Phase 1 delivers cat
 | `increment_post_view_count` | Increment view counter |
 | `mark_reply_as_solution` | Mark reply as accepted answer (question posts only), awards +10 reputation |
 | `search_forum_posts` | Full-text search using `tsvector` + GIN index |
+| `vote_forum_poll` | Cast vote(s) on a poll, handles single/multiple choice |
+| `check_and_award_badges` | Check user stats against thresholds, award new badges |
 
 ### Notification Types (6 new)
 | Type | Trigger | Icon | Color |
@@ -802,18 +813,30 @@ Professional discussion forum integrated into the platform. Phase 1 delivers cat
 - **10 categories:** Market Trends, Legal & Compliance, Inspection Tips, Buyer Strategies, Technology & Tools, Networking & Events, Finance & Lending, Styling & Presentation, Career & Business, General Discussion
 - **10 regional boards:** Sydney, Melbourne, Brisbane, Perth, Adelaide, Hobart, Canberra, Darwin, Gold Coast, Newcastle
 
+### Expert Badge Thresholds
+| Badge | Requirement |
+|-------|-------------|
+| Helpful Member | 10+ replies |
+| Problem Solver | 5+ solutions |
+| Top Contributor | 50+ posts |
+| Rising Star | 100+ reputation |
+| Expert | 500+ reputation |
+| Community Leader | 1000+ reputation |
+
 ### Migrations
 ```
 20260217010000_create_forum_core_tables.sql       9 core tables + RLS + indexes + triggers
 20260217020000_create_forum_supporting_tables.sql  8 supporting tables + seed data
 20260217030000_create_forum_functions_and_search.sql  RPC functions + full-text search + notification types
+20260218010000_add_forum_counter_rpcs.sql          Counter increment RPCs (bug fix)
+20260218020000_forum_phase2.sql                    Phase 2: post_type expansion, case study columns, edited_at, poll/badge RLS, vote_forum_poll RPC, check_and_award_badges RPC, forum-media bucket
 ```
 
-### Phase 2 (Planned)
-AI suggestions, poll UI, case study post type, @mentions, weekly digest emails
+### Phase 2 (Completed 18 Feb 2026)
+Polls, case studies, expert badges, similar post suggestions, leaderboard, my posts/bookmarks pages, edit/delete for posts and replies, load more pagination on all list pages
 
 ### Phase 3 (Planned)
-Admin moderation dashboard, premium categories, pinned posts, email digests
+Admin moderation dashboard, premium categories, pinned posts, @mention support, weekly digest emails, trending algorithm improvements, post media upload UI
 
 ---
 
@@ -931,3 +954,27 @@ Admin moderation dashboard, premium categories, pinned posts, email digests
 - `b17e87a` - feat: notify nearby inspectors when new job is posted
   - `CreateInspectionJob.tsx`: changed to `return=representation`, calls RPC after job creation
   - Fixed double OR syntax bug in migration SQL and live database function
+
+### Session: 17-18 February 2026 (Community Forum)
+- Forum Phase 1 commits (17 Feb) — core tables, supporting tables, RPC functions, all 5 pages
+- `004adfa` - chore: add Netlify SPA redirects for deployment
+- `555eeed` - docs: update CLAUDE.md with area notifications, payout debugging, and management API
+
+### Session: 18 February 2026 (Forum Phase 2)
+- `bb0853e` - feat: add Phase 2 forum database migration and API functions
+  - Migration: post_type expansion, case study columns, edited_at, poll/badge RLS, vote_forum_poll + check_and_award_badges RPCs, forum-media bucket
+  - ~15 new API functions in forum.ts
+- `9e2e77b` - feat: add polls UI with poll builder, voting, and results display
+  - PollDisplay component, poll builder in ForumNewPost, purple Poll badge on PostCard
+- `8583182` - feat: add case study post type with structured fields and display
+  - CaseStudyDisplay component, case study form in ForumNewPost, indigo Case Study badge
+- `f35b2c7` - feat: add expert badges system with auto-award and display
+  - UserBadges component, integrated in PostCard/ReplyThread/ForumPostView, auto-award after marking solution
+- `aaf826a` - feat: add similar post suggestions when typing title
+  - Debounced search (300ms, 15+ chars) in ForumNewPost
+- `9988ec2` - feat: add leaderboard, my posts, and my bookmarks pages
+  - 3 new pages + routes, sidebar links
+- `776ff83` - feat: add edit and delete UI for posts and replies
+  - Inline edit, soft-delete posts, hard-delete replies, (edited) indicator
+- `b891417` - feat: add load more pagination to forum list pages
+  - PAGE_SIZE=10, Load More button on category, regional board, and trending pages

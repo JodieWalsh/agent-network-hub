@@ -92,41 +92,64 @@ Phase 1 delivers the core forum experience:
 
 - **Follower notifications** are not yet server-side — `forum_follow_reply` notifications require fetching all followers client-side (skipped for Phase 1)
 - **Post media uploads** — `forum_post_media` table exists but no upload UI yet
-- **Pagination** — Posts use offset-based pagination but no "Load More" button on list pages
-- **Edit/Delete posts** — RLS policies allow it but no UI exists
 - **Trending algorithm** — Currently just sorts by `like_count` in the last week; no decay function
 - **View count** — Increments on every page visit (no deduplication per user/session)
 
 ---
 
-## Phase 2 — Engagement (Planned)
+## Phase 2 — Engagement (Completed 18 Feb 2026)
 
-- AI-powered post suggestions and smart tagging
-- Poll creation and voting UI (tables already exist)
-- Case study post type with structured format
-- Weekly digest emails
-- Trending algorithm improvements (time-decay scoring)
-- @mention support with autocomplete
+### Features Added
+- **Polls** — Poll post type with 2-6 options, multiple choice support, optional end date. PollDisplay component with voting, progress bars, and percentage results
+- **Case Studies** — Structured post type with property type, location, Situation/Findings/Lessons sections in color-coded cards
+- **Expert Badges** — 6 badge types (Helpful Member, Problem Solver, Top Contributor, Rising Star, Expert, Community Leader) auto-awarded based on user stats. Displayed with tooltips across all author views
+- **Similar Post Suggestions** — Debounced search (300ms, 15+ chars) shows existing similar posts when composing a new post title
+- **Leaderboard** — Full page at `/forums/leaderboard` with all-time/monthly tabs, ranked table with badges, top 3 highlighted
+- **My Posts** — User's posts page at `/forums/my-posts` with type filters (Discussion, Question, Poll, Case Study) and sort options
+- **My Bookmarks** — Bookmarked posts page at `/forums/my-bookmarks` with remove action
+- **Edit & Delete** — Inline edit for posts (title + content) and replies. Soft-delete posts, hard-delete replies. Shows (edited) indicator
+- **Load More Pagination** — Category, regional board, and trending pages start with 10 posts and load more on demand
 
-### Phase 1 Changes Needed for Phase 2
+### New Database Changes (Migration `20260218020000_forum_phase2.sql`)
+- `forum_posts.post_type` expanded: `'poll'`, `'case_study'` added
+- `forum_posts` new columns: `case_study_property_type`, `case_study_location`, `case_study_situation`, `case_study_findings`, `case_study_lessons`, `edited_at`
+- `forum_replies.edited_at` column added
+- `forum_expert_badges` unique constraint on `(user_id, badge_type)`
+- RLS policies on `forum_polls`, `forum_poll_options`, `forum_poll_votes`, `forum_expert_badges`
+- `vote_forum_poll()` RPC — handles voting with single/multiple choice
+- `check_and_award_badges()` RPC — checks thresholds, returns newly awarded badges
+- `forum-media` storage bucket created
 
-| Phase 2 Feature | Phase 1 Prep Needed |
-|-----------------|---------------------|
-| Poll UI | Tables ready (`forum_polls`, `forum_poll_options`, `forum_poll_votes`). Need to add `has_poll` flag to post creation form and poll rendering in ForumPostView |
-| @mentions | Need `forum_mention` notification trigger. Add user search/autocomplete to ReplyEditor and post content editor |
-| Post media | `forum_post_media` table ready. Need file upload component (can reuse `uploadAttachment()` pattern from messaging) |
-| Edit/Delete | RLS policies already permit. Need edit button in ForumPostView + inline editor, delete confirmation dialog |
-| Pagination | Add "Load More" button to ForumCategoryView, ForumRegionalBoard, and ForumHome trending tab |
-| Follower notifications | Move to database trigger or RPC (currently noted as TODO in ForumPostView) |
+### New Pages & Components
+| File | Purpose |
+|------|---------|
+| `src/components/forum/PollDisplay.tsx` | Poll voting and results display |
+| `src/components/forum/CaseStudyDisplay.tsx` | Structured case study sections |
+| `src/components/forum/UserBadges.tsx` | Badge icons with tooltips |
+| `src/pages/ForumLeaderboard.tsx` | Reputation leaderboard |
+| `src/pages/ForumMyPosts.tsx` | User's own posts |
+| `src/pages/ForumMyBookmarks.tsx` | Bookmarked posts |
+
+### Badge Thresholds
+| Badge | Requirement |
+|-------|-------------|
+| Helpful Member | 10+ replies |
+| Problem Solver | 5+ solutions |
+| Top Contributor | 50+ posts |
+| Rising Star | 100+ reputation |
+| Expert | 500+ reputation |
+| Community Leader | 1000+ reputation |
 
 ## Phase 3 — Moderation & Premium (Planned)
 
 - Admin moderation dashboard (report queue, content actions)
 - Premium-only categories/boards
 - Pinned/featured posts (pin UI for admins — `is_pinned` column already exists)
-- User reputation levels and badges
-- Email notification digests
+- @mention support with autocomplete
+- Weekly digest emails
+- Trending algorithm improvements (time-decay scoring)
 - Content quality scoring
+- Post media upload UI
 
 ---
 
