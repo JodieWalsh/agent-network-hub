@@ -2,8 +2,10 @@
  * Notification System
  *
  * Multi-channel notification helpers for creating and managing notifications.
- * Currently supports in-app notifications with email support coming soon.
+ * Supports in-app notifications with email delivery via Resend.
  */
+
+import { sendNotificationEmail } from './email';
 
 // Helper to get auth headers for raw fetch
 const getAuthHeaders = () => {
@@ -434,6 +436,7 @@ export async function notifyBidReceived(
   bidId: string,
   inspectorId: string
 ) {
+  sendNotificationEmail(jobCreatorId, 'bid_received', { inspectorName, propertyAddress, bidAmount, jobId });
   return createNotification({
     userId: jobCreatorId,
     type: 'bid_received',
@@ -455,6 +458,7 @@ export async function notifyBidAccepted(
   bidId: string,
   jobCreatorId: string
 ) {
+  sendNotificationEmail(inspectorId, 'bid_accepted', { propertyAddress, jobId });
   return createNotification({
     userId: inspectorId,
     type: 'bid_accepted',
@@ -475,6 +479,7 @@ export async function notifyBidDeclined(
   jobId: string,
   bidId: string
 ) {
+  sendNotificationEmail(inspectorId, 'bid_declined', { propertyAddress });
   return createNotification({
     userId: inspectorId,
     type: 'bid_declined',
@@ -535,6 +540,7 @@ export async function notifyReportSubmitted(
   jobId: string,
   inspectorId: string
 ) {
+  sendNotificationEmail(jobCreatorId, 'report_submitted', { propertyAddress, inspectorName: 'Your inspector' });
   return createNotification({
     userId: jobCreatorId,
     type: 'report_submitted',
@@ -554,6 +560,7 @@ export async function notifyReportApproved(
   jobId: string,
   jobCreatorId: string
 ) {
+  sendNotificationEmail(inspectorId, 'report_approved', { propertyAddress });
   return createNotification({
     userId: inspectorId,
     type: 'report_approved',
@@ -573,6 +580,7 @@ export async function notifyPaymentReleased(
   propertyAddress: string,
   jobId: string
 ) {
+  sendNotificationEmail(inspectorId, 'payment_released', { amount: `$${amount.toLocaleString()}`, propertyAddress });
   return createNotification({
     userId: inspectorId,
     type: 'payment_released',
@@ -633,6 +641,7 @@ export async function notifyReviewReceived(
  * Notify user when they earn a badge
  */
 export async function notifyBadgeEarned(userId: string, badgeName: string) {
+  sendNotificationEmail(userId, 'badge_earned', { badgeName });
   return createNotification({
     userId,
     type: 'badge_earned',
@@ -713,6 +722,7 @@ export async function notifyUserApproved(
   userId: string,
   adminId: string
 ) {
+  sendNotificationEmail(userId, 'user_approved', {});
   return createNotification({
     userId,
     type: 'user_approved',

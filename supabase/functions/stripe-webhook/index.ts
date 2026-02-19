@@ -33,6 +33,34 @@ import {
   getSupabaseClient,
   calculateFees,
 } from '../_shared/stripe.ts';
+import { getResendClient, FROM_EMAIL, checkEmailPreferences } from '../_shared/email.ts';
+import { getTemplateForType } from '../_shared/email-templates.ts';
+
+/** Fire-and-forget email helper for webhook notifications */
+async function sendEmailForNotification(
+  userId: string,
+  type: string,
+  data: Record<string, unknown>
+): Promise<void> {
+  try {
+    const { shouldSend, email } = await checkEmailPreferences(userId, type);
+    if (!shouldSend || !email) return;
+
+    const template = getTemplateForType(type, data);
+    if (!template) return;
+
+    const resend = getResendClient();
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [email],
+      subject: template.subject,
+      html: template.html,
+    });
+    console.log(`[webhook-email] Sent ${type} email to ${email}`);
+  } catch (err) {
+    console.error(`[webhook-email] Failed to send ${type} email:`, err);
+  }
+}
 
 serve(async (req) => {
   // Webhook doesn't need CORS preflight but we handle it anyway
@@ -234,6 +262,11 @@ serve(async (req) => {
               } else {
                 console.log(`bid_accepted notification sent to inspector ${inspectorId}`);
               }
+              // Send email
+              sendEmailForNotification(inspectorId, 'bid_accepted', {
+                propertyAddress: escrowJob.property_address || 'a property',
+                jobId,
+              });
             } catch (err) {
               console.error('bid_accepted notification error:', err);
             }
@@ -260,6 +293,12 @@ serve(async (req) => {
               if (!res.ok) {
                 console.error(`payment_confirmed notification failed (${res.status}): ${await res.text()}`);
               }
+              // Send email
+              sendEmailForNotification(posterId, 'payment_confirmed', {
+                amount: `${(escrowJob.budget_currency || 'AUD')} $${agreedPrice.toFixed(2)}`,
+                propertyAddress: escrowJob.property_address || 'a property',
+                inspectorName,
+              });
             } catch (err) {
               console.error('payment_confirmed notification error:', err);
             }
@@ -292,6 +331,11 @@ serve(async (req) => {
               } else {
                 console.log(`payout_setup_required notification sent to inspector ${inspectorId}`);
               }
+              // Send email
+              sendEmailForNotification(inspectorId, 'payout_setup_required', {
+                propertyAddress: escrowJob.property_address || 'a property',
+                jobId,
+              });
             } catch (err) {
               console.error('payout_setup_required notification error:', err);
             }
@@ -351,6 +395,10 @@ serve(async (req) => {
                 if (!res.ok) {
                   console.error(`bid_declined notification failed for ${declined.inspector_id} (${res.status}): ${await res.text()}`);
                 }
+                // Send email
+                sendEmailForNotification(declined.inspector_id, 'bid_declined', {
+                  propertyAddress: escrowJob.property_address || 'a property',
+                });
               } catch (err) {
                 console.error(`bid_declined notification error for ${declined.inspector_id}:`, err);
               }
@@ -748,6 +796,11 @@ serve(async (req) => {
             } else {
               console.log(`Payment notification sent to inspector ${inspectorId}`);
             }
+            // Send email
+            sendEmailForNotification(inspectorId, 'payment_released', {
+              amount: amountFormatted,
+              propertyAddress: jobAddress,
+            });
           } catch (notifError) {
             console.error('Error sending payment notification:', notifError);
           }

@@ -1,11 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/stripe.ts';
+import { getResendClient, FROM_EMAIL, getUserEmail } from '../_shared/email.ts';
+import { weeklyDigestTemplate } from '../_shared/email-templates.ts';
 
 /**
- * Forum Digest Email - Edge Function Stub
+ * Forum Digest Email - Edge Function
  *
- * This function prepares and sends a weekly/daily forum digest email.
- * Currently logs the email content. Resend integration to be added.
+ * Prepares and sends a weekly/daily forum digest email via Resend.
  *
  * Call with: POST /functions/v1/send-forum-digest
  * Body: { "userId": "uuid" } or { "frequency": "weekly" | "daily" } for batch
@@ -42,6 +43,7 @@ serve(async (req: Request) => {
       });
     }
 
+    const resend = getResendClient();
     const results = [];
 
     for (const uid of userIds) {
@@ -79,22 +81,21 @@ serve(async (req: Request) => {
         .order('like_count', { ascending: false })
         .limit(5);
 
-      // 3. User's stats changes
+      // 3. User's stats
       const { data: stats } = await supabase
         .from('forum_user_stats')
         .select('*')
         .eq('user_id', uid)
         .single();
 
-      // Get user email
+      // Get user profile name
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', uid)
         .single();
 
-      const digestContent = {
-        userId: uid,
+      const digestData = {
         userName: profile?.full_name || 'User',
         newRepliesCount: newReplies.length,
         trendingPosts: (trending || []).map((p: any) => ({
@@ -106,18 +107,35 @@ serve(async (req: Request) => {
         likesReceived: stats?.likes_received || 0,
       };
 
-      console.log('[Forum Digest] Content for user:', JSON.stringify(digestContent, null, 2));
+      // Get user email
+      const userEmail = await getUserEmail(uid);
+      if (!userEmail) {
+        results.push({ userId: uid, status: 'skipped', reason: 'no_email' });
+        continue;
+      }
 
-      // TODO: Resend integration
-      // const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
-      // await resend.emails.send({
-      //   from: 'Buyers Agent Hub <noreply@buyersagenthub.com>',
-      //   to: [userEmail],
-      //   subject: `Your Weekly Forum Digest - ${digestContent.newRepliesCount} new replies`,
-      //   html: generateDigestHtml(digestContent),
-      // });
+      // Generate template and send
+      const template = weeklyDigestTemplate(digestData);
 
-      results.push({ userId: uid, status: 'logged' });
+      try {
+        const { error: sendError } = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: [userEmail],
+          subject: template.subject,
+          html: template.html,
+        });
+
+        if (sendError) {
+          console.error(`[Forum Digest] Resend error for ${uid}:`, sendError);
+          results.push({ userId: uid, status: 'error', error: sendError.message });
+        } else {
+          console.log(`[Forum Digest] Sent to ${userEmail}`);
+          results.push({ userId: uid, status: 'sent' });
+        }
+      } catch (sendErr) {
+        console.error(`[Forum Digest] Send error for ${uid}:`, sendErr);
+        results.push({ userId: uid, status: 'error', error: String(sendErr) });
+      }
     }
 
     return new Response(JSON.stringify({ results }), {

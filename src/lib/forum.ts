@@ -7,6 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from './notifications';
+import { sendNotificationEmail } from './email';
 import { isValidDate, normaliseToISO } from './dateUtils';
 
 // ===========================================
@@ -1062,6 +1063,7 @@ export async function notifyForumReply(
   postId: string,
   replierId: string
 ) {
+  sendNotificationEmail(postAuthorId, 'forum_reply', { replierName, postTitle, postId });
   return createNotification({
     userId: postAuthorId,
     type: 'forum_reply' as any,
@@ -1089,8 +1091,10 @@ export async function notifyForumLike(
 export async function notifyForumSolution(
   replyAuthorId: string,
   postTitle: string,
-  postAuthorId: string
+  postAuthorId: string,
+  postId?: string
 ) {
+  sendNotificationEmail(replyAuthorId, 'forum_solution', { postTitle, postId });
   return createNotification({
     userId: replyAuthorId,
     type: 'forum_solution' as any,
@@ -1104,8 +1108,10 @@ export async function notifyForumFollowReply(
   followerId: string,
   replierName: string,
   postTitle: string,
-  replierId: string
+  replierId: string,
+  postId?: string
 ) {
+  sendNotificationEmail(followerId, 'forum_follow_reply', { replierName, postTitle, postId });
   return createNotification({
     userId: followerId,
     type: 'forum_follow_reply' as any,
@@ -1789,6 +1795,7 @@ export async function checkAndAwardBadges(userId: string): Promise<string[]> {
   // Send notifications for newly awarded badges
   for (const badgeType of awarded) {
     const label = getBadgeLabel(badgeType);
+    sendNotificationEmail(userId, 'forum_badge_earned', { badgeName: label });
     await createNotification({
       userId,
       type: 'forum_badge_earned' as any,
