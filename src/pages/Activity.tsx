@@ -178,7 +178,7 @@ export default function Activity() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif font-semibold text-foreground">Activity</h1>
+            <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">Activity</h1>
             <p className="text-muted-foreground">
               {unreadCount > 0
                 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`

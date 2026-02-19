@@ -30,16 +30,11 @@ export function TopBar() {
   };
 
   const getUserRoleDisplay = () => {
-    // Admin gets special label
     if (profile?.role === 'admin') {
       return 'Administrator';
     }
-
-    // Get the user type label
     const type = profile?.user_type || user?.user_metadata?.user_type;
     const typeLabel = type ? userTypeLabels[type] || type : "Member";
-
-    // Add verification status
     if (profile?.approval_status === 'approved' || profile?.is_verified) {
       return `${typeLabel} (Verified)`;
     } else if (profile?.approval_status === 'pending') {
@@ -47,13 +42,12 @@ export function TopBar() {
     } else if (profile?.approval_status === 'rejected') {
       return `${typeLabel} (Rejected)`;
     }
-
     return typeLabel;
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-background border-b border-border">
-      <div className="flex items-center justify-between h-14 px-4 lg:px-8">
+    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-border">
+      <div className="flex items-center justify-between h-16 px-4 lg:px-8">
         {/* Spacer for mobile menu button */}
         <div className="w-10 lg:hidden" />
 
@@ -68,30 +62,29 @@ export function TopBar() {
               type="text"
               placeholder="Search agents, properties, or forums..."
               className={cn(
-                "w-full h-9 pl-10 pr-4 rounded-md",
-                "bg-white border border-border",
+                "w-full h-10 pl-10 pr-4 rounded-lg",
+                "bg-muted/50 border border-border",
                 "text-sm placeholder:text-muted-foreground",
-                "focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary",
-                "transition-colors duration-150"
+                "focus:outline-none focus:ring-2 focus:ring-rose-gold/20 focus:border-rose-gold/40 focus:bg-white",
+                "transition-all duration-200"
               )}
             />
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* Notifications */}
           <button
             className={cn(
-              "relative p-2 rounded-md",
-              "hover:bg-muted transition-colors duration-150",
-              "focus:outline-none focus:ring-1 focus:ring-primary/20"
+              "relative p-2 rounded-lg",
+              "hover:bg-muted transition-all duration-200",
+              "focus:outline-none focus:ring-2 focus:ring-rose-gold/20"
             )}
             aria-label="Notifications"
           >
             <Bell size={18} className="text-foreground" />
-            {/* Notification Badge */}
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-gold rounded-full" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-gold rounded-full" />
           </button>
 
           {/* User Avatar - Desktop Only */}
@@ -101,10 +94,10 @@ export function TopBar() {
                 <img
                   src={profile.avatar_url}
                   alt={getUserName()}
-                  className="w-8 h-8 rounded-md border border-border object-cover"
+                  className="w-9 h-9 rounded-lg border border-border object-cover"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-md border border-border bg-white flex items-center justify-center">
+                <div className="w-9 h-9 rounded-lg border border-border bg-muted/50 flex items-center justify-center">
                   <span className="text-xs font-semibold text-foreground">{getUserInitials()}</span>
                 </div>
               )}

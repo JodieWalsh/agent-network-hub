@@ -172,8 +172,8 @@ export default function Directory() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="font-sans text-2xl font-semibold text-foreground">Agent Directory</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">Agent Directory</h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Connect with verified professionals in your network
           </p>
         </div>
@@ -347,7 +347,7 @@ export default function Directory() {
                         <div className="flex-1 min-w-0">
                           {/* Name & Verified Badge */}
                           <div className="flex items-center gap-2">
-                            <h3 className="font-sans text-base font-semibold text-foreground truncate">
+                            <h3 className="text-base font-semibold text-foreground truncate">
                               {profile.full_name || "Anonymous Agent"}
                             </h3>
                             <VerifiedBadge isVerified={profile.is_verified || false} size="sm" />

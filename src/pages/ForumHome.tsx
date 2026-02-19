@@ -138,27 +138,28 @@ export default function ForumHome() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <MessagesSquare className="text-forest" size={28} />
-              Community Forums
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Connect, share knowledge, and grow with fellow professionals
-            </p>
+      <div className="max-w-7xl mx-auto">
+        {/* Hero Header */}
+        <div className="hero-section rounded-xl px-6 py-8 lg:px-8 lg:py-10 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-serif font-bold text-white flex items-center gap-3">
+                <MessagesSquare className="text-rose-gold-light" size={28} />
+                Community Forums
+              </h1>
+              <p className="text-white/70 mt-2">
+                Connect, share knowledge, and grow with fellow professionals
+              </p>
+            </div>
+            {user && (
+              <Button
+                onClick={() => navigate('/forums/new')}
+              >
+                <Plus size={16} className="mr-1" />
+                New Post
+              </Button>
+            )}
           </div>
-          {user && (
-            <Button
-              onClick={() => navigate('/forums/new')}
-              className="bg-forest hover:bg-forest/90"
-            >
-              <Plus size={16} className="mr-1" />
-              New Post
-            </Button>
-          )}
         </div>
 
         {/* Stats Bar */}

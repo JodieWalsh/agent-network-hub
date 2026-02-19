@@ -42,11 +42,11 @@ export function ForumSidebar({
           <CardContent className="pt-0">
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-lg font-bold text-forest">{userStats.post_count}</div>
+                <div className="text-lg font-bold font-serif text-forest">{userStats.post_count}</div>
                 <div className="text-xs text-muted-foreground">Posts</div>
               </div>
               <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-lg font-bold text-forest">{userStats.reply_count}</div>
+                <div className="text-lg font-bold font-serif text-forest">{userStats.reply_count}</div>
                 <div className="text-xs text-muted-foreground">Replies</div>
               </div>
               <div className="bg-muted/50 rounded-lg p-2">

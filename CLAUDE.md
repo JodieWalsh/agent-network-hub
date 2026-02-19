@@ -898,6 +898,90 @@ Polls, case studies, expert badges, similar post suggestions, leaderboard, my po
 
 ---
 
+## Email Notifications with Resend (Built 18 Feb 2026)
+
+### Overview
+Real email delivery via Resend API for important notifications. Server-side preference checking ensures users only receive emails they've opted into. Fire-and-forget pattern — email sending never blocks notification creation.
+
+### Architecture
+```
+Frontend notification helper (e.g. notifyBidReceived)
+  → createNotification() [in-app, always]
+  → sendNotificationEmail() [fire-and-forget HTTP call to send-email edge function]
+    → checkEmailPreferences() [queries user's preference tables]
+    → getTemplateForType() [generates HTML email]
+    → Resend API [delivers email]
+    → UPDATE notifications SET delivered_email=true
+
+Stripe webhook (server-side notifications)
+  → INSERT notification [direct DB]
+  → sendEmailForNotification() [direct Resend call, same preference check]
+```
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `supabase/functions/_shared/email.ts` | Resend client, `getUserEmail()`, `checkEmailPreferences()` |
+| `supabase/functions/_shared/email-templates.ts` | 10 HTML templates + base layout + router |
+| `supabase/functions/send-email/index.ts` | Central email sending edge function |
+| `src/lib/email.ts` | Frontend fire-and-forget helper |
+| `supabase/migrations/20260218060000_email_preference_defaults.sql` | Auto-create preference rows trigger + backfill |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/lib/notifications.ts` | Added `sendNotificationEmail()` calls to 8 helper functions |
+| `src/lib/forum.ts` | Added `sendNotificationEmail()` calls to 4 forum notification functions |
+| `supabase/functions/stripe-webhook/index.ts` | Added direct email sending for 5 webhook notification types |
+| `supabase/functions/send-forum-digest/index.ts` | Replaced TODO stub with real Resend sending |
+
+### Email Templates (10)
+| Template | Type | Subject |
+|----------|------|---------|
+| `bidReceivedTemplate` | bid_received | "New bid on your inspection job" |
+| `bidAcceptedTemplate` | bid_accepted | "Your bid was accepted!" |
+| `bidDeclinedTemplate` | bid_declined | "Bid update for {address}" |
+| `reportSubmittedTemplate` | report_submitted | "Inspection report ready for review" |
+| `paymentConfirmedTemplate` | payment_confirmed | "Payment confirmed — {amount}" |
+| `payoutCompleteTemplate` | payment_released | "Your payout of {amount} is on the way" |
+| `payoutSetupRequiredTemplate` | payout_setup_required | "Complete payout setup to start your inspection" |
+| `forumReplyTemplate` | forum_reply/forum_follow_reply | "New reply to: {postTitle}" |
+| `forumSolutionTemplate` | forum_solution | "Your reply was marked as the solution!" |
+| `forumBadgeTemplate` | forum_badge_earned/badge_earned | "You earned a badge: {badgeName}" |
+| `weeklyDigestTemplate` | weekly_digest | "Your Weekly Forum Digest" |
+| `userApprovedTemplate` | user_approved | "You're verified — welcome to Buyers Agent Hub!" |
+
+### Types That Skip Email
+- `new_message` — too frequent
+- `forum_like` — too frequent
+- `bid_edited` — minor
+- `job_expired`, `job_cancelled` — no template
+- `forum_mention` — not yet implemented
+
+### Preference Checking
+Two existing preference tables are used:
+- **`notification_preferences`** — marketplace email toggles (email_bid_received, email_bid_accepted, etc.)
+- **`forum_email_preferences`** — forum toggles (notify_replies, notify_mentions, notify_follows, digest_frequency)
+
+If no preference row exists, defaults are used (all enabled). The migration adds a trigger to auto-create rows on user signup.
+
+### Environment Variables Needed
+```
+# Supabase Edge Function secrets (set via supabase secrets set):
+RESEND_API_KEY=re_xxxxxxxxxx
+APP_URL=https://agent-network-hub-1ynd.vercel.app
+```
+
+### Setup Instructions
+1. Sign up at https://resend.com and get an API key
+2. Add and verify the domain `buyersagenthub.com` in Resend dashboard
+3. Set the secrets: `supabase secrets set RESEND_API_KEY=re_xxx APP_URL=https://agent-network-hub-1ynd.vercel.app`
+4. Deploy the new edge function: `supabase functions deploy send-email`
+5. Re-deploy updated functions: `supabase functions deploy stripe-webhook send-forum-digest`
+6. Apply migration via Supabase Management API (see pattern in CLAUDE.md)
+
+---
+
 ## Documentation Files
 | File | Purpose |
 |------|---------|
@@ -1054,3 +1138,16 @@ Polls, case studies, expert badges, similar post suggestions, leaderboard, my po
   - Content quality indicators (Staff Endorsed, Community Validated badges)
   - send-forum-digest edge function stub
   - Updated AppSidebar with Forum Moderation link for admins
+- `d710c96` - fix: remove duplicate Staff Endorsed badge and dead code, update CLAUDE.md with Phase 3
+
+### Session: 18 February 2026 (Email Notifications with Resend)
+- feat: add email notifications via Resend API
+  - New: `_shared/email.ts` (Resend client, getUserEmail, checkEmailPreferences)
+  - New: `_shared/email-templates.ts` (12 HTML templates with forest green branding)
+  - New: `send-email/index.ts` edge function (central email sender)
+  - New: `src/lib/email.ts` (frontend fire-and-forget helper)
+  - New: migration for auto-creating email preference rows on signup + backfill
+  - Updated: `notifications.ts` with email calls in 8 marketplace helpers
+  - Updated: `forum.ts` with email calls in 4 forum notification helpers
+  - Updated: `stripe-webhook/index.ts` with direct email for 5 server-side notification types
+  - Updated: `send-forum-digest/index.ts` — replaced console.log TODO with real Resend sending

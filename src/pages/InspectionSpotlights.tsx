@@ -212,7 +212,7 @@ export default function InspectionSpotlights() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <h1 className="text-2xl lg:text-3xl font-serif font-bold text-foreground flex items-center gap-3">
                 <Sparkles className="h-8 w-8 text-forest" />
                 Property Spotlights
               </h1>

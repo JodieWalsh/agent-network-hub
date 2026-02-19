@@ -62,7 +62,7 @@ export function ProfileDetailModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-sans font-semibold">
+          <DialogTitle className="text-xl font-serif font-semibold">
             Agent Profile
           </DialogTitle>
         </DialogHeader>
@@ -88,7 +88,7 @@ export function ProfileDetailModal({
             <div className="flex-1">
               {/* Name & Verification */}
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-2xl font-sans font-semibold">
+                <h2 className="text-2xl font-serif font-semibold">
                   {profile.full_name || "Anonymous Agent"}
                 </h2>
                 <VerifiedBadge isVerified={profile.is_verified || false} size="lg" />

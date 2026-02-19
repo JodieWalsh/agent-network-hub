@@ -476,7 +476,7 @@ export default function CreateInspectionJob() {
       {/* Header */}
       <div className="border-b bg-card">
         <div className="max-w-4xl mx-auto px-6 py-6">
-          <h1 className="text-2xl font-semibold text-foreground">Post Inspection Job</h1>
+          <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">Post Inspection Job</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Get competitive bids from verified inspectors in your area
           </p>

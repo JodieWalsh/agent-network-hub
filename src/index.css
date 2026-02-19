@@ -11,105 +11,106 @@
 @tailwind utilities;
 
 /* Agent Hub Design System - "Premium Network" Theme
-   Deep Forest Green + Rose Gold + Champagne Ivory
+   Deep Forest Green + Rose Gold/Copper + Cream
+   Inspired by luxury Australian real estate branding
 */
 
 @layer base {
   :root {
-    /* Core Brand Colors */
-    --forest: 160 89% 16%;           /* #064E3B - Deep Forest Green */
-    --rose-gold: 356 50% 81%;        /* #E8B4B8 - Rose Gold Accent */
-    --burgundy: 263 67% 35%;         /* #4C1D95 - Deep Purple/Burgundy */
-    --champagne: 48 60% 97%;         /* #FDFCF0 - Champagne Ivory */
-    --cream: 45 50% 96%;             /* Cream for cards */
-    
-    /* Extended Palette */
-    --forest-light: 160 45% 25%;
-    --forest-dark: 160 89% 12%;
-    --rose-gold-light: 356 50% 90%;
-    --rose-gold-dark: 356 40% 65%;
-    --champagne-dark: 40 30% 90%;
-    
-    /* Semantic Tokens - Minimal Aesthetic */
-    --background: 0 0% 98%;              /* #FAFAFA - Cool near-white */
-    --foreground: 160 30% 15%;
+    /* Core Brand Colors — matched to design reference */
+    --forest: 155 37% 17%;              /* #1B3A2D - Deep Forest Green */
+    --rose-gold: 27 40% 59%;            /* #C4956A - Copper/Rose Gold */
+    --burgundy: 263 67% 35%;            /* #4C1D95 - Deep Purple */
+    --champagne: 40 33% 97%;            /* #FAF8F5 - Warm Ivory */
+    --cream: 40 33% 97%;                /* #FAF8F5 - Same warm base */
 
-    --card: 0 0% 100%;                   /* #FFFFFF - Pure white */
-    --card-foreground: 160 30% 15%;
+    /* Extended Palette */
+    --forest-light: 155 30% 28%;        /* Lighter forest for hover */
+    --forest-dark: 155 40% 12%;         /* Darker forest for depth */
+    --rose-gold-light: 27 45% 78%;      /* Lighter copper */
+    --rose-gold-dark: 27 35% 45%;       /* Darker copper */
+    --champagne-dark: 35 20% 90%;       /* Darker ivory */
+
+    /* Semantic Tokens — Premium Aesthetic */
+    --background: 40 33% 97%;              /* #FAF8F5 - Warm cream */
+    --foreground: 155 25% 15%;             /* Dark forest-tinted text */
+
+    --card: 0 0% 100%;                    /* Pure white cards */
+    --card-foreground: 155 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 160 30% 15%;
+    --popover-foreground: 155 25% 15%;
 
-    --primary: var(--forest);
-    --primary-foreground: 0 0% 100%;
+    --primary: var(--rose-gold);           /* Rose gold primary actions */
+    --primary-foreground: 0 0% 100%;       /* White text on rose gold */
 
-    --secondary: var(--burgundy);
+    --secondary: var(--forest);            /* Forest green secondary */
     --secondary-foreground: 0 0% 100%;
 
-    --accent: var(--rose-gold);
-    --accent-foreground: 160 30% 15%;
+    --accent: var(--rose-gold-light);
+    --accent-foreground: 155 25% 15%;
 
-    --muted: 0 0% 96%;                   /* #F5F5F5 - Lighter, more minimal */
-    --muted-foreground: 160 15% 45%;
+    --muted: 35 15% 94%;                  /* Warm muted background */
+    --muted-foreground: 155 10% 45%;      /* Muted text */
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;                  /* Cool neutral gray */
-    --input: 0 0% 90%;
-    --ring: var(--forest);
+    --border: 35 12% 88%;                 /* Warm neutral border */
+    --input: 35 12% 88%;
+    --ring: var(--rose-gold);             /* Rose gold focus rings */
 
-    --radius: 0.375rem;                  /* 6px - Slightly softer */
-    
-    /* Sidebar - Warm & Premium */
-    --sidebar-background: 40 25% 95%;       /* #F5F3EE - Warm champagne/beige */
-    --sidebar-foreground: 160 30% 15%;      /* Dark text */
-    --sidebar-primary: var(--forest);       /* Forest green text */
-    --sidebar-primary-foreground: var(--forest);
-    --sidebar-accent: 40 20% 92%;           /* Slightly darker warm beige for hover */
-    --sidebar-accent-foreground: 160 30% 15%;
-    --sidebar-border: 40 15% 88%;           /* Warm beige border */
-    --sidebar-ring: var(--forest);
-    
-    /* Custom Shadows - Minimal */
-    --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
-    --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --radius: 0.5rem;                     /* 8px - Softer corners */
+
+    /* Sidebar - Dark Forest Green */
+    --sidebar-background: 155 37% 17%;       /* Dark forest green */
+    --sidebar-foreground: 40 20% 88%;        /* Light cream text */
+    --sidebar-primary: var(--rose-gold);     /* Rose gold active */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 155 30% 22%;           /* Slightly lighter green for hover */
+    --sidebar-accent-foreground: 40 20% 92%;
+    --sidebar-border: 155 25% 24%;           /* Subtle green border */
+    --sidebar-ring: var(--rose-gold);
+
+    /* Custom Shadows — Subtle & Premium */
+    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.04);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   .dark {
-    --background: 160 30% 8%;
-    --foreground: 45 50% 95%;
-    
-    --card: 160 25% 12%;
-    --card-foreground: 45 50% 95%;
-    
-    --popover: 160 25% 10%;
-    --popover-foreground: 45 50% 95%;
-    
+    --background: 155 30% 8%;
+    --foreground: 40 30% 92%;
+
+    --card: 155 25% 12%;
+    --card-foreground: 40 30% 92%;
+
+    --popover: 155 25% 10%;
+    --popover-foreground: 40 30% 92%;
+
     --primary: var(--rose-gold);
-    --primary-foreground: 160 30% 10%;
-    
+    --primary-foreground: 155 30% 10%;
+
     --secondary: 263 50% 50%;
     --secondary-foreground: 0 0% 100%;
-    
+
     --accent: var(--forest-light);
-    --accent-foreground: 45 50% 95%;
-    
-    --muted: 160 20% 18%;
-    --muted-foreground: 45 20% 65%;
-    
-    --border: 160 20% 20%;
-    --input: 160 20% 20%;
+    --accent-foreground: 40 30% 92%;
+
+    --muted: 155 20% 18%;
+    --muted-foreground: 40 15% 60%;
+
+    --border: 155 20% 20%;
+    --input: 155 20% 20%;
     --ring: var(--rose-gold);
-    
-    --sidebar-background: 160 30% 6%;
-    --sidebar-foreground: 45 50% 95%;
+
+    --sidebar-background: 155 35% 8%;
+    --sidebar-foreground: 40 30% 92%;
     --sidebar-primary: var(--rose-gold);
-    --sidebar-primary-foreground: 160 30% 10%;
-    --sidebar-accent: 160 40% 15%;
-    --sidebar-accent-foreground: 45 50% 95%;
-    --sidebar-border: 160 25% 15%;
+    --sidebar-primary-foreground: 155 30% 10%;
+    --sidebar-accent: 155 35% 14%;
+    --sidebar-accent-foreground: 40 30% 92%;
+    --sidebar-border: 155 25% 15%;
     --sidebar-ring: var(--rose-gold);
   }
 }
@@ -118,30 +119,49 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-sans;                    /* Changed from font-serif for minimal aesthetic */
+
+  /* Serif headings for premium feel */
+  h1, h2, h3 {
+    @apply font-serif tracking-tight;
+  }
+
+  h4, h5, h6 {
+    @apply font-sans;
   }
 }
 
 @layer components {
-  /* Minimal Card - Clean white card with subtle border */
+  /* Premium Card — Clean white with subtle shadow */
   .card-minimal {
-    @apply bg-white rounded-md border border-border transition-colors duration-150;
+    @apply bg-white rounded-lg border border-border shadow-subtle transition-shadow duration-200;
   }
 
   .card-minimal:hover {
-    @apply border-muted-foreground/20;
+    @apply shadow-card;
+  }
+
+  /* Hero section — dark forest green gradient */
+  .hero-section {
+    @apply bg-gradient-to-br from-forest to-forest-dark text-white;
+  }
+
+  /* Rose gold accent underline for headings */
+  .heading-accent {
+    @apply relative pb-3;
+  }
+  .heading-accent::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-12 h-0.5 bg-rose-gold rounded-full;
   }
 }
 
 @layer utilities {
-  /* Minimal transitions - faster, subtler */
-  .transition-minimal {
-    @apply transition-all duration-150 ease-out;
+  /* Smooth transitions */
+  .transition-premium {
+    @apply transition-all duration-200 ease-out;
   }
 }

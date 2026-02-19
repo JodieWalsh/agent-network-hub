@@ -40,10 +40,10 @@ export function WelcomeHeader({ userName, userId, hasAvatar }: WelcomeHeaderProp
     <div className="animate-fade-in">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl lg:text-2xl font-sans font-semibold text-foreground">
+          <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">
             {getWelcomeMessage()}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             {userName ? "Your network is growing" : "Please sign in to access your dashboard"}
           </p>
         </div>

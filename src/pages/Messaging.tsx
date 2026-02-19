@@ -930,7 +930,7 @@ export default function Messaging() {
               {/* Header */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-xl font-semibold flex items-center gap-2">
+                  <h1 className="text-2xl lg:text-3xl font-serif font-semibold flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-forest" />
                     Messages
                   </h1>

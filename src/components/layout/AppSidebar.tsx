@@ -74,9 +74,9 @@ const membershipLabels: Record<string, string> = {
 };
 
 const membershipColors: Record<string, string> = {
-  free: "bg-muted text-muted-foreground",
-  basic: "bg-forest/10 text-forest",
-  premium: "bg-rose-gold/20 text-rose-gold",
+  free: "bg-white/10 text-white/70 border-white/20",
+  basic: "bg-white/10 text-rose-gold border-rose-gold/30",
+  premium: "bg-rose-gold/20 text-rose-gold border-rose-gold/40",
 };
 
 export function AppSidebar() {
@@ -214,20 +214,17 @@ export function AppSidebar() {
   };
 
   const handleSignOut = async () => {
-    console.log('🔴 Sign Out button clicked');
+    console.log('Sign Out button clicked');
     try {
-      console.log('🔴 Calling signOut()...');
       await signOut();
-      console.log('🔴 signOut() completed successfully');
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",
       });
       setIsMobileOpen(false);
-      console.log('🔴 Navigating to /auth...');
       navigate("/auth");
     } catch (error) {
-      console.error('🔴 Sign out failed with error:', error);
+      console.error('Sign out failed:', error);
       toast({
         variant: "destructive",
         title: "Sign Out Failed",
@@ -251,16 +248,11 @@ export function AppSidebar() {
   };
 
   const getUserType = () => {
-    // Admin gets special label
     if (profile?.role === 'admin') {
       return 'Administrator';
     }
-
-    // Get the user type label
     const type = profile?.user_type || user?.user_metadata?.user_type;
     const typeLabel = type ? userTypeLabels[type] || type : "Member";
-
-    // Add verification status
     if (profile?.approval_status === 'approved' || profile?.is_verified) {
       return `${typeLabel} (Verified)`;
     } else if (profile?.approval_status === 'pending') {
@@ -268,7 +260,6 @@ export function AppSidebar() {
     } else if (profile?.approval_status === 'rejected') {
       return `${typeLabel} (Rejected)`;
     }
-
     return typeLabel;
   };
 
@@ -286,7 +277,7 @@ export function AppSidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-primary text-primary-foreground shadow-card lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-forest text-white shadow-card lg:hidden"
         aria-label="Toggle menu"
       >
         {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
@@ -295,15 +286,15 @@ export function AppSidebar() {
       {/* Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — Dark Forest Green */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 h-full w-64 bg-sidebar z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -313,14 +304,14 @@ export function AppSidebar() {
             <img
               src="/images/logo/logo-option-1.svg"
               alt="Buyers Agent Hub"
-              className="h-15 w-auto"
+              className="h-15 w-auto brightness-0 invert"
             />
           </Link>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {dynamicNavItems.map((item) => (
               <li key={item.label}>
                 {item.children ? (
@@ -328,36 +319,36 @@ export function AppSidebar() {
                     <button
                       onClick={() => toggleExpand(item.label)}
                       className={cn(
-                        "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150",
+                        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                         isParentActive(item)
-                          ? "bg-forest/5 text-forest"
-                          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                          ? "bg-sidebar-accent text-rose-gold"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
                       )}
                     >
                       <span className="flex items-center gap-3">
-                        <item.icon size={16} />
+                        <item.icon size={17} />
                         {item.label}
                       </span>
                       <ChevronDown
-                        size={16}
+                        size={15}
                         className={cn(
-                          "transition-transform duration-200",
+                          "transition-transform duration-200 opacity-60",
                           expandedItems.includes(item.label) && "rotate-180"
                         )}
                       />
                     </button>
                     {expandedItems.includes(item.label) && (
-                      <ul className="mt-1 ml-4 pl-4 border-l border-sidebar-border space-y-1">
+                      <ul className="mt-1 ml-4 pl-4 border-l border-sidebar-border space-y-0.5">
                         {item.children.map((child) => (
                           <li key={child.label}>
                             <Link
                               to={child.path}
                               onClick={() => setIsMobileOpen(false)}
                               className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150",
+                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                                 isActive(child.path)
-                                  ? "bg-forest/5 text-forest font-medium"
-                                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                                  ? "text-rose-gold font-medium"
+                                  : "text-sidebar-foreground/70 hover:text-white"
                               )}
                             >
                               <child.icon size={14} />
@@ -373,18 +364,18 @@ export function AppSidebar() {
                     to={item.path}
                     onClick={() => setIsMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                       isActive(item.path)
-                        ? "bg-forest/5 text-forest"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                        ? "bg-sidebar-accent text-rose-gold"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
                     )}
                   >
-                    <item.icon size={16} />
+                    <item.icon size={17} />
                     <span className="flex-1">{item.label}</span>
                     {item.label === "Messaging" && unreadMessageCount > 0 && (
                       <Badge
                         variant="default"
-                        className="bg-red-500 text-white text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full"
+                        className="bg-rose-gold text-white text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-0"
                       >
                         {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                       </Badge>
@@ -405,24 +396,25 @@ export function AppSidebar() {
                   <img
                     src={profile.avatar_url}
                     alt={profile.full_name || user.email || 'User'}
-                    className="w-8 h-8 rounded-md object-cover border border-border"
+                    className="w-9 h-9 rounded-lg object-cover ring-2 ring-white/20"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-md bg-forest/5 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-forest">{getUserInitials()}</span>
+                  <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center ring-2 ring-white/10">
+                    <span className="text-xs font-semibold text-white">{getUserInitials()}</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-sm font-medium text-white truncate">
                     {profile?.full_name || user.user_metadata?.full_name || user.email}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{getUserType()}</p>
+                  <p className="text-xs text-sidebar-foreground/60 truncate">{getUserType()}</p>
                 </div>
                 <NotificationBell />
               </div>
               {/* Membership Badge */}
               <div className="px-3">
                 <Badge
+                  variant="outline"
                   className={cn(
                     "w-full justify-center text-xs py-1",
                     membershipColors[getMembershipTier()]
@@ -434,7 +426,7 @@ export function AppSidebar() {
               </div>
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors duration-150"
+                className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-white transition-all duration-200"
               >
                 <LogOut size={14} />
                 Sign Out
@@ -444,7 +436,7 @@ export function AppSidebar() {
             <Link
               to="/auth"
               onClick={() => setIsMobileOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm font-medium bg-forest text-white hover:bg-forest/90 transition-colors duration-150"
+              className="flex items-center justify-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium bg-rose-gold text-white hover:bg-rose-gold-dark transition-all duration-200"
             >
               <LogIn size={16} />
               Sign In

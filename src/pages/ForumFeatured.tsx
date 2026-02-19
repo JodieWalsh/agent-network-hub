@@ -80,7 +80,7 @@ export default function ForumFeatured() {
             <ArrowLeft size={20} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold flex items-center gap-2">
               <Star className="text-yellow-500" size={26} />
               Featured & Best Of
             </h1>

@@ -129,7 +129,7 @@ export function PropertyDetailModal({ property, open, onOpenChange }: PropertyDe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-sans font-semibold">
+          <DialogTitle className="text-2xl font-serif font-semibold">
             {property.title}
           </DialogTitle>
           <div className="flex items-center gap-2 mt-2">
@@ -143,7 +143,7 @@ export function PropertyDetailModal({ property, open, onOpenChange }: PropertyDe
         {/* Price Bar - Always Visible */}
         <div className="p-4 bg-forest/5 rounded-lg border border-forest/20">
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-sans font-bold text-forest">
+            <div className="text-2xl font-serif font-bold text-forest">
               {formatPrice(property.price)}
             </div>
             <div className="flex items-center gap-4 text-sm">

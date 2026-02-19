@@ -42,7 +42,7 @@ export default function ForumLeaderboard() {
             <ArrowLeft size={20} />
           </Button>
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold flex items-center gap-2">
               <Trophy size={22} className="text-amber-500" />
               Leaderboard
             </h1>

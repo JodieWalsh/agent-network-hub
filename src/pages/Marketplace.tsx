@@ -130,8 +130,8 @@ export default function Marketplace() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-sans text-2xl font-semibold text-foreground">Property Marketplace</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">Property Marketplace</h1>
+            <p className="text-sm text-muted-foreground mt-2">
               Discover exclusive off-market properties for your clients
             </p>
           </div>
@@ -223,7 +223,7 @@ export default function Marketplace() {
 
                 <CardContent className="p-5 space-y-3">
                   {/* Title */}
-                  <h3 className="font-sans text-base font-semibold text-foreground line-clamp-1">
+                  <h3 className="text-base font-semibold text-foreground line-clamp-1">
                     {property.title}
                   </h3>
 
@@ -280,7 +280,7 @@ export default function Marketplace() {
                   </div>
 
                   {/* Price */}
-                  <p className="font-sans text-lg font-semibold text-forest">
+                  <p className="text-lg font-serif font-semibold text-forest">
                     {formatPrice(property.price)}
                   </p>
 

@@ -397,8 +397,8 @@ export default function Admin() {
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Loading...</p>
+            <h1 className="text-2xl lg:text-3xl font-serif font-semibold">Admin Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Loading...</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
@@ -422,8 +422,8 @@ export default function Admin() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage users, properties, and platform settings</p>
+            <h1 className="text-2xl lg:text-3xl font-serif font-semibold">Admin Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Manage users, properties, and platform settings</p>
           </div>
           <Button
             variant="outline"

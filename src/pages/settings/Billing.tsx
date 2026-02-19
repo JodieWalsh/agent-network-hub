@@ -258,7 +258,7 @@ export default function Billing() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Billing & Subscription</h1>
+          <h1 className="text-2xl lg:text-3xl font-serif font-bold text-foreground">Billing & Subscription</h1>
           <p className="text-muted-foreground mt-1">
             Manage your subscription{isInspector ? ", payouts," : ""} and payment details
           </p>

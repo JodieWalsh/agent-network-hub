@@ -203,8 +203,8 @@ export default function ClientBriefs() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Client Briefs</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold text-foreground">Client Briefs</h1>
+            <p className="text-sm text-muted-foreground mt-2">
               Manage detailed property requirements for your clients
             </p>
           </div>

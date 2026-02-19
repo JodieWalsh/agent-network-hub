@@ -10,9 +10,11 @@ interface StatCardProps {
 
 function StatCard({ icon: Icon, label, value, trend }: StatCardProps) {
   return (
-    <div className="p-4 rounded-md border border-border bg-white transition-colors duration-150">
+    <div className="p-5 rounded-lg border border-border bg-white shadow-subtle hover:shadow-card transition-all duration-200">
       <div className="flex items-center justify-between mb-3">
-        <Icon size={16} className="text-muted-foreground" />
+        <div className="w-8 h-8 rounded-lg bg-rose-gold/10 flex items-center justify-center">
+          <Icon size={15} className="text-rose-gold" />
+        </div>
         {trend && (
           <span className="text-xs text-muted-foreground">
             {trend.isPositive ? "+" : ""}
@@ -21,7 +23,7 @@ function StatCard({ icon: Icon, label, value, trend }: StatCardProps) {
         )}
       </div>
       <div>
-        <p className="text-lg font-sans font-semibold text-foreground">
+        <p className="text-2xl font-serif font-semibold text-foreground">
           {value}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{label}</p>

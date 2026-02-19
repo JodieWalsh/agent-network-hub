@@ -639,7 +639,7 @@ export default function InspectionSpotlightDetail() {
                     General Area Booking
                   </Badge>
                 )}
-                <h1 className="text-2xl font-bold text-foreground">
+                <h1 className="text-2xl lg:text-3xl font-serif font-bold text-foreground">
                   {job.property_address.startsWith('Area:') ? job.property_address.replace('Area: ', '') : job.property_address}
                 </h1>
               </div>

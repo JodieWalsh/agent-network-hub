@@ -155,7 +155,7 @@ export default function ForumAdmin() {
         <div className="flex items-center gap-3 mb-6">
           <Shield className="text-purple-600" size={28} />
           <div>
-            <h1 className="text-2xl font-bold">Forum Moderation</h1>
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold">Forum Moderation</h1>
             <p className="text-muted-foreground text-sm">Manage reports, content, and community health</p>
           </div>
         </div>

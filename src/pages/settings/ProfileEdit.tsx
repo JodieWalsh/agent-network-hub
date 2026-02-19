@@ -424,7 +424,7 @@ export default function ProfileEdit() {
           <Card className="border-forest bg-forest/5">
             <CardContent className="pt-6">
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold text-forest">
+                <h2 className="text-2xl lg:text-3xl font-serif font-semibold text-forest">
                   Welcome to Buyers Agent Hub!
                 </h2>
                 <p className="text-muted-foreground">

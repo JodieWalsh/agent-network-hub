@@ -53,7 +53,7 @@ export default function ForumMyPosts() {
             <ArrowLeft size={20} />
           </Button>
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2">
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold flex items-center gap-2">
               <FileText size={22} className="text-forest" />
               My Posts
             </h1>
