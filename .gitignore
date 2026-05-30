@@ -32,3 +32,5 @@ check-*.mjs
 test-*.mjs
 verify-*.mjs
 fix-*.sql
+# Environment variables - never commit these!
+.env
