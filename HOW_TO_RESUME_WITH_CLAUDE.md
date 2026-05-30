@@ -1,225 +1,328 @@
 # How to Resume Development with Claude
 
-This document explains how to start a new Claude session and have it understand the context of this project.
+This document explains how to start a new Claude session and get up to speed fast.
+
+**Last Updated:** May 30, 2026
+**Project:** Buyers Agent Hub (agent-network-hub)
+**Live URL:** https://agent-network-hub-1ynd.vercel.app
 
 ---
 
-## Quick Start - Copy and Paste This Prompt
+## 🔐 SECURITY PROTOCOLS (Read First!)
 
-When starting a new Claude Code session, use this prompt:
+These rules were established May 30, 2026 after a security audit. Follow them every session.
+
+### The Golden Rules
+
+1. **NEVER commit `.env` to GitHub** — it is now in `.gitignore`. Keep it that way.
+2. **Secret keys live in two places only:**
+   - Your local `.env` file on your computer
+   - The private "Buyers Agent Hub" Google Drive folder (as a backup doc)
+3. **If you ever need to rotate keys** (e.g. another accidental exposure), go to:
+   - Supabase → Settings → API → use the NEW "Publishable and secret API keys" tab
+   - Mapbox → account.mapbox.com → Tokens → Create new, delete old
+   - Stripe → dashboard.stripe.com → Developers → API Keys
+4. **The GitHub repo is PUBLIC** — never paste real keys anywhere in code or docs
+5. **Run `git status` before every push** to confirm `.env` is not in the list
+
+### What Was Done (May 30, 2026)
+
+- Discovered `.env` was publicly visible on GitHub
+- Rotated all Supabase keys (now using new `sb_publishable_` / `sb_secret_` format)
+- Disabled old legacy JWT-based Supabase API keys
+- Rotated Mapbox token (old `Default public token` deleted, new `buyers-agent-hub-production` created)
+- Added `.env` to `.gitignore` — will never be committed again
+- Saved all keys to private Google Drive backup
+
+### Current Key Locations
+
+| Key | Where to regenerate if lost |
+|-----|---------------------------|
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | supabase.com → Settings → API → Publishable key |
+| `SUPABASE_ACCESS_TOKEN` | supabase.com → Settings → API → Secret key |
+| `VITE_SUPABASE_URL` | supabase.com → Settings → API (never changes) |
+| `VITE_SUPABASE_PROJECT_ID` | `yrjtdunljzxasyohjdnw` (never changes) |
+| `VITE_MAPBOX_ACCESS_TOKEN` | account.mapbox.com → Tokens → buyers-agent-hub-production |
+| `STRIPE_SECRET_KEY` | dashboard.stripe.com → Developers → API Keys |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | dashboard.stripe.com → Developers → API Keys |
+| `STRIPE_WEBHOOK_SECRET` | dashboard.stripe.com → Developers → Webhooks |
+
+---
+
+## 🚀 Quick Start — Copy and Paste This Into Claude Code
 
 ```
-I'm working on Agent Hub, a B2B SaaS platform for real estate professionals.
+I'm working on Buyers Agent Hub, a B2B SaaS marketplace platform for Australian real estate professionals (buyers agents, building inspectors, conveyancers, property managers).
 
 PROJECT CONTEXT:
 - Platform: React + TypeScript + Vite + Tailwind + shadcn/ui
-- Backend: Supabase (PostgreSQL with PostGIS, Storage, Auth)
+- Backend: Supabase (PostgreSQL with PostGIS, Storage, Auth, Realtime, Edge Functions)
+- Payments: Stripe (subscriptions + Connect for marketplace payouts)
 - Location: Mapbox Geocoding API
+- Email: Resend API
+- Deployment: Vercel
+- GitHub: https://github.com/JodieWalsh/agent-network-hub
+- Live URL: https://agent-network-hub-1ynd.vercel.app
 - Current branch: main
-- Dev server: http://localhost:8087
 
-RECENT WORK (January 11, 2026):
-We just fixed three critical bugs:
-1. Added Admin Property Review Modal - admins can now view full property details before approving/rejecting
-2. Fixed missing street numbers in addresses - Mapbox geocoder now combines house number + street name
-3. Fixed price storage and validation - upgraded to BIGINT, added validation, prevented corruption
+CRITICAL TECHNICAL NOTE — RAW FETCH PATTERN:
+The Supabase JS client hangs indefinitely due to a deadlock in onAuthStateChange.
+ALL database operations use raw fetch() to the Supabase REST API instead.
+NEVER use supabase.from() — it will hang!
+Always use the raw fetch pattern documented in PROJECT_CONTEXT.md.
 
-KEY PROJECT FILES:
-- Plan file: C:\Users\Jodie Ralph\.claude\plans\drifting-whistling-matsumoto.md
-- Session summary: SESSION_SUMMARY_2026-01-11.md
-- Database migrations: supabase/migrations/*.sql
-- Environment: .env (Supabase + Mapbox credentials configured)
+DESIGN SYSTEM:
+- Deep forest green headers (#064E3B)
+- Rose gold/copper accents (#E8B4B8)
+- Cormorant Garamond serif headings
+- DM Sans body font
+- Luxury real estate aesthetic
+- Design reference saved to docs/design-reference.png
 
-IMPORTANT CONTEXT:
-- Properties require admin approval before appearing in marketplace
-- User roles: admin, verified_professional, pending_professional, guest
-- File uploads go to Supabase Storage (property-images, floor-plans buckets)
-- Currency auto-detects from property country (UK→GBP, US→USD, AU→AUD)
-- Addresses use single smart search field (like Zillow/Airbnb)
+KEY PROJECT FILES TO READ FIRST:
+1. PROJECT_CONTEXT.md — full architecture, session history, technical notes
+2. docs/DANI_APPROVAL_CHECKLIST.md — business decisions needing co-founder sign-off
+3. docs/PROJECT_TODO.md — prioritised feature backlog
+4. HOW_TO_RESUME_WITH_CLAUDE.md — this file
 
-Please read:
-1. PROJECT_CONTEXT.md (if it exists)
-2. SESSION_SUMMARY_2026-01-11.md
-3. The plan file at C:\Users\Jodie Ralph\.claude\plans\drifting-whistling-matsumoto.md
+COMPLETED MAJOR SYSTEMS:
+- Full inspection marketplace workflow (7 phases, end-to-end working)
+- Real-time messaging (Supabase Realtime, typing indicators, read receipts)
+- Stripe subscriptions (pricing, checkout, welcome flow, billing portal)
+- Community forum (posts, comments, moderation, premium categories)
+- Email notifications (Resend API, 12 HTML templates, weekly digest)
+- Visual overhaul (luxury real estate design system)
+- Notification system (in-app bells, 12 notification types)
+- 16-section inspection report builder with auto-save
+- Client brief system with location priority tiers
+- Global location system (Mapbox, PostGIS, works worldwide)
 
-Then let me know you're ready and I'll tell you what I need help with.
+NEXT PRIORITY:
+Stripe Connect payout flow — inspectors receive 90% of inspection fee automatically
+when job poster approves report. Platform takes 10%. Escrow until approval.
+Edge functions already scaffolded: stripe-connect-onboarding, stripe-connect-dashboard.
+
+Please read PROJECT_CONTEXT.md first, then let me know you're ready and I'll tell you what I need help with.
 ```
 
 ---
 
-## Alternative: Minimal Prompt
+## 🛠️ Common Commands
 
-If you just want to continue where we left off:
-
+### Start Dev Server
 ```
-Continue working on Agent Hub. Read SESSION_SUMMARY_2026-01-11.md to see what we just completed, then let me know you're ready for the next task.
-```
-
----
-
-## Understanding the Codebase Structure
-
-### Frontend (`src/`)
-```
-src/
-├── components/
-│   ├── admin/          # Admin-only components (AdminPropertyReviewModal, etc.)
-│   ├── layout/         # Dashboard layout, sidebar, navigation
-│   ├── location/       # Location search components
-│   ├── marketplace/    # Property cards, detail modals, gallery
-│   ├── property/       # Property forms (AddressSearch, ImageUpload, PriceInput)
-│   └── ui/            # shadcn/ui components (button, input, dialog, etc.)
-├── contexts/          # React contexts (AuthContext)
-├── lib/               # Utilities (mapbox-geocoder, currency, storage, permissions)
-├── pages/             # Main pages (Admin, Marketplace, AddProperty, Directory)
-└── integrations/      # Supabase client config
-```
-
-### Backend (`supabase/`)
-```
-supabase/
-├── migrations/        # Database schema migrations (run in chronological order)
-└── seed-agents.mjs    # Sample data script
-```
-
-### Key Migrations (in order):
-1. `20251218074938_...sql` - Initial schema (profiles, properties tables)
-2. `20260108040000_...sql` - Role and approval system
-3. `20260108043000_...sql` - Storage buckets for images/floor plans
-4. `20260111000003_...sql` - PostGIS geography for location search
-5. `20260111080000_...sql` - Currency column for multi-currency support
-6. `20260111100000_...sql` - BIGINT price column with validation
-
----
-
-## Common Tasks
-
-### Starting the Dev Server
-```bash
 npm run dev
 ```
 Server runs on http://localhost:8087
 
-### Running Database Migrations
-```bash
-SUPABASE_ACCESS_TOKEN="sbp_2b6bd8f7775de52e75100b919f735dfd3009bde1" npx supabase db push
+### Run Database Migrations
 ```
+npx supabase db push
+```
+Note: SUPABASE_ACCESS_TOKEN must be set in your `.env` file.
 
-### Checking TypeScript Errors
-```bash
+### Check TypeScript Errors
+```
 npx tsc --noEmit
 ```
 
-### Git Workflow
-```bash
-git status
+### Git Workflow (Safe Version)
+```
+git status          ← always check this first, confirm .env is NOT listed
 git add .
-git commit -m "Your commit message"
+git commit -m "feat: your description here"
 git push
 ```
 
----
-
-## Key Environment Variables
-
-From `.env`:
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_PUBLISHABLE_KEY` - Supabase anon key
-- `SUPABASE_ACCESS_TOKEN` - For CLI migrations
-- `VITE_MAPBOX_ACCESS_TOKEN` - Mapbox geocoding API
-
----
-
-## Important Patterns
-
-### 1. Protected Routes
-```typescript
-<ProtectedRoute requiredPermission="CAN_SUBMIT_PROPERTY">
-  <AddProperty />
-</ProtectedRoute>
+### Deploy Edge Functions
 ```
-
-### 2. File Uploads
-```typescript
-import { uploadPropertyImage, uploadFloorPlan } from '@/lib/storage';
-
-const result = await uploadPropertyImage(file, userId, propertyId, index);
-// Returns: { url: string, path: string }
-```
-
-### 3. Permissions Check
-```typescript
-import { canSubmitProperty } from '@/lib/permissions';
-
-const permissions = usePermissions();
-const canAdd = canSubmitProperty(permissions);
-```
-
-### 4. Currency Detection
-```typescript
-import { getCurrencyForCountry } from '@/lib/currency';
-
-const currency = getCurrencyForCountry('GB'); // Returns 'GBP'
+supabase functions deploy function-name
+supabase secrets set KEY_NAME=value
 ```
 
 ---
 
-## Admin User Credentials
+## 🏗️ Project Structure
 
-**Email:** support@the-empowered-patient.org
-**Role:** admin
-
-Use this account to test admin features.
-
----
-
-## Debugging Tips
-
-### View Database Data
-```bash
-node seed-agents.mjs  # Run with: node <script-name>.mjs
+```
+agent-network-hub/
+├── src/
+│   ├── components/
+│   │   ├── auth/           # Authentication components
+│   │   ├── layout/         # Sidebar, TopBar, DashboardLayout
+│   │   ├── location/       # Mapbox location search
+│   │   ├── notifications/  # NotificationBell, NotificationDropdown
+│   │   └── ui/             # shadcn/ui components
+│   ├── contexts/           # AuthContext, UnitsContext
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Utilities (notifications, stripe, permissions, geocoder)
+│   └── pages/
+│       ├── inspections/    # MyPostedJobs, MyInspectionWork, Spotlights
+│       └── settings/       # ProfileEdit, billing
+├── supabase/
+│   ├── functions/          # Edge Functions (stripe-*, email-*)
+│   └── migrations/         # Database migrations (chronological)
+├── docs/                   # Project documentation
+├── .env                    # Secret keys — NEVER commit this!
+├── .gitignore              # Includes .env — keep it that way!
+└── PROJECT_CONTEXT.md      # Full project history and architecture
 ```
 
-### Check Supabase Storage
-Go to: https://supabase.com/dashboard/project/yrjtdunljzxasyohjdnw/storage/buckets
+---
 
-### View Console Logs
-- Price submission logs in browser console when submitting properties
-- Mapbox geocoding responses logged in LocationSearch component
+## ⚠️ Critical Patterns — Read Before Writing Any Code
+
+### 1. Raw Fetch Pattern (MANDATORY — not optional)
+```javascript
+const getAuthHeaders = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  let accessToken = supabaseKey;
+  try {
+    const storageKey = `sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`;
+    const storedSession = localStorage.getItem(storageKey);
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession);
+      accessToken = parsed?.access_token || supabaseKey;
+    }
+  } catch (e) {}
+  return { supabaseUrl, supabaseKey, accessToken };
+};
+```
+
+### 2. Supabase RPC Calls
+Always `await` rpc() calls or post counts won't update (lazy evaluation issue).
+
+### 3. Date Validation
+Three layers required: inline feedback + disabled submit button + API-level guard.
+
+### 4. Vercel Routing
+SPA deployments need `vercel.json` with rewrite rules to avoid 404 errors.
 
 ---
 
-## Common Issues & Solutions
+## 👥 User Roles
 
-### Issue: "new row violates row-level security policy"
-**Solution:** User doesn't have required role. Check:
-1. User's role in profiles table
-2. RLS policies allow the action
-3. Admin users need `is_admin()` check in policies
-
-### Issue: Images not uploading
-**Solution:** Check storage RLS policies allow both verified_professional AND admin roles
-
-### Issue: Price showing incorrectly
-**Solution:** Check browser console logs during submission to see original vs parsed values
+| Role | Access |
+|------|--------|
+| `guest` | Limited — browsing only, awaiting approval |
+| `pending_professional` | Submitted credentials, awaiting verification |
+| `verified_professional` | Full platform access |
+| `admin` | Full access + platform management |
 
 ---
 
-## Project Documentation Files
+## 💳 Payment Architecture
 
-1. `SESSION_SUMMARY_2026-01-11.md` - What we did today
-2. `PROJECT_CONTEXT.md` - Overall project architecture (if exists)
-3. `HOW_TO_RESUME_WITH_CLAUDE.md` - This file
-4. Plan file: `C:\Users\Jodie Ralph\.claude\plans\drifting-whistling-matsumoto.md`
+### Stripe Subscriptions (Live)
+- Basic Plan: $29/month or $290/year
+- Premium Plan: $79/month or $790/year
+- Edge functions: `stripe-create-checkout`, `stripe-create-portal`, `stripe-webhook`
 
----
-
-## Contact & Repository
-
-**Repository:** https://github.com/JodieWalsh/agent-network-hub
-**Branch:** main
-**Owner:** Jodie Ralph (jodie@agenthub.com)
+### Stripe Connect (Next to Build)
+- Inspectors receive 90% of inspection fee
+- Platform keeps 10%
+- Payment held in escrow until job poster approves report
+- Edge functions scaffolded: `stripe-connect-onboarding`, `stripe-connect-dashboard`
 
 ---
 
-Last Updated: January 11, 2026
+## 📧 Email System
+
+- Provider: Resend API
+- FROM email: currently `onboarding@resend.dev` (pending domain verification for buyersagenthub.com)
+- 12 HTML templates covering 8 marketplace + 4 forum trigger types
+- Weekly digest via Edge Function
+- **Note: Email testing not yet completed**
+
+---
+
+## 🔄 Inspection Marketplace Workflow
+
+```
+Job Posted (open)
+    ↓
+Inspector Bids → Job Poster Reviews
+    ↓
+Bid Accepted (assigned)
+    ↓
+Inspector Completes 16-Section Report (in_progress → pending_review)
+    ↓
+Job Poster Approves Report (completed)
+    ↓
+[NEXT] Stripe Connect releases 90% payment to inspector automatically
+```
+
+---
+
+## 🤝 Co-Founder Protocol (Dani)
+
+Dani is co-founder and must approve certain decisions before implementation.
+Check `docs/DANI_APPROVAL_CHECKLIST.md` before making changes to:
+- Pricing or subscription tiers
+- Legal terms or policies
+- Content decisions affecting the brand
+- New user-facing features that change the product direction
+
+---
+
+## 🐛 Common Issues & Solutions
+
+### Supabase JS client hanging
+**Cause:** Known deadlock in `onAuthStateChange` callback
+**Solution:** Use raw fetch pattern (see above). Never use `supabase.from()`
+
+### "new row violates row-level security policy"
+**Solution:** Check user role in profiles table and RLS policies for the table
+
+### GitHub credentials cached under wrong account
+**Solution:** Clear via Windows Credential Manager
+
+### 404 errors on Vercel after deploy
+**Solution:** Check `vercel.json` has SPA rewrite rules
+
+---
+
+## 📋 Backlog (Prioritised)
+
+1. **Stripe Connect payout flow** ← NEXT
+2. Complete email notification testing
+3. Domain verification for buyersagenthub.com (Resend)
+4. CRM system with client management and automated workflows
+5. Expanded user/job types (pest inspectors, property managers)
+6. Document templates for buyer agent client communications
+7. Enhanced marketplace filtering
+
+---
+
+## 📁 Documentation Files
+
+| File | Purpose |
+|------|---------|
+| `HOW_TO_RESUME_WITH_CLAUDE.md` | This file — how to start a session |
+| `PROJECT_CONTEXT.md` | Full architecture, session changelogs, technical notes |
+| `docs/DANI_APPROVAL_CHECKLIST.md` | Business decisions needing co-founder sign-off |
+| `docs/PROJECT_TODO.md` | Feature backlog |
+| `docs/TECHNICAL_DOCUMENTATION.md` | Deep technical reference |
+| `docs/KEY_FEATURES.md` | Platform features overview |
+| `docs/design-reference.png` | Dani's visual design direction |
+| `CLAUDE_PROMPT_QUICKSTART.txt` | Copy-paste prompts for common tasks |
+| `SESSION_RECORD.md` | Session history log |
+
+---
+
+## 🔗 Key Links
+
+| Resource | URL |
+|----------|-----|
+| GitHub Repo | https://github.com/JodieWalsh/agent-network-hub |
+| Live App | https://agent-network-hub-1ynd.vercel.app |
+| Supabase Dashboard | https://supabase.com/dashboard/project/yrjtdunljzxasyohjdnw |
+| Stripe Dashboard | https://dashboard.stripe.com |
+| Mapbox Tokens | https://account.mapbox.com/access-tokens |
+| Resend Dashboard | https://resend.com/dashboard |
+| Vercel Dashboard | https://vercel.com/dashboard |
+
+---
+
+*Last Updated: May 30, 2026 — Security audit completed, keys rotated, .env protected*
