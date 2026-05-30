@@ -42,7 +42,21 @@
       "Bash(npm info:*)",
       "WebFetch(domain:github.com)",
       "Bash(if not exist \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\" mkdir \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\src\\\\pages\\\\inspections\")",
-      "Bash(npx vite build)"
+      "Bash(npx vite build)",
+      "Bash(python -m json.tool:*)",
+      "Bash(python -c \"import sys,json; funcs=json.load\\(sys.stdin\\); wh=[f for f in funcs if f[''slug'']==''stripe-webhook''][0]; print\\(f\"\"verify_jwt: {wh[''verify_jwt'']}\"\"\\)\")",
+      "Bash(stripe --version)",
+      "Bash(git push:*)",
+      "Bash(supabase functions deploy:*)",
+      "Bash(where:*)",
+      "Bash(python:*)",
+      "Bash(dir /b \"C:\\\\Users\\\\Jodie Ralph\\\\agent-network-hub\\\\.env*\")",
+      "Bash(gh run:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(wc:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ]
   }
 }
