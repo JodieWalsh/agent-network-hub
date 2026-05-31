@@ -1,4 +1,5 @@
 # 📋 DANI'S APPROVAL CHECKLIST
+Last Updated: May 31, 2026
 ## Buyers Agent Hub - Items Needing Review & Approval
 
 This document tracks all business decisions, content, and pricing that Dani needs to review and approve before launch.
@@ -495,6 +496,19 @@ Budget you're offering: $200.00
 - [x] Which gating option should we use? (A, B, or C) → **Option C chosen**
 - [x] If Option C: Should we block the poster from accepting a bid if the inspector hasn't set up payouts? Or accept the bid and prompt the inspector? → **Accept the bid and prompt the inspector. Job enters `pending_inspector_setup` status; when inspector completes onboarding, job auto-transitions to `assigned`.**
 - [ ] Should there be a time limit for completing payout setup after a bid is accepted?
+
+---
+
+### 22. Develo API — Property Risk Data & Pricing Strategy
+**Added:** May 31, 2026
+Develo (develo.com.au) can provide automatic flood risk, bushfire ratings, heritage overlays and zoning data on every BAH property listing via API. National AU coverage. $99/month Pro plan. KEY INSIGHT: Most buyers agents already pay $99/month for Develo separately. If BAH includes this data, users save $99/month by cancelling their Develo subscription — making BAH Premium ($79/month) cheaper than their current Develo subscription alone. This is our biggest potential marketing differentiator.
+- [ ] Do you want to pursue Develo API integration?
+- [ ] Should we increase Premium pricing to $99-119/month to absorb Develo cost?
+- [ ] Should property risk data be Premium-only to drive upgrades?
+- [ ] Partner/reseller arrangement with Develo?
+- [ ] Show "Powered by Develo" or white-label it?
+- [ ] Legal disclaimer approach for risk data?
+- [x] Enquiry submitted to Develo May 31 2026 — awaiting response
 
 ---
 

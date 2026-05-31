@@ -145,6 +145,10 @@ Make Stripe invoices professional and tax-compliant before launch.
 - [ ] Research requirements for different countries (Australia ABN, US EIN, UK VAT, etc.)
 - [ ] Consider using Stripe Tax ID collection (`tax_id_collection: { enabled: true }`) — already enabled for subscription checkout, needs review for escrow payments
 
+### 14. Australian Property Risk Ratings System
+**Priority:** High (Backlog) **Status:** Research Complete **Added:** May 2026
+Display flood risk, bushfire BAL rating, heritage listing, zoning and subdivision potential on property listings. Best provider identified: Develo API (develo.com.au) — national coverage, $99/month Pro plan includes API. Alternatives: HTAG Analytics (purpose-built for buyers agents), PropTech Data, Landchecker. UK equivalent: Searchland or PropEco. USA: FEMA API (free). Research contact submitted to Develo May 31 2026. Awaiting response. See Dani Approval Checklist #22 for business decisions required.
+
 ---
 
 ## 🐛 BUGS TO FIX
