@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { sendNotificationEmail } from "@/lib/email";
 import {
   getConversations,
   getConversationDetails,
@@ -208,10 +209,10 @@ function ConversationItem({
     <button
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3 rounded-lg transition-colors duration-150 text-left",
+        "w-full flex items-center gap-3 p-3 rounded-[18px] transition-all duration-150 text-left bg-cream border border-transparent",
         isActive
-          ? "bg-forest/10 border border-forest/20"
-          : "hover:bg-muted/50 border border-transparent"
+          ? "bg-forest/10 border border-forest/20 shadow-card"
+          : "hover:bg-rose-gold/10"
       )}
     >
       {/* Avatar */}
@@ -662,6 +663,14 @@ export default function Messaging() {
         attachment
       );
 
+      if (currentParticipant && currentParticipant.id !== user.id) {
+        sendNotificationEmail(currentParticipant.id, 'new_message', {
+          senderName: user.user_metadata?.full_name || user.email || 'Someone',
+          messagePreview: newMessage.trim().slice(0, 120),
+          conversationId: selectedConversationId,
+        });
+      }
+
       // Add message to local state with sender info
       const messageWithSender: Message = {
         ...message,
@@ -918,26 +927,26 @@ export default function Messaging() {
   return (
     <DashboardLayout>
       <div className="h-[calc(100vh-8rem)] max-h-[800px]">
-        <Card className="h-full overflow-hidden border-border/50">
+        <Card className="h-full overflow-hidden border border-forest/10 bg-cream shadow-card">
           <div className="flex h-full">
             {/* Left Panel - Conversation List */}
             <div
               className={cn(
-                "w-full md:w-80 lg:w-96 border-r border-border flex flex-col",
+                "w-full md:w-80 lg:w-96 border-r border-forest/10 flex flex-col",
                 showConversation && "hidden md:flex"
               )}
             >
               {/* Header */}
-              <div className="p-4 border-b border-border">
+              <div className="p-4 border-b border-forest/10 bg-cream">
                 <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-2xl lg:text-3xl font-serif font-semibold flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-forest" />
+                  <h1 className="text-2xl lg:text-3xl font-serif font-semibold flex items-center gap-2 text-forest">
+                    <MessageSquare className="w-5 h-5 text-rose-gold" />
                     Messages
                   </h1>
                   <Button
                     size="sm"
                     onClick={() => setIsNewMessageModalOpen(true)}
-                    className="bg-forest hover:bg-forest/90 text-white"
+                    className="bg-rose-gold text-white hover:bg-rose-gold-dark"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     New
@@ -951,7 +960,7 @@ export default function Messaging() {
                     placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 bg-cream border-forest/10 shadow-subtle"
                   />
                 </div>
               </div>
@@ -997,7 +1006,7 @@ export default function Messaging() {
               ) : (
                 <>
                   {/* Conversation Header */}
-                  <div className="p-4 border-b border-border flex items-center gap-3">
+                  <div className="p-4 border-b border-forest/10 bg-cream flex items-center gap-3">
                     {/* Back button (mobile) */}
                     <Button
                       variant="ghost"
@@ -1089,7 +1098,7 @@ export default function Messaging() {
                   </div>
 
                   {/* Messages Area */}
-                  <ScrollArea className="flex-1 p-4">
+                  <ScrollArea className="flex-1 p-4 bg-cream/70">
                     {loadingMessages ? (
                       <MessageSkeleton />
                     ) : messages.length === 0 ? (
@@ -1224,7 +1233,7 @@ export default function Messaging() {
                           placeholder="Type a message..."
                           rows={1}
                           className={cn(
-                            "flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2",
+                            "flex-1 resize-none rounded-lg border border-forest/10 bg-white px-3 py-2",
                             "text-sm placeholder:text-muted-foreground",
                             "focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest",
                             "min-h-[40px] max-h-[120px]"

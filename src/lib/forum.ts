@@ -1079,6 +1079,7 @@ export async function notifyForumLike(
   postTitle: string,
   likerId: string
 ) {
+  sendNotificationEmail(authorId, 'forum_like', { likerName, postTitle });
   return createNotification({
     userId: authorId,
     type: 'forum_like' as any,
