@@ -294,23 +294,21 @@ export function AppSidebar() {
       {/* Sidebar — Dark Forest Green */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-sidebar z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 h-full w-64 bg-[#064E3B] text-[#F9F5EB] z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo */}
-        <div className="p-5 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center" onClick={() => setIsMobileOpen(false)}>
-            <img
-              src="/images/logo/logo-option-1.svg"
-              alt="Buyers Agent Hub"
-              className="h-15 w-auto brightness-0 invert"
-            />
+        {/* Logo Section — Luxury Header */}
+        <div className="p-6 border-b border-[#0C382C]/40 bg-[#064E3B]">
+          <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileOpen(false)}>
+            <span className="hidden sm:block font-serif text-lg uppercase tracking-[0.35em] text-[#F9F5EB]">
+              BUYERS AGENT HUB
+            </span>
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {/* Navigation — Premium Styling */}
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           <ul className="space-y-0.5">
             {dynamicNavItems.map((item) => (
               <li key={item.label}>
@@ -319,39 +317,39 @@ export function AppSidebar() {
                     <button
                       onClick={() => toggleExpand(item.label)}
                       className={cn(
-                        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        "w-full flex items-center justify-between px-4 py-3 rounded-[18px] text-sm font-medium transition-all duration-200",
                         isParentActive(item)
-                          ? "bg-sidebar-accent text-rose-gold"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+                          ? "bg-[#C9A84C]/15 text-[#C9A84C]"
+                          : "text-[#F9F5EB]/90 hover:bg-white/10 hover:text-white"
                       )}
                     >
                       <span className="flex items-center gap-3">
-                        <item.icon size={17} />
+                        <item.icon size={18} strokeWidth={1.5} />
                         {item.label}
                       </span>
                       <ChevronDown
-                        size={15}
+                        size={16}
                         className={cn(
-                          "transition-transform duration-200 opacity-60",
+                          "transition-transform duration-300 opacity-70",
                           expandedItems.includes(item.label) && "rotate-180"
                         )}
                       />
                     </button>
                     {expandedItems.includes(item.label) && (
-                      <ul className="mt-1 ml-4 pl-4 border-l border-sidebar-border space-y-0.5">
+                      <ul className="mt-2 ml-2 pl-4 border-l border-sidebar-border/50 space-y-1">
                         {item.children.map((child) => (
                           <li key={child.label}>
                             <Link
                               to={child.path}
                               onClick={() => setIsMobileOpen(false)}
                               className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                                "flex items-center gap-3 px-4 py-2.5 rounded-[16px] text-sm transition-all duration-200",
                                 isActive(child.path)
-                                  ? "text-rose-gold font-medium"
-                                  : "text-sidebar-foreground/70 hover:text-white"
+                                  ? "text-[#C9A84C] font-semibold bg-[#C9A84C]/10"
+                                  : "text-[#F9F5EB]/80 hover:text-white hover:bg-white/10"
                               )}
                             >
-                              <child.icon size={14} />
+                              <child.icon size={15} strokeWidth={1.5} />
                               {child.label}
                             </Link>
                           </li>
@@ -364,18 +362,18 @@ export function AppSidebar() {
                     to={item.path}
                     onClick={() => setIsMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 px-4 py-3 rounded-[18px] text-sm font-medium transition-all duration-200",
                       isActive(item.path)
-                        ? "bg-sidebar-accent text-rose-gold"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+                        ? "bg-[#C9A84C]/15 text-[#C9A84C]"
+                        : "text-[#F9F5EB]/90 hover:bg-white/10 hover:text-white"
                     )}
                   >
-                    <item.icon size={17} />
+                    <item.icon size={18} strokeWidth={1.5} />
                     <span className="flex-1">{item.label}</span>
                     {item.label === "Messaging" && unreadMessageCount > 0 && (
                       <Badge
                         variant="default"
-                        className="bg-rose-gold text-white text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-0"
+                        className="bg-[#C9A84C] text-[#064E3B] text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-0 ml-2"
                       >
                         {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                       </Badge>
@@ -387,56 +385,66 @@ export function AppSidebar() {
           </ul>
         </nav>
 
-        {/* User Section */}
-        <div className="p-4 border-t border-sidebar-border">
+        {/* User Section — Premium Card */}
+        <div className="p-4 border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-sidebar-background/50 space-y-3">
           {user ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 px-3 py-2">
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name || user.email || 'User'}
-                    className="w-9 h-9 rounded-lg object-cover ring-2 ring-white/20"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center ring-2 ring-white/10">
-                    <span className="text-xs font-semibold text-white">{getUserInitials()}</span>
+            <>
+              <div className="px-4 py-3 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/30">
+                <div className="flex items-center gap-3">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.full_name || user.email || 'User'}
+                      className="w-10 h-10 rounded-lg object-cover ring-2 ring-rose-gold/30"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-rose-gold/20 flex items-center justify-center ring-2 ring-rose-gold/20">
+                      <span className="text-sm font-semibold text-rose-gold">{getUserInitials()}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {profile?.full_name || user.user_metadata?.full_name || user.email}
+                    </p>
+                    <p className="text-xs text-sidebar-foreground/60 truncate">{getUserType()}</p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {profile?.full_name || user.user_metadata?.full_name || user.email}
-                  </p>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">{getUserType()}</p>
                 </div>
-                <NotificationBell />
               </div>
+
               {/* Membership Badge */}
-              <div className="px-3">
+              <div className="px-4">
                 <Badge
                   variant="outline"
                   className={cn(
-                    "w-full justify-center text-xs py-1",
+                    "w-full justify-center text-xs py-1.5 font-medium",
                     membershipColors[getMembershipTier()]
                   )}
                 >
-                  {getMembershipTier() === 'premium' && <Crown className="w-3 h-3 mr-1" />}
+                  {getMembershipTier() === 'premium' && <Crown className="w-3 h-3 mr-1.5" />}
                   {getMembershipLabel()}
                 </Badge>
               </div>
+
+              {/* Notifications Badge */}
+              <div className="px-4">
+                <div className="flex items-center justify-between text-xs text-sidebar-foreground/60 mb-2">
+                  <span>Notifications</span>
+                </div>
+              </div>
+
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-white transition-all duration-200"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 w-full rounded-[18px] text-sm font-medium text-[#F9F5EB]/80 hover:bg-[#C9A84C]/15 hover:text-[#F9F5EB] transition-all duration-200"
               >
-                <LogOut size={14} />
+                <LogOut size={15} />
                 Sign Out
               </button>
-            </div>
+            </>
           ) : (
             <Link
               to="/auth"
               onClick={() => setIsMobileOpen(false)}
-              className="flex items-center justify-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium bg-rose-gold text-white hover:bg-rose-gold-dark transition-all duration-200"
+              className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-semibold bg-gradient-to-r from-rose-gold to-rose-gold-dark text-white hover:shadow-hover transition-all duration-200"
             >
               <LogIn size={16} />
               Sign In
