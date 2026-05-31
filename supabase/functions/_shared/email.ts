@@ -1,19 +1,50 @@
 /**
  * Shared Email Utilities for Edge Functions
  *
- * Resend client initialization and helpers for email preference checking.
- * Separate from stripe.ts to avoid Stripe dependency in non-Stripe functions.
+ * Direct Resend API integration and helpers for email preference checking.
+ * Uses fetch calls instead of npm packages for better Deno compatibility.
  */
-
-import { Resend } from 'https://esm.sh/resend@2.1.0';
 
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
-export function getResendClient(): Resend {
+/**
+ * Send an email directly via Resend API
+ */
+export async function sendEmailViaResend(
+  to: string,
+  subject: string,
+  html: string,
+  fromEmail: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (!resendApiKey) {
-    throw new Error('Missing RESEND_API_KEY environment variable');
+    return { success: false, error: 'Missing RESEND_API_KEY' };
   }
-  return new Resend(resendApiKey);
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: to,
+        subject: subject,
+        html: html,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      return { success: false, error };
+    }
+
+    const result = await response.json();
+    return { success: true, messageId: result.id };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
 }
 
 // TODO: Switch to 'Buyers Agent Hub <notifications@buyersagenthub.com>' after domain verification
@@ -22,7 +53,8 @@ export const FROM_EMAIL = 'Buyers Agent Hub <onboarding@resend.dev>';
 export const APP_URL = Deno.env.get('APP_URL') || 'https://agent-network-hub-1ynd.vercel.app';
 
 /**
- * Get a user's email address from Supabase Auth
+ * Get a user's email address from Supabase
+ * Tries auth admin API first, falls back to profiles table
  */
 export async function getUserEmail(userId: string): Promise<string | null> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -30,20 +62,47 @@ export async function getUserEmail(userId: string): Promise<string | null> {
 
   if (!supabaseUrl || !serviceRoleKey) return null;
 
-  try {
-    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-      },
-    });
+  const headers = {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    Accept: 'application/json',
+  };
 
-    if (!response.ok) return null;
-    const user = await response.json();
-    return user.email || null;
+  // Try auth admin API first with the REST filter endpoint.
+  try {
+    const authResponse = await fetch(
+      `${supabaseUrl}/auth/v1/admin/users?select=email&id=eq.${userId}&limit=1`,
+      { headers }
+    );
+
+    if (authResponse.ok) {
+      const rows = await authResponse.json();
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].email) {
+        return rows[0].email;
+      }
+    }
   } catch {
-    return null;
+    // Fall through to profiles table
   }
+
+  // Fallback: query profiles table for email
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?select=email&id=eq.${userId}&limit=1`,
+      { headers }
+    );
+
+    if (response.ok) {
+      const rows = await response.json();
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].email) {
+        return rows[0].email;
+      }
+    }
+  } catch {
+    // Fall through
+  }
+
+  return null;
 }
 
 /**
