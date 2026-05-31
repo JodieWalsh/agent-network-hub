@@ -48,58 +48,78 @@ export async function sendEmailViaResend(
 }
 
 // TODO: Switch to 'Buyers Agent Hub <notifications@buyersagenthub.com>' after domain verification
-export const FROM_EMAIL = 'Buyers Agent Hub <onboarding@resend.dev>';
+export const FROM_EMAIL = 'Buyers Agent Hub <hello@buyersagenthub.com>';
 
-export const APP_URL = Deno.env.get('APP_URL') || 'https://agent-network-hub-1ynd.vercel.app';
+export const APP_URL = Deno.env.get('APP_URL') || 'https://buyersagenthub.com';
+
+function getServiceRoleKey(): string | null {
+  const secretKeysJson = Deno.env.get('SUPABASE_SECRET_KEYS');
+  if (!secretKeysJson) {
+    console.log('[send-email] missing SUPABASE_SECRET_KEYS');
+    return null;
+  }
+
+  try {
+    const secretKeys = JSON.parse(secretKeysJson);
+    return Object.values(secretKeys)[0] as string;
+  } catch (error) {
+    console.log('[send-email] failed to parse SUPABASE_SECRET_KEYS:', String(error));
+    return null;
+  }
+}
 
 /**
  * Get a user's email address from Supabase
  * Tries auth admin API first, falls back to profiles table
  */
 export async function getUserEmail(userId: string): Promise<string | null> {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceRoleKey = getServiceRoleKey();
 
-  if (!supabaseUrl || !serviceRoleKey) return null;
-
-  const headers = {
-    apikey: serviceRoleKey,
-    Authorization: `Bearer ${serviceRoleKey}`,
-    Accept: 'application/json',
-  };
-
-  // Try auth admin API first with the REST filter endpoint.
-  try {
-    const authResponse = await fetch(
-      `${supabaseUrl}/auth/v1/admin/users?select=email&id=eq.${userId}&limit=1`,
-      { headers }
-    );
-
-    if (authResponse.ok) {
-      const rows = await authResponse.json();
-      if (Array.isArray(rows) && rows.length > 0 && rows[0].email) {
-        return rows[0].email;
-      }
-    }
-  } catch {
-    // Fall through to profiles table
+  if (!serviceRoleKey) {
+    return null;
   }
 
-  // Fallback: query profiles table for email
   try {
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?select=email&id=eq.${userId}&limit=1`,
-      { headers }
+      `${supabaseUrl}/auth/v1/admin/users/${userId}`,
+      {
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+      }
     );
 
-    if (response.ok) {
-      const rows = await response.json();
-      if (Array.isArray(rows) && rows.length > 0 && rows[0].email) {
-        return rows[0].email;
-      }
+    const data = await response.json();
+    console.log('[send-email] auth admin response:', { status: response.status, ok: response.ok, data });
+
+    if (data?.email) {
+      return data.email;
     }
-  } catch {
-    // Fall through
+  } catch (error) {
+    console.log('[send-email] auth admin lookup failed:', String(error));
+  }
+
+  try {
+    const profileResponse = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?select=email&id=eq.${userId}&limit=1`,
+      {
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+      }
+    );
+
+    const profileData = await profileResponse.json();
+    console.log('[send-email] profiles fallback response:', { status: profileResponse.status, ok: profileResponse.ok, profileData });
+
+    if (Array.isArray(profileData) && profileData.length > 0 && profileData[0]?.email) {
+      return profileData[0].email;
+    }
+  } catch (error) {
+    console.log('[send-email] profiles lookup failed:', String(error));
   }
 
   return null;
@@ -162,7 +182,7 @@ export async function checkEmailPreferences(
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const serviceRoleKey = getServiceRoleKey();
   if (!supabaseUrl || !serviceRoleKey) {
     return { shouldSend: false, email, reason: 'no_supabase' };
   }
