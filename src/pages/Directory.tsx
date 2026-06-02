@@ -181,12 +181,12 @@ export default function Directory() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-forest/70" size={18} />
             <Input
               placeholder="Search by name or city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-cream border-forest/10 shadow-subtle"
             />
           </div>
           <Button
@@ -197,7 +197,7 @@ export default function Directory() {
             <Filter size={18} className="mr-2" />
             Filters
             {hasActiveFilters && (
-              <Badge variant="secondary" className="ml-2 bg-rose-gold text-forest">
+              <Badge variant="secondary" className="ml-2 bg-rose-gold text-white">
                 Active
               </Badge>
             )}
@@ -209,10 +209,10 @@ export default function Directory() {
           <aside
             className={`lg:w-64 space-y-6 ${showFilters ? "block" : "hidden lg:block"}`}
           >
-            <Card className="bg-card border-border">
+            <Card className="bg-cream border-forest/10 shadow-card">
               <CardContent className="p-5 space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-foreground">Filters</h3>
+                  <h3 className="font-medium text-forest">Filters</h3>
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}
@@ -294,7 +294,7 @@ export default function Directory() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="bg-card border-border animate-pulse">
+                  <Card key={i} className="bg-cream border-forest/10 animate-pulse shadow-card">
                     <CardContent className="p-6">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="w-20 h-20 rounded-full bg-muted" />
@@ -306,11 +306,11 @@ export default function Directory() {
                 ))}
               </div>
             ) : filteredProfiles.length === 0 ? (
-              <Card className="bg-card border-border">
+              <Card className="bg-cream border-forest/10 shadow-card">
                 <CardContent className="p-12 text-center">
                   <p className="text-muted-foreground">No agents found matching your criteria.</p>
                   {hasActiveFilters && (
-                    <Button variant="link" onClick={clearFilters} className="mt-2 text-primary">
+                    <Button variant="link" onClick={clearFilters} className="mt-2 text-rose-gold">
                       Clear filters
                     </Button>
                   )}
@@ -321,7 +321,7 @@ export default function Directory() {
                 {filteredProfiles.map((profile) => (
                   <Card
                     key={profile.id}
-                    className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150 cursor-pointer"
+                    className="bg-cream border-forest/10 hover:border-rose-gold/20 shadow-card hover:shadow-hover transition-all duration-200 cursor-pointer"
                     onClick={() => {
                       setSelectedProfile(profile);
                       setProfileModalOpen(true);
@@ -355,7 +355,7 @@ export default function Directory() {
 
                           {/* Type */}
                           <div className="mt-1">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-rose-gold text-rose-gold/90 bg-rose-gold/5">
                               {userTypeLabels[profile.user_type] || profile.user_type}
                             </Badge>
                           </div>
@@ -367,7 +367,7 @@ export default function Directory() {
                                 <Badge
                                   key={spec}
                                   variant="secondary"
-                                  className="text-xs bg-forest/5 text-forest border-forest/20"
+                                  className="text-xs bg-rose-gold/10 text-rose-gold-dark border-rose-gold/20"
                                 >
                                   {specializationLabels[spec] || spec}
                                 </Badge>

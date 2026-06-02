@@ -33,7 +33,7 @@ import {
   getSupabaseClient,
   calculateFees,
 } from '../_shared/stripe.ts';
-import { getResendClient, FROM_EMAIL, checkEmailPreferences } from '../_shared/email.ts';
+import { sendEmailViaResend, FROM_EMAIL, checkEmailPreferences } from '../_shared/email.ts';
 import { getTemplateForType } from '../_shared/email-templates.ts';
 
 /** Fire-and-forget email helper for webhook notifications */
@@ -49,14 +49,18 @@ async function sendEmailForNotification(
     const template = getTemplateForType(type, data);
     if (!template) return;
 
-    const resend = getResendClient();
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [email],
-      subject: template.subject,
-      html: template.html,
-    });
-    console.log(`[webhook-email] Sent ${type} email to ${email}`);
+    const result = await sendEmailViaResend(
+      email,
+      template.subject,
+      template.html,
+      FROM_EMAIL
+    );
+    
+    if (result.success) {
+      console.log(`[webhook-email] Sent ${type} email to ${email}`);
+    } else {
+      console.error(`[webhook-email] Failed to send ${type} email:`, result.error);
+    }
   } catch (err) {
     console.error(`[webhook-email] Failed to send ${type} email:`, err);
   }

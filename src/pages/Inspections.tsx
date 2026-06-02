@@ -205,7 +205,7 @@ export default function Inspections() {
             </p>
           </div>
           <Link to="/inspections/new">
-            <Button className="bg-rose-gold hover:bg-rose-gold/90 text-forest font-semibold">
+            <Button className="bg-rose-gold hover:bg-rose-gold/90 text-white font-semibold">
               <Plus className="h-4 w-4 mr-2" />
               Post Inspection Request
             </Button>
@@ -299,7 +299,7 @@ export default function Inspections() {
                 </p>
               </div>
               <Link to="/inspections/new">
-                <Button className="bg-rose-gold hover:bg-rose-gold/90 text-forest">
+                <Button className="bg-rose-gold hover:bg-rose-gold/90 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Post a Job
                 </Button>

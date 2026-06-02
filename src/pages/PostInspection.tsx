@@ -330,7 +330,7 @@ export default function PostInspection() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-rose-gold hover:bg-rose-gold/90 text-forest font-semibold"
+                  className="flex-1 bg-rose-gold hover:bg-rose-gold/90 text-white font-semibold"
                 >
                   {loading ? "Posting..." : "Post Request"}
                 </Button>

@@ -141,7 +141,7 @@ export default function ResetPassword() {
                 </p>
                 <Button
                   onClick={() => navigate("/auth")}
-                  className="bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium"
+                  className="bg-rose-gold hover:bg-rose-gold/90 text-white font-medium"
                 >
                   Back to Sign In
                 </Button>
@@ -230,7 +230,7 @@ export default function ResetPassword() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium"
+                  className="w-full bg-rose-gold hover:bg-rose-gold/90 text-white font-medium"
                   disabled={isLoading}
                 >
                   {isLoading ? "Updating..." : "Update Password"}

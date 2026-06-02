@@ -143,11 +143,11 @@ export default function ForumHome() {
         <div className="hero-section rounded-xl px-6 py-8 lg:px-8 lg:py-10 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-serif font-bold text-white flex items-center gap-3">
-                <MessagesSquare className="text-rose-gold-light" size={28} />
+              <h1 className="text-2xl lg:text-3xl font-serif font-bold text-foreground flex items-center gap-3">
+                <MessagesSquare className="text-forest" size={28} />
                 Community Forums
               </h1>
-              <p className="text-white/70 mt-2">
+              <p className="text-muted-foreground mt-2">
                 Connect, share knowledge, and grow with fellow professionals
               </p>
             </div>
@@ -172,9 +172,9 @@ export default function ForumHome() {
         </div>
 
         {/* Search */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 bg-cream border border-forest/10 shadow-card rounded-[18px] p-4">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-forest/70" />
             <Input
               value={searchQuery}
               onChange={(e) => {
@@ -183,10 +183,10 @@ export default function ForumHome() {
               }}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search forums..."
-              className="pl-9"
+              className="pl-9 bg-cream border-forest/10 shadow-subtle"
             />
           </div>
-          <Button variant="outline" onClick={handleSearch} disabled={searching}>
+          <Button variant="outline" onClick={handleSearch} disabled={searching} className="border-rose-gold text-rose-gold hover:bg-rose-gold/10">
             {searching ? 'Searching...' : 'Search'}
           </Button>
         </div>
@@ -228,10 +228,10 @@ export default function ForumHome() {
           <div className="flex gap-6">
             <div className="flex-1 min-w-0">
               <Tabs defaultValue="categories">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="categories">Categories</TabsTrigger>
-                  <TabsTrigger value="regional">Regional</TabsTrigger>
-                  <TabsTrigger value="trending">Trending</TabsTrigger>
+                <TabsList className="mb-4 rounded-full bg-cream border border-forest/10 shadow-subtle p-1">
+                  <TabsTrigger value="categories" className="rounded-full px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5">Categories</TabsTrigger>
+                  <TabsTrigger value="regional" className="rounded-full px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5">Regional</TabsTrigger>
+                  <TabsTrigger value="trending" className="rounded-full px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5">Trending</TabsTrigger>
                 </TabsList>
 
                 {/* Categories Tab */}
@@ -249,7 +249,7 @@ export default function ForumHome() {
                         return (
                           <Card
                             key={category.id}
-                            className="hover:bg-muted/30 transition-colors cursor-pointer"
+                            className="bg-cream border-forest/10 shadow-card hover:bg-rose-gold/5 transition-all duration-200 cursor-pointer"
                             onClick={() => navigate(`/forums/category/${category.slug}`)}
                           >
                             <CardContent className="p-4 flex items-start gap-3">
@@ -292,7 +292,7 @@ export default function ForumHome() {
                       {boards.map((board) => (
                         <Card
                           key={board.id}
-                          className="hover:bg-muted/30 transition-colors cursor-pointer"
+                          className="bg-cream border-forest/10 shadow-card hover:bg-rose-gold/5 transition-all duration-200 cursor-pointer"
                           onClick={() => navigate(`/forums/region/${board.slug}`)}
                         >
                           <CardContent className="p-4 flex items-center gap-3">
@@ -344,7 +344,9 @@ export default function ForumHome() {
                   ) : (
                     <div className="space-y-2">
                       {trendingPosts.map((post) => (
-                        <PostCard key={post.id} post={post} />
+                        <div key={post.id} className="bg-cream border-forest/10 shadow-card rounded-[18px] overflow-hidden">
+                          <PostCard post={post} />
+                        </div>
                       ))}
                       {hasMoreTrending && (
                         <div className="text-center pt-4">

@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/stripe.ts';
-import { getResendClient, FROM_EMAIL, checkEmailPreferences } from '../_shared/email.ts';
+import { sendEmailViaResend, FROM_EMAIL, checkEmailPreferences } from '../_shared/email.ts';
 import { getTemplateForType } from '../_shared/email-templates.ts';
 
 /**
@@ -48,19 +48,18 @@ serve(async (req: Request) => {
       );
     }
 
-    // 3. Send via Resend
-    const resend = getResendClient();
-    const { error: sendError } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [email!],
-      subject: template.subject,
-      html: template.html,
-    });
+    // 3. Send via Resend API
+    const sendResult = await sendEmailViaResend(
+      email!,
+      template.subject,
+      template.html,
+      FROM_EMAIL
+    );
 
-    if (sendError) {
-      console.error(`[send-email] Resend error for ${userId}:`, sendError);
+    if (!sendResult.success) {
+      console.error(`[send-email] Resend API error for ${userId}:`, sendResult.error);
       return new Response(
-        JSON.stringify({ status: 'error', message: sendError.message }),
+        JSON.stringify({ status: 'error', message: sendResult.error }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

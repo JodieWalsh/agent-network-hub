@@ -289,7 +289,7 @@ export default function Auth() {
 
                     <Button
                       type="submit"
-                      className="w-full bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium"
+                      className="w-full bg-rose-gold hover:bg-rose-gold/90 text-white font-medium"
                       disabled={isLoading}
                     >
                       {isLoading ? "Sending..." : "Send Reset Link"}
@@ -413,7 +413,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-rose-gold hover:bg-rose-gold/90 text-forest font-medium"
+                className="w-full bg-rose-gold hover:bg-rose-gold/90 text-white font-medium"
                 disabled={isLoading}
               >
                 {isLoading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}

@@ -14,17 +14,17 @@ function PowerTile({ icon: Icon, title, description, path }: PowerTileProps) {
   return (
     <button
       onClick={() => navigate(path)}
-      className="group p-6 rounded-lg border border-border bg-white hover:border-rose-gold/30 hover:shadow-card shadow-subtle transition-all duration-200 text-left w-full"
+      className="group p-6 rounded-[18px] border border-rose-gold/15 bg-cream shadow-card hover:shadow-hover transition-all duration-200 text-left w-full"
     >
       <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-lg bg-forest/8 flex items-center justify-center flex-shrink-0 group-hover:bg-forest/12 transition-colors">
+        <div className="w-12 h-12 rounded-2xl bg-forest/10 flex items-center justify-center flex-shrink-0 group-hover:bg-forest/15 transition-colors">
           <Icon size={18} className="text-forest" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold mb-1 text-foreground">
+          <h3 className="text-base font-semibold mb-1 text-forest">
             {title}
           </h3>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {description}
           </p>
         </div>

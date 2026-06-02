@@ -136,7 +136,7 @@ export default function Marketplace() {
             </p>
           </div>
           {canAddProperty && (
-            <Button onClick={() => navigate('/marketplace/add')} className="flex items-center gap-2">
+            <Button onClick={() => navigate('/marketplace/add')} className="flex items-center gap-2 bg-rose-gold text-white hover:bg-rose-gold-dark">
               <Plus size={16} />
               Add Property
             </Button>
@@ -146,12 +146,12 @@ export default function Marketplace() {
         {/* Search & Location Filter */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1 max-w-xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-forest/70" size={18} />
             <Input
               placeholder="Search by property name, city, or state..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-cream border-forest/10 shadow-subtle"
             />
           </div>
           <div className="w-full md:w-72">
@@ -163,7 +163,7 @@ export default function Marketplace() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="bg-card border-border animate-pulse overflow-hidden">
+              <Card key={i} className="bg-cream border-forest/10 animate-pulse overflow-hidden shadow-card">
                 <div className="h-48 bg-muted" />
                 <CardContent className="p-5 space-y-3">
                   <div className="h-5 w-3/4 bg-muted rounded" />
@@ -174,7 +174,7 @@ export default function Marketplace() {
             ))}
           </div>
         ) : filteredProperties.length === 0 ? (
-          <Card className="bg-card border-border">
+          <Card className="bg-cream border-forest/10 shadow-card">
             <CardContent className="p-12 text-center">
               <p className="text-muted-foreground">No properties found matching your search.</p>
             </CardContent>
@@ -184,7 +184,7 @@ export default function Marketplace() {
             {filteredProperties.map((property) => (
               <Card
                 key={property.id}
-                className="bg-card border-border hover:border-muted-foreground/20 transition-colors duration-150 overflow-hidden cursor-pointer"
+                className="bg-cream border-forest/10 hover:border-rose-gold/20 shadow-card hover:shadow-hover transition-all duration-200 overflow-hidden cursor-pointer"
                 onClick={() => {
                   setSelectedProperty(property);
                   setDetailModalOpen(true);
@@ -206,7 +206,7 @@ export default function Marketplace() {
                   {/* Status Badge */}
                   <Badge
                     variant="outline"
-                    className={`absolute top-3 right-3 bg-white/95 ${statusLabels[property.status].className}`}
+                    className={`absolute top-3 right-3 bg-white/95 text-xs px-2 py-1 ${statusLabels[property.status].className}`}
                   >
                     {statusLabels[property.status].label}
                   </Badge>
@@ -214,7 +214,7 @@ export default function Marketplace() {
                   {property.distance !== null && (
                     <Badge
                       variant="outline"
-                      className="absolute top-3 left-3 bg-white/95 text-forest border-forest"
+                      className="absolute top-3 left-3 bg-white/95 text-forest border-forest text-xs px-2 py-1"
                     >
                       {property.distance} km
                     </Badge>

@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { corsHeaders } from '../_shared/stripe.ts';
-import { getResendClient, FROM_EMAIL, getUserEmail } from '../_shared/email.ts';
+import { sendEmailViaResend, FROM_EMAIL, getUserEmail } from '../_shared/email.ts';
 import { weeklyDigestTemplate } from '../_shared/email-templates.ts';
 
 /**
@@ -43,7 +43,6 @@ serve(async (req: Request) => {
       });
     }
 
-    const resend = getResendClient();
     const results = [];
 
     for (const uid of userIds) {
@@ -118,16 +117,16 @@ serve(async (req: Request) => {
       const template = weeklyDigestTemplate(digestData);
 
       try {
-        const { error: sendError } = await resend.emails.send({
-          from: FROM_EMAIL,
-          to: [userEmail],
-          subject: template.subject,
-          html: template.html,
-        });
+        const sendResult = await sendEmailViaResend(
+          userEmail,
+          template.subject,
+          template.html,
+          FROM_EMAIL
+        );
 
-        if (sendError) {
-          console.error(`[Forum Digest] Resend error for ${uid}:`, sendError);
-          results.push({ userId: uid, status: 'error', error: sendError.message });
+        if (!sendResult.success) {
+          console.error(`[Forum Digest] Resend error for ${uid}:`, sendResult.error);
+          results.push({ userId: uid, status: 'error', error: sendResult.error });
         } else {
           console.log(`[Forum Digest] Sent to ${userEmail}`);
           results.push({ userId: uid, status: 'sent' });

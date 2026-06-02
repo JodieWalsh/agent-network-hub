@@ -169,11 +169,12 @@ export function RecentActivity() {
   }
 
   return (
-    <div className="p-6 rounded-md border border-border bg-white">
+    <div className="p-6 rounded-[18px] border border-forest/10 bg-cream shadow-card">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-sm font-semibold text-foreground">
-          Recent Activity
-        </h2>
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-forest/70">Recent Activity</p>
+          <h2 className="text-xl font-serif font-semibold text-forest">Activity Snapshot</h2>
+        </div>
         <button
           onClick={() => navigate('/activity')}
           className="text-xs text-forest hover:text-forest/80 font-medium transition-colors flex items-center gap-1"

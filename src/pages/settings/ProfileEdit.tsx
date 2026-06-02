@@ -438,7 +438,7 @@ export default function ProfileEdit() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Personal Information */}
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-rose-gold" />
@@ -487,7 +487,7 @@ export default function ProfileEdit() {
           </Card>
 
           {/* Location Settings */}
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-rose-gold" />
@@ -517,7 +517,7 @@ export default function ProfileEdit() {
           {user && <ServiceAreaManager userId={user.id} />}
 
           {/* Professional Information */}
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-rose-gold" />
@@ -569,7 +569,7 @@ export default function ProfileEdit() {
           </Card>
 
           {/* Security Profile */}
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-rose-gold" />
@@ -580,7 +580,7 @@ export default function ProfileEdit() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-cream rounded-2xl border border-forest/10 shadow-sm">
                 <div className="flex items-center gap-3">
                   {role === 'admin' && <Shield className="h-6 w-6 text-purple-600" />}
                   {role !== 'admin' && approvalStatus === 'approved' && <CheckCircle2 className="h-6 w-6 text-green-600" />}
@@ -641,7 +641,7 @@ export default function ProfileEdit() {
           </Card>
 
           {/* Membership */}
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-rose-gold" />
@@ -652,7 +652,7 @@ export default function ProfileEdit() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-cream rounded-2xl border border-forest/10 shadow-sm">
                 <div className="flex items-center gap-3">
                   {(authProfile?.subscription_tier === 'premium') && (
                     <Crown className="h-6 w-6 text-rose-gold" />
@@ -747,7 +747,7 @@ export default function ProfileEdit() {
           )}
 
           {/* Preferences */}
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-rose-gold" />
@@ -765,7 +765,7 @@ export default function ProfileEdit() {
                   onValueChange={(value) => setUnitSystem(value as 'metric' | 'imperial')}
                   className="flex flex-col space-y-2"
                 >
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-2xl border border-forest/10 bg-cream hover:bg-cream/80 transition-colors">
                     <RadioGroupItem value="metric" id="metric" />
                     <Label htmlFor="metric" className="flex-1 cursor-pointer">
                       <span className="font-medium">Metric</span>
@@ -774,7 +774,7 @@ export default function ProfileEdit() {
                       </span>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-2xl border border-forest/10 bg-cream hover:bg-cream/80 transition-colors">
                     <RadioGroupItem value="imperial" id="imperial" />
                     <Label htmlFor="imperial" className="flex-1 cursor-pointer">
                       <span className="font-medium">Imperial</span>
@@ -790,8 +790,8 @@ export default function ProfileEdit() {
               </div>
 
               {/* Country & Currency */}
-              <div className="space-y-3 pt-2 border-t">
-                <Label>Country</Label>
+              <div className="space-y-3 pt-2 border-t border-forest/10">
+                <Label className="text-forest">Country</Label>
                 <Select
                   value={selectedCountry}
                   onValueChange={(value) => {
@@ -844,7 +844,7 @@ export default function ProfileEdit() {
             <Button
               type="submit"
               disabled={saving}
-              className="bg-rose-gold hover:bg-rose-gold/90 text-forest font-semibold gap-2"
+              className="bg-rose-gold text-white hover:bg-rose-gold-dark font-semibold gap-2"
             >
               <Save className="h-4 w-4" />
               {saving ? "Saving..." : "Save Changes"}
@@ -853,7 +853,7 @@ export default function ProfileEdit() {
         </form>
 
         {/* Notification Preferences */}
-        <Card className="border-border/50">
+        <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-rose-gold" />
@@ -887,9 +887,9 @@ export default function ProfileEdit() {
               {notificationPrefs && (
                 <div className="space-y-3 pl-6">
                   {/* Master Toggle */}
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-cream rounded-2xl border border-forest/10">
                     <div>
-                      <p className="font-medium">Enable email notifications</p>
+                      <p className="font-medium text-forest">Enable email notifications</p>
                       <p className="text-sm text-muted-foreground">
                         Receive important updates via email
                       </p>
@@ -903,7 +903,7 @@ export default function ProfileEdit() {
 
                   {/* Individual Email Toggles */}
                   {notificationPrefs.email_enabled && (
-                    <div className="space-y-2 border-l-2 border-border pl-4 ml-2">
+                    <div className="space-y-2 border-l-2 border-forest/20 pl-4 ml-2">
                       <div className="flex items-center justify-between py-2">
                         <span className="text-sm">New bids on your jobs</span>
                         <Switch
@@ -981,7 +981,7 @@ export default function ProfileEdit() {
                 <h4 className="font-medium">Push Notifications</h4>
                 <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-4 bg-cream rounded-2xl border border-forest/10 shadow-sm">
                 <p className="text-sm text-muted-foreground">
                   Browser and mobile push notifications will be available in a future update. Stay tuned!
                 </p>
@@ -995,7 +995,7 @@ export default function ProfileEdit() {
                 <h4 className="font-medium">SMS Notifications</h4>
                 <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-4 bg-cream rounded-2xl border border-forest/10 shadow-sm">
                 <p className="text-sm text-muted-foreground">
                   Text message alerts for critical updates will be available in a future update.
                 </p>
@@ -1010,9 +1010,9 @@ export default function ProfileEdit() {
                   <h4 className="font-medium">Quiet Hours</h4>
                 </div>
                 <div className="space-y-3 pl-6">
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-cream rounded-2xl border border-forest/10">
                     <div>
-                      <p className="font-medium">Enable quiet hours</p>
+                      <p className="font-medium text-forest">Enable quiet hours</p>
                       <p className="text-sm text-muted-foreground">
                         Pause email notifications during set hours
                       </p>
@@ -1025,7 +1025,7 @@ export default function ProfileEdit() {
                   </div>
 
                   {notificationPrefs.quiet_hours_enabled && (
-                    <div className="grid grid-cols-2 gap-4 border-l-2 border-border pl-4 ml-2">
+                    <div className="grid grid-cols-2 gap-4 border-l-2 border-forest/20 pl-4 ml-2">
                       <div className="space-y-2">
                         <Label htmlFor="quietStart" className="text-sm">Start time</Label>
                         <Input
@@ -1056,7 +1056,7 @@ export default function ProfileEdit() {
 
         {/* Password Change Section */}
         <form onSubmit={handlePasswordChange}>
-          <Card className="border-border/50">
+          <Card className="border-forest/10 bg-cream shadow-card rounded-[18px]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-rose-gold" />
