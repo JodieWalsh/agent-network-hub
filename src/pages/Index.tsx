@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { PowerTiles } from "@/components/dashboard/PowerTiles";
@@ -6,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
 
   const getUserFirstName = () => {
     if (profile?.full_name) {
@@ -42,12 +44,13 @@ const Dashboard = () => {
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             {[
-              { label: "New Brief", mode: "primary" },
-              { label: "Post Property", mode: "primary" },
-              { label: "Review Offers", mode: "secondary" },
+              { label: "New Brief", mode: "primary", path: "/briefs/new" },
+              { label: "Post Property", mode: "primary", path: "/marketplace/add" },
+              { label: "Review Offers", mode: "secondary", path: "/inspections" },
             ].map((action) => (
               <button
                 key={action.label}
+                onClick={() => navigate(action.path)}
                 className={`rounded-full px-6 py-3 text-sm font-semibold transition ${
                   action.mode === "primary"
                     ? "bg-[#064E3B] text-white shadow-sm hover:bg-[#0d5f48]"
