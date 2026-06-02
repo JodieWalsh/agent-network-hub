@@ -4,10 +4,15 @@ import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { PowerTiles } from "@/components/dashboard/PowerTiles";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useAuth } from "@/contexts/AuthContext";
+import Landing from "./Landing";
 
 const Dashboard = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Logged-out users see the marketing landing page
+  if (loading) return null;
+  if (!user) return <Landing />;
 
   const getUserFirstName = () => {
     if (profile?.full_name) {
