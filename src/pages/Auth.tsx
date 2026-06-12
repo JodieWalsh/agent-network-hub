@@ -5,9 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Mail, Lock, User, Briefcase, ArrowLeft } from "lucide-react";
+import { Mail, Lock, User, Briefcase, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -210,28 +209,61 @@ export default function Auth() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <img
-            src="/images/logo/logo-option-1.svg"
-            alt="Buyers Agent Hub"
-            className="h-16 w-auto"
-          />
-        </div>
+  const inputClasses = (hasError: boolean) =>
+    `h-12 min-h-[44px] rounded-lg bg-white px-4 text-[#1C1917] placeholder:text-[#1C1917]/40 border shadow-[0_2px_10px_rgba(94,70,55,0.05)] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#B76E79]/30 focus-visible:ring-offset-0 focus-visible:border-[#B76E79]/50 ${
+      hasError ? "border-[#BE123C]" : "border-[rgba(216,195,184,0.6)]"
+    }`;
 
-        <Card className="bg-card border-border shadow-elegant">
-          <CardHeader className="text-center">
-            <CardTitle className="font-serif text-2xl">
+  const labelClasses = "flex items-center gap-2 text-sm font-medium text-[#1C1917]";
+
+  return (
+    <div className="flex min-h-screen flex-col bg-[#F6F1EA] lg:flex-row">
+      {/* Left panel — atmospheric forest green with aurora light */}
+      <div className="relative flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#173A31] to-[#2D6350] px-8 py-10 lg:min-h-screen lg:w-1/2 lg:py-0">
+        {/* Aurora — champagne and rose gold light sources */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 80% at 90% -5%, rgba(183,110,121,0.5), transparent 60%), radial-gradient(ellipse 50% 55% at 70% 10%, rgba(216,195,184,0.4), transparent 65%), radial-gradient(ellipse 60% 70% at 0% 110%, rgba(216,195,184,0.25), transparent 60%)",
+          }}
+        />
+        {/* Subtle texture — fine diagonal sheen */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(135deg, rgba(255,255,255,0.6) 0px, rgba(255,255,255,0.6) 1px, transparent 1px, transparent 9px)",
+          }}
+        />
+
+        <div className="relative flex flex-col items-center text-center">
+          <h2 className="font-serif text-2xl uppercase leading-snug tracking-[0.35em] text-[#D8C3B8] lg:text-4xl lg:leading-relaxed">
+            Buyers Agent
+            <br />
+            Hub
+          </h2>
+          <div className="mt-5 h-[2px] w-16 rounded-full bg-[#B76E79]" />
+          <p className="mt-6 hidden max-w-sm font-serif text-xl leading-relaxed text-white lg:block">
+            Where Australia&rsquo;s leading property professionals connect.
+          </p>
+        </div>
+      </div>
+
+      {/* Right panel — warm ivory form */}
+      <div className="flex flex-1 items-center justify-center px-6 py-12 lg:w-1/2 lg:px-12">
+        <div className="w-full max-w-md">
+          <div className="mb-9 text-center lg:text-left">
+            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#173A31] lg:text-5xl">
               {showForgotPassword
                 ? "Reset Password"
                 : isLogin
                 ? "Welcome Back"
                 : "Welcome"}
-            </CardTitle>
-            <CardDescription>
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-[#1C1917]/70">
               {showForgotPassword
                 ? "Enter your email to receive a password reset link"
                 : isLogin
@@ -239,28 +271,28 @@ export default function Auth() {
                 : pendingPlan
                 ? `Create an account to subscribe to ${pendingPlan.charAt(0).toUpperCase() + pendingPlan.slice(1)}`
                 : "Create your account to connect with buyers agents"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
+          </div>
+          <div>
             {showForgotPassword ? (
               // Forgot Password Form
               <div className="space-y-4">
                 {resetEmailSent ? (
                   // Success state
                   <div className="text-center py-4">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Mail className="h-8 w-8 text-green-600" />
+                    <div className="w-16 h-16 bg-[#2D6350]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Mail className="h-8 w-8 text-[#2D6350]" />
                     </div>
-                    <h3 className="text-lg font-medium mb-2">Check your email</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      We've sent a password reset link to <strong>{email}</strong>
+                    <h3 className="text-lg font-medium text-[#1C1917] mb-2">Check your email</h3>
+                    <p className="text-sm text-[#1C1917]/70 mb-4">
+                      We've sent a password reset link to <strong className="text-[#1C1917]">{email}</strong>
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-[#1C1917]/70">
                       Didn't receive the email? Check your spam folder or{" "}
                       <button
                         type="button"
                         onClick={() => setResetEmailSent(false)}
-                        className="text-primary hover:underline"
+                        className="text-[#8F4E58] font-medium hover:underline"
                       >
                         try again
                       </button>
@@ -270,8 +302,8 @@ export default function Auth() {
                   // Email input form
                   <form onSubmit={handleForgotPassword} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="resetEmail" className="flex items-center gap-2">
-                        <Mail size={14} />
+                      <Label htmlFor="resetEmail" className={labelClasses}>
+                        <Mail size={14} className="text-[#2D6350]" />
                         Email Address
                       </Label>
                       <Input
@@ -280,16 +312,16 @@ export default function Auth() {
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={errors.email ? "border-destructive" : ""}
+                        className={inputClasses(!!errors.email)}
                       />
                       {errors.email && (
-                        <p className="text-xs text-destructive">{errors.email}</p>
+                        <p className="text-xs text-[#BE123C]">{errors.email}</p>
                       )}
                     </div>
 
                     <Button
                       type="submit"
-                      className="w-full bg-rose-gold hover:bg-rose-gold/90 text-white font-medium"
+                      className="w-full min-h-[48px] rounded-lg bg-[#2D6350] py-3.5 text-sm font-semibold tracking-[0.05em] text-white shadow-[0_5px_16px_rgba(23,58,49,0.25)] transition-all duration-200 hover:bg-[#B76E79] hover:shadow-[0_8px_22px_rgba(183,110,121,0.35)]"
                       disabled={isLoading}
                     >
                       {isLoading ? "Sending..." : "Send Reset Link"}
@@ -305,7 +337,7 @@ export default function Auth() {
                       setResetEmailSent(false);
                       setErrors({});
                     }}
-                    className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                    className="text-sm text-[#1C1917]/70 hover:text-[#2D6350] inline-flex items-center gap-1 min-h-[44px]"
                   >
                     <ArrowLeft size={14} />
                     Back to sign in
@@ -319,8 +351,8 @@ export default function Auth() {
               {!isLogin && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="fullName" className="flex items-center gap-2">
-                      <User size={14} />
+                    <Label htmlFor="fullName" className={labelClasses}>
+                      <User size={14} className="text-[#2D6350]" />
                       Full Name
                     </Label>
                     <Input
@@ -329,23 +361,23 @@ export default function Auth() {
                       placeholder="Enter your full name"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className={errors.fullName ? "border-destructive" : ""}
+                      className={inputClasses(!!errors.fullName)}
                     />
                     {errors.fullName && (
-                      <p className="text-xs text-destructive">{errors.fullName}</p>
+                      <p className="text-xs text-[#BE123C]">{errors.fullName}</p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="userType" className="flex items-center gap-2">
-                      <Briefcase size={14} />
+                    <Label htmlFor="userType" className={labelClasses}>
+                      <Briefcase size={14} className="text-[#2D6350]" />
                       Professional Type
                     </Label>
                     <Select value={userType} onValueChange={setUserType}>
-                      <SelectTrigger className={errors.userType ? "border-destructive" : ""}>
+                      <SelectTrigger className={inputClasses(!!errors.userType)}>
                         <SelectValue placeholder="Select your profession" />
                       </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
+                      <SelectContent className="bg-white border-[rgba(216,195,184,0.6)] text-[#1C1917]">
                         {Object.entries(userTypeLabels).map(([value, label]) => (
                           <SelectItem key={value} value={value}>
                             {label}
@@ -354,15 +386,15 @@ export default function Auth() {
                       </SelectContent>
                     </Select>
                     {errors.userType && (
-                      <p className="text-xs text-destructive">{errors.userType}</p>
+                      <p className="text-xs text-[#BE123C]">{errors.userType}</p>
                     )}
                   </div>
                 </>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail size={14} />
+                <Label htmlFor="email" className={labelClasses}>
+                  <Mail size={14} className="text-[#2D6350]" />
                   Email
                 </Label>
                 <Input
@@ -371,16 +403,16 @@ export default function Auth() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={errors.email ? "border-destructive" : ""}
+                  className={inputClasses(!!errors.email)}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email}</p>
+                  <p className="text-xs text-[#BE123C]">{errors.email}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2">
-                  <Lock size={14} />
+                <Label htmlFor="password" className={labelClasses}>
+                  <Lock size={14} className="text-[#2D6350]" />
                   Password
                 </Label>
                 <Input
@@ -389,10 +421,10 @@ export default function Auth() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={errors.password ? "border-destructive" : ""}
+                  className={inputClasses(!!errors.password)}
                 />
                 {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password}</p>
+                  <p className="text-xs text-[#BE123C]">{errors.password}</p>
                 )}
                 {isLogin && (
                   <div className="text-right">
@@ -403,7 +435,7 @@ export default function Auth() {
                         setErrors({});
                         setResetEmailSent(false);
                       }}
-                      className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                      className="text-xs text-[#7A655A] hover:text-[#8F4E58] hover:underline py-2"
                     >
                       Forgot password?
                     </button>
@@ -413,7 +445,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="w-full bg-rose-gold hover:bg-rose-gold/90 text-white font-medium"
+                className="w-full min-h-[48px] rounded-lg bg-[#2D6350] py-3.5 text-sm font-semibold tracking-[0.05em] text-white shadow-[0_5px_16px_rgba(23,58,49,0.25)] transition-all duration-200 hover:bg-[#B76E79] hover:shadow-[0_8px_22px_rgba(183,110,121,0.35)]"
                 disabled={isLoading}
               >
                 {isLoading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
@@ -423,10 +455,10 @@ export default function Auth() {
             {/* Divider - only show for login/signup form */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
+                <div className="w-full border-t border-[rgba(216,195,184,0.6)]"></div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <div className="relative flex justify-center text-xs uppercase tracking-[0.15em]">
+                <span className="bg-[#F6F1EA] px-3 text-[#1C1917]/60">Or continue with</span>
               </div>
             </div>
 
@@ -434,7 +466,7 @@ export default function Auth() {
             <Button
               type="button"
               variant="outline"
-              className="w-full border-border hover:bg-accent"
+              className="w-full min-h-[48px] rounded-lg border-[rgba(216,195,184,0.7)] bg-white text-sm font-medium text-[#1C1917] shadow-[0_2px_10px_rgba(94,70,55,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#FBF8F3] hover:text-[#1C1917] hover:shadow-[0_6px_18px_rgba(94,70,55,0.1)]"
               disabled={isLoading}
               onClick={handleGoogleSignIn}
             >
@@ -460,7 +492,7 @@ export default function Auth() {
             </Button>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-[#1C1917]/70">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
                 <button
                   type="button"
@@ -475,7 +507,7 @@ export default function Auth() {
                     if (pendingBilling) params.set("billing", pendingBilling);
                     navigate(`/auth?${params.toString()}`, { replace: true });
                   }}
-                  className="ml-1 text-primary font-medium hover:underline"
+                  className="ml-1 min-h-[44px] font-medium text-[#8F4E58] hover:underline"
                 >
                   {isLogin ? "Sign up" : "Sign in"}
                 </button>
@@ -483,8 +515,8 @@ export default function Auth() {
             </div>
             </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
