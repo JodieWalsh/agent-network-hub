@@ -74,9 +74,9 @@ const membershipLabels: Record<string, string> = {
 };
 
 const membershipColors: Record<string, string> = {
-  free: "bg-white/10 text-white border-[rgba(255,255,255,0.12)]",
-  basic: "bg-white/10 text-[#D8C3B8] border-[#D8C3B8]/40",
-  premium: "bg-[#B76E79]/20 text-[#D8C3B8] border-[#B76E79]/40",
+  free: "bg-[#2D6350]/30 text-white border-[rgba(255,255,255,0.15)]",
+  basic: "bg-[#2D6350]/40 text-[#D8C3B8] border-[rgba(216,195,184,0.4)]",
+  premium: "bg-[#2D6350]/40 text-[#D8C3B8] border-[rgba(216,195,184,0.5)]",
 };
 
 export function AppSidebar() {
@@ -277,7 +277,7 @@ export function AppSidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#173A31] text-white shadow-card lg:hidden"
+        className="fixed top-2.5 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-lg bg-[#173A31] text-white shadow-card lg:hidden"
         aria-label="Toggle menu"
       >
         {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
@@ -305,7 +305,7 @@ export function AppSidebar() {
         {/* Logo Section — Luxury Header */}
         <div className="p-6 border-b border-[rgba(255,255,255,0.12)]">
           <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileOpen(false)}>
-            <span className="hidden sm:block font-serif text-lg uppercase tracking-[0.35em] text-[#D8C3B8]">
+            <span className="block font-serif text-lg uppercase tracking-[0.35em] text-[#D8C3B8]">
               BUYERS AGENT HUB
             </span>
           </Link>
@@ -420,7 +420,7 @@ export function AppSidebar() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "w-full justify-center text-xs py-1.5 font-medium",
+                    "w-full justify-center text-[11px] uppercase tracking-[0.15em] py-1.5 font-medium",
                     membershipColors[getMembershipTier()]
                   )}
                 >

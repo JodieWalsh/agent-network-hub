@@ -40,14 +40,15 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8 px-4 py-6 sm:px-6 lg:px-8">
         {/* Hero welcome card — deep forest gradient */}
-        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#173A31] to-[#2D6350] p-10 lg:p-12 shadow-[0_24px_60px_rgba(23,58,49,0.28)]">
-          {/* Aurora gradient overlay — ambient light bleeding in from top right */}
+        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#173A31] to-[#2D6350] p-6 sm:p-10 lg:p-12 shadow-[0_24px_60px_rgba(23,58,49,0.28)]">
+          {/* Aurora gradient overlay — ambient light bleeding in from top right,
+              with a second champagne light source from bottom left */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 70% 80% at 92% -10%, rgba(183,110,121,0.45), transparent 60%), radial-gradient(ellipse 45% 50% at 75% 5%, rgba(216,195,184,0.35), transparent 65%), radial-gradient(ellipse 55% 65% at 5% 105%, rgba(216,195,184,0.18), transparent 60%)",
+                "radial-gradient(ellipse 70% 80% at 92% -10%, rgba(183,110,121,0.55), transparent 60%), radial-gradient(ellipse 45% 50% at 75% 5%, rgba(216,195,184,0.42), transparent 65%), radial-gradient(ellipse 60% 70% at 0% 110%, rgba(216,195,184,0.3), transparent 60%)",
             }}
           />
           {/* Soft light bloom in the corner itself */}
@@ -64,7 +65,7 @@ const Dashboard = () => {
             <p className="text-xs font-medium uppercase tracking-[0.35em] text-[#D8C3B8]">
               Signature buyers agent experience
             </p>
-            <h1 className="mt-5 font-serif text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+            <h1 className="mt-5 font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
               Welcome back{firstName ? `, ${firstName}` : ""}
             </h1>
             <div className="mt-5 h-[3px] w-24 rounded-full bg-[#B76E79]" />
@@ -81,7 +82,7 @@ const Dashboard = () => {
             <button
               key={action.label}
               onClick={() => navigate(action.path)}
-              className="rounded-full bg-[#2D6350] px-8 py-3.5 text-sm font-semibold tracking-[0.05em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.12),0_5px_16px_rgba(23,58,49,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#B76E79] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_26px_rgba(183,110,121,0.38)]"
+              className="w-full sm:w-auto min-h-[44px] rounded-full bg-[#2D6350] px-8 py-3.5 text-sm font-semibold tracking-[0.05em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.12),0_5px_16px_rgba(23,58,49,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#B76E79] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_26px_rgba(183,110,121,0.38)]"
             >
               {action.label}
             </button>
@@ -109,6 +110,15 @@ const Dashboard = () => {
             {/* Property spotlight */}
             <section className="overflow-hidden rounded-[24px] border border-[#2D6350]/12 bg-white shadow-[0_6px_24px_rgba(94,70,55,0.07)]">
               <div className="relative h-44 bg-gradient-to-br from-[#2D6350] to-[#173A31]">
+                {/* Aurora — same ambient light treatment as the hero */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse 75% 90% at 92% -10%, rgba(183,110,121,0.5), transparent 60%), radial-gradient(ellipse 50% 60% at 75% 5%, rgba(216,195,184,0.38), transparent 65%)",
+                  }}
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Building2 size={44} strokeWidth={1} className="text-[#D8C3B8]" />
                 </div>

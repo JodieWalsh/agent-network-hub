@@ -49,10 +49,15 @@ export function TopBar() {
     <header className="sticky top-0 z-30 bg-[#F6F1EA]/95 backdrop-blur-xl border-b border-[#E3D9CD]">
       <div className="flex items-center justify-between h-16 px-4 lg:px-8">
         {/* Spacer for mobile menu button */}
-        <div className="w-10 lg:hidden" />
+        <div className="w-11 flex-shrink-0 lg:hidden" />
 
-        {/* Search Bar — Premium Styling */}
-        <div className="flex-1 max-w-2xl mx-4 lg:mx-0">
+        {/* Mobile logo — centred */}
+        <span className="flex-1 text-center font-serif text-sm uppercase tracking-[0.25em] text-[#173A31] lg:hidden">
+          Buyers Agent Hub
+        </span>
+
+        {/* Search Bar — Premium Styling (desktop only) */}
+        <div className="hidden flex-1 max-w-2xl mx-4 lg:mx-0 lg:block">
           <div className="relative group">
             <Search
               size={18}
@@ -73,11 +78,11 @@ export function TopBar() {
         </div>
 
         {/* Actions — Refined Icons */}
-        <div className="flex items-center gap-4 lg:gap-6">
+        <div className="flex flex-shrink-0 items-center gap-3 lg:gap-6">
           {/* Notifications */}
           <button
             className={cn(
-              "relative p-2.5 rounded-xl bg-white text-[#2D6350] border border-[#E3D9CD] shadow-[0_2px_12px_rgba(94,70,55,0.07)]",
+              "relative flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#2D6350] border border-[#E3D9CD] shadow-[0_2px_12px_rgba(94,70,55,0.07)]",
               "hover:bg-[#FBF8F3] transition-all duration-200",
               "focus:outline-none focus:ring-2 focus:ring-[#B76E79]/25"
             )}
@@ -87,9 +92,9 @@ export function TopBar() {
             <span className="absolute top-2 right-2 w-2 h-2 bg-[#B76E79] rounded-full shadow-sm" />
           </button>
 
-          {/* User Avatar - Desktop Only */}
+          {/* User Avatar — visible at all sizes; name desktop only */}
           {user && (
-            <div className="hidden lg:flex items-center gap-4 ml-2 pl-6 border-l border-[#E3D9CD]">
+            <div className="flex items-center gap-4 lg:ml-2 lg:pl-6 lg:border-l lg:border-[#E3D9CD]">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}

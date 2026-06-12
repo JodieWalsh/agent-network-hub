@@ -126,6 +126,53 @@ async function contrastAudit(page) {
     console.log('No contrast issues on dashboard.');
   }
 
+  // --- Mobile (375px) ---
+  console.log('\n=== DASHBOARD MOBILE 375px ===');
+  await page.setViewport({ width: 375, height: 812 });
+  await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle0', timeout: 30000 }).catch(() => {});
+  await new Promise((r) => setTimeout(r, 2500));
+  await page.screenshot({ path: path.join(screenshotDir, 'dashboard-mobile-full.png'), fullPage: true });
+  await page.screenshot({ path: path.join(screenshotDir, 'dashboard-mobile-viewport.png') });
+  console.log('Mobile screenshots saved.');
+
+  const hScroll = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+    bodyScrollWidth: document.body.scrollWidth,
+  }));
+  if (hScroll.scrollWidth > hScroll.clientWidth || hScroll.bodyScrollWidth > hScroll.clientWidth) {
+    console.log('HORIZONTAL SCROLL DETECTED:', JSON.stringify(hScroll));
+  } else {
+    console.log('No horizontal scrolling on mobile.');
+  }
+
+  const mobileIssues = await contrastAudit(page);
+  if (mobileIssues.length) {
+    console.log(`MOBILE CONTRAST ISSUES (${mobileIssues.length}):`);
+    mobileIssues.forEach((i) =>
+      console.log(`  "${i.text}" contrast=${i.contrast} (need ${i.required}) fg=${i.fg} bg=${i.bg} size=${i.fontSize}px`)
+    );
+  } else {
+    console.log('No contrast issues on mobile dashboard.');
+  }
+
+  // Mobile drawer: open the hamburger and screenshot
+  try {
+    await page.click('button[aria-label="Toggle menu"]');
+    await new Promise((r) => setTimeout(r, 600));
+    await page.screenshot({ path: path.join(screenshotDir, 'dashboard-mobile-drawer.png') });
+    console.log('Mobile drawer screenshot saved.');
+    const drawerIssues = await contrastAudit(page);
+    const drawerOnly = drawerIssues.length;
+    console.log(drawerOnly ? `DRAWER CONTRAST ISSUES (${drawerOnly})` : 'No contrast issues with drawer open.');
+    if (drawerOnly) drawerIssues.forEach((i) => console.log(`  "${i.text}" contrast=${i.contrast} fg=${i.fg} bg=${i.bg}`));
+  } catch (e) {
+    console.log('Drawer test failed:', e.message);
+  }
+
+  // Restore desktop viewport for remaining pages
+  await page.setViewport({ width: 1440, height: 900 });
+
   // --- Other pages sharing the layout (sidebar/topbar/bg verification) ---
   for (const p of sharedLayoutPages) {
     console.log(`\n=== ${p.name} ===`);
