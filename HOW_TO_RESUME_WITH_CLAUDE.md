@@ -21,7 +21,7 @@ The entire app now uses the **quiet luxury design system** (see CLAUDE.md → DE
 Dev server for these: `npm run dev -- --port 8081`
 
 **Next up:**
-1. **Work Regions feature** — Jodie says this is fully planned and specced, but the spec is NOT in the repo. Ask Jodie where it lives before starting.
+1. **Work Regions feature** — spec at `docs/WORK_REGIONS_SPEC.docx`. Read it first, then implement.
 2. Replace mock geocoder in Directory/Marketplace/Inspections filters with Mapbox (`LocationSearchFilter` → real geocoder) — international users currently can't filter by location
 3. Regenerate Supabase types (`npx supabase gen types`) — fixes most of the 93 pre-existing tsc errors
 4. Delete dead code: `Inspections.tsx`, `PostInspection.tsx`, `WelcomeHeader.tsx`, `NavLink.tsx`
@@ -306,7 +306,7 @@ Check `docs/DANI_APPROVAL_CHECKLIST.md` before making changes to:
 
 ## 📋 Backlog (Prioritised — June 12, 2026)
 
-1. **Work Regions feature** ← NEXT (spec reportedly exists — ask Jodie where; not in repo)
+1. **Work Regions feature** ← NEXT (spec: docs/WORK_REGIONS_SPEC.docx)
 2. Real Mapbox geocoding in Directory/Marketplace/Inspections filters (mock geocoder is AU-only)
 3. Regenerate Supabase types + clear the 93 pre-existing tsc errors
 4. Review system completion (table exists, no write UI; ratings hardcoded)
