@@ -31,7 +31,7 @@ function StarRow({ count = 5 }: { count?: number }) {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: count }).map((_, i) => (
-        <Star key={i} size={14} className="fill-[#C9A84C] text-[#C9A84C]" />
+        <Star key={i} size={14} className="fill-[#B76E79] text-[#B76E79]" />
       ))}
     </div>
   );
@@ -68,11 +68,11 @@ export default function Landing() {
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="flex items-center gap-2 cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#064E3B] flex items-center justify-center">
-                <Building2 size={16} className="text-[#C9A84C]" />
+              <div className="w-8 h-8 rounded-lg bg-[#2D6350] flex items-center justify-center">
+                <Building2 size={16} className="text-[#B76E79]" />
               </div>
               <span
-                className="text-[#064E3B] font-semibold tracking-wide hidden sm:block"
+                className="text-[#2D6350] font-semibold tracking-wide hidden sm:block"
                 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.1rem" }}
               >
                 BUYERS AGENT HUB
@@ -88,7 +88,7 @@ export default function Landing() {
                 <button
                   key={item.id}
                   onClick={() => scrollTo(item.id)}
-                  className="text-xs tracking-[0.15em] font-semibold text-[#064E3B]/70 hover:text-[#064E3B] transition-colors cursor-pointer"
+                  className="text-xs tracking-[0.15em] font-semibold text-[#2D6350]/70 hover:text-[#2D6350] transition-colors cursor-pointer"
                 >
                   {item.label}
                 </button>
@@ -99,13 +99,13 @@ export default function Landing() {
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={() => navigate("/auth")}
-                className="text-xs tracking-[0.15em] font-semibold text-[#064E3B] border border-[#064E3B]/30 rounded-full px-5 py-2 hover:border-[#064E3B] transition-colors cursor-pointer"
+                className="text-xs tracking-[0.15em] font-semibold text-[#2D6350] border border-[#2D6350]/30 rounded-full px-5 py-2 hover:border-[#2D6350] transition-colors cursor-pointer"
               >
                 LOG IN
               </button>
               <button
                 onClick={() => navigate("/auth?mode=signup")}
-                className="text-xs tracking-[0.15em] font-semibold bg-[#064E3B] text-white rounded-full px-5 py-2 hover:bg-[#0d5f48] transition-colors cursor-pointer"
+                className="text-xs tracking-[0.15em] font-semibold bg-[#2D6350] text-white rounded-full px-5 py-2 hover:bg-[#24513F] transition-colors cursor-pointer"
               >
                 JOIN FREE
               </button>
@@ -113,26 +113,26 @@ export default function Landing() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 text-[#064E3B] cursor-pointer"
+              className="md:hidden p-2 text-[#2D6350] cursor-pointer"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
               <div className="w-5 space-y-1">
-                <span className={`block h-0.5 bg-[#064E3B] transition-all ${mobileOpen ? "rotate-45 translate-y-1.5" : ""}`} />
-                <span className={`block h-0.5 bg-[#064E3B] transition-all ${mobileOpen ? "opacity-0" : ""}`} />
-                <span className={`block h-0.5 bg-[#064E3B] transition-all ${mobileOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
+                <span className={`block h-0.5 bg-[#2D6350] transition-all ${mobileOpen ? "rotate-45 translate-y-1.5" : ""}`} />
+                <span className={`block h-0.5 bg-[#2D6350] transition-all ${mobileOpen ? "opacity-0" : ""}`} />
+                <span className={`block h-0.5 bg-[#2D6350] transition-all ${mobileOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
               </div>
             </button>
           </div>
 
           {/* Mobile menu */}
           {mobileOpen && (
-            <div className="md:hidden pb-4 border-t border-[#064E3B]/10 pt-4 space-y-3">
+            <div className="md:hidden pb-4 border-t border-[#2D6350]/10 pt-4 space-y-3">
               {["HOW IT WORKS", "PRICING"].map((label) => (
                 <button
                   key={label}
                   onClick={() => { scrollTo(label.toLowerCase().replace(/ /g, "-")); setMobileOpen(false); }}
-                  className="block w-full text-left text-xs tracking-[0.15em] font-semibold text-[#064E3B]/70 py-2 cursor-pointer"
+                  className="block w-full text-left text-xs tracking-[0.15em] font-semibold text-[#2D6350]/70 py-2 cursor-pointer"
                 >
                   {label}
                 </button>
@@ -140,13 +140,13 @@ export default function Landing() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => navigate("/auth")}
-                  className="flex-1 text-xs tracking-[0.12em] font-semibold text-[#064E3B] border border-[#064E3B]/40 rounded-full py-2.5 cursor-pointer"
+                  className="flex-1 text-xs tracking-[0.12em] font-semibold text-[#2D6350] border border-[#2D6350]/40 rounded-full py-2.5 cursor-pointer"
                 >
                   LOG IN
                 </button>
                 <button
                   onClick={() => navigate("/auth?mode=signup")}
-                  className="flex-1 text-xs tracking-[0.12em] font-semibold bg-[#064E3B] text-white rounded-full py-2.5 cursor-pointer"
+                  className="flex-1 text-xs tracking-[0.12em] font-semibold bg-[#2D6350] text-white rounded-full py-2.5 cursor-pointer"
                 >
                   JOIN FREE
                 </button>
@@ -167,7 +167,7 @@ export default function Landing() {
       >
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 border border-[#C9A84C]/50 rounded-full px-5 py-2 text-[#C9A84C] text-xs tracking-[0.2em] font-semibold">
+          <div className="inline-flex items-center gap-2 border border-[#B76E79]/50 rounded-full px-5 py-2 text-[#D8C3B8] text-xs tracking-[0.2em] font-semibold">
             BUILT FOR BUYERS AGENTS · AUSTRALIA
           </div>
 
@@ -183,7 +183,7 @@ export default function Landing() {
           >
             The Professional Network
             <br />
-            <span className="text-[#C9A84C]">Built for Buyers Agents</span>
+            <span className="text-[#B76E79]">Built for Buyers Agents</span>
           </h1>
 
           {/* Subheadline */}
@@ -195,13 +195,13 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
             <button
               onClick={() => navigate("/auth?mode=signup")}
-              className="text-xs tracking-[0.18em] font-semibold bg-[#064E3B] text-white rounded-full px-8 py-4 hover:bg-[#0d5f48] transition-all duration-200 shadow-lg cursor-pointer"
+              className="text-xs tracking-[0.18em] font-semibold bg-[#2D6350] text-white rounded-full px-8 py-4 hover:bg-[#24513F] transition-all duration-200 shadow-lg cursor-pointer"
             >
               JOIN FREE
             </button>
             <button
               onClick={() => scrollTo("how-it-works")}
-              className="text-xs tracking-[0.18em] font-semibold text-[#C9A84C] border border-[#C9A84C]/60 rounded-full px-8 py-4 hover:border-[#C9A84C] hover:bg-[#C9A84C]/10 transition-all duration-200 cursor-pointer"
+              className="text-xs tracking-[0.18em] font-semibold text-[#D8C3B8] border border-[#B76E79]/60 rounded-full px-8 py-4 hover:border-[#B76E79] hover:bg-[#B76E79]/10 transition-all duration-200 cursor-pointer"
             >
               SEE HOW IT WORKS
             </button>
@@ -219,7 +219,7 @@ export default function Landing() {
       </section>
 
       {/* ── 3. SOCIAL PROOF BAR ─────────────────────────────────────────────── */}
-      <section id="social-proof" className="bg-[#F0F7F3] py-8 border-y border-[#064E3B]/8">
+      <section id="social-proof" className="bg-[#F0F7F3] py-8 border-y border-[#2D6350]/8">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
             {[
@@ -231,14 +231,14 @@ export default function Landing() {
               <div key={item.label} className="flex items-center gap-3 text-center">
                 <div>
                   <p
-                    className="text-[#064E3B] font-bold"
+                    className="text-[#2D6350] font-bold"
                     style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.5rem" }}
                   >
                     {item.stat}
                   </p>
-                  <p className="text-[#064E3B]/60 text-xs tracking-[0.12em] font-medium uppercase">{item.label}</p>
+                  <p className="text-[#2D6350]/60 text-xs tracking-[0.12em] font-medium uppercase">{item.label}</p>
                 </div>
-                <div className="hidden sm:block w-px h-8 bg-[#064E3B]/15 last:hidden" />
+                <div className="hidden sm:block w-px h-8 bg-[#2D6350]/15 last:hidden" />
               </div>
             ))}
           </div>
@@ -260,7 +260,7 @@ export default function Landing() {
       {/* ── 5. PROBLEM STATEMENT ────────────────────────────────────────────── */}
       <section className="py-24 lg:py-32 px-6">
         <div className="max-w-2xl mx-auto text-center space-y-6">
-          <p className="text-[#C9A84C] text-xs tracking-[0.25em] font-semibold uppercase">The Old Way</p>
+          <p className="text-[#8F4E58] text-xs tracking-[0.25em] font-semibold uppercase">The Old Way</p>
           <blockquote
             style={{
               fontFamily: "'Cormorant Garamond', serif",
@@ -274,7 +274,7 @@ export default function Landing() {
             "Coordinating inspections used to mean chasing emails, guessing on inspectors, and hoping nothing got missed."
           </blockquote>
           <p
-            className="text-[#064E3B] font-semibold tracking-wide"
+            className="text-[#2D6350] font-semibold tracking-wide"
             style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.4rem" }}
           >
             There's a better way.
@@ -286,7 +286,7 @@ export default function Landing() {
       <section className="py-8 pb-24 lg:pb-32 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-3">
-            <p className="text-[#C9A84C] text-xs tracking-[0.25em] font-semibold uppercase">What You Get</p>
+            <p className="text-[#8F4E58] text-xs tracking-[0.25em] font-semibold uppercase">What You Get</p>
             <h2
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
@@ -302,7 +302,7 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
             {/* Card 1 — Inspection Marketplace */}
-            <div className="rounded-2xl overflow-hidden bg-[#F0F7F3] border border-[#064E3B]/8 group hover:shadow-md transition-shadow duration-300">
+            <div className="rounded-2xl overflow-hidden bg-[#F0F7F3] border border-[#2D6350]/8 group hover:shadow-md transition-shadow duration-300">
               <div
                 className="h-52 w-full"
                 style={{
@@ -314,11 +314,11 @@ export default function Landing() {
                 aria-label="Building inspector examining a property"
               />
               <div className="p-7">
-                <div className="w-10 h-10 rounded-xl bg-[#064E3B]/10 flex items-center justify-center mb-4">
-                  <Search size={18} className="text-[#064E3B]" />
+                <div className="w-10 h-10 rounded-xl bg-[#2D6350]/10 flex items-center justify-center mb-4">
+                  <Search size={18} className="text-[#2D6350]" />
                 </div>
                 <h3
-                  className="text-[#064E3B] mb-2"
+                  className="text-[#2D6350] mb-2"
                   style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.4rem", fontWeight: 600 }}
                 >
                   Inspection Marketplace
@@ -330,8 +330,8 @@ export default function Landing() {
             </div>
 
             {/* Card 2 — Property Intelligence */}
-            <div className="rounded-2xl overflow-hidden bg-[#F0F7F3] border border-[#064E3B]/8 group hover:shadow-md transition-shadow duration-300">
-              <div className="h-52 w-full bg-gradient-to-br from-[#064E3B] to-[#0d7a5e] flex items-center justify-center relative overflow-hidden">
+            <div className="rounded-2xl overflow-hidden bg-[#F0F7F3] border border-[#2D6350]/8 group hover:shadow-md transition-shadow duration-300">
+              <div className="h-52 w-full bg-gradient-to-br from-[#2D6350] to-[#3D7A64] flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10">
                   {[...Array(6)].map((_, i) => (
                     <div
@@ -347,14 +347,14 @@ export default function Landing() {
                     />
                   ))}
                 </div>
-                <Layers size={48} className="text-[#C9A84C] relative z-10" />
+                <Layers size={48} className="text-[#B76E79] relative z-10" />
               </div>
               <div className="p-7">
-                <div className="w-10 h-10 rounded-xl bg-[#064E3B]/10 flex items-center justify-center mb-4">
-                  <Layers size={18} className="text-[#064E3B]" />
+                <div className="w-10 h-10 rounded-xl bg-[#2D6350]/10 flex items-center justify-center mb-4">
+                  <Layers size={18} className="text-[#2D6350]" />
                 </div>
                 <h3
-                  className="text-[#064E3B] mb-2"
+                  className="text-[#2D6350] mb-2"
                   style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.4rem", fontWeight: 600 }}
                 >
                   Property Intelligence
@@ -366,21 +366,21 @@ export default function Landing() {
             </div>
 
             {/* Card 3 — Professional Community */}
-            <div className="rounded-2xl overflow-hidden bg-[#F0F7F3] border border-[#064E3B]/8 group hover:shadow-md transition-shadow duration-300">
-              <div className="h-52 w-full bg-gradient-to-br from-[#2D5A4E] to-[#1a3d34] flex items-center justify-center relative overflow-hidden">
+            <div className="rounded-2xl overflow-hidden bg-[#F0F7F3] border border-[#2D6350]/8 group hover:shadow-md transition-shadow duration-300">
+              <div className="h-52 w-full bg-gradient-to-br from-[#2D6350] to-[#173A31] flex items-center justify-center relative overflow-hidden">
                 <div className="grid grid-cols-3 gap-3 opacity-40">
                   {[...Array(9)].map((_, i) => (
-                    <div key={i} className="w-10 h-10 rounded-full bg-[#C9A84C]/60" />
+                    <div key={i} className="w-10 h-10 rounded-full bg-[#B76E79]/60" />
                   ))}
                 </div>
                 <Users size={44} className="text-white absolute" />
               </div>
               <div className="p-7">
-                <div className="w-10 h-10 rounded-xl bg-[#064E3B]/10 flex items-center justify-center mb-4">
-                  <Users size={18} className="text-[#064E3B]" />
+                <div className="w-10 h-10 rounded-xl bg-[#2D6350]/10 flex items-center justify-center mb-4">
+                  <Users size={18} className="text-[#2D6350]" />
                 </div>
                 <h3
-                  className="text-[#064E3B] mb-2"
+                  className="text-[#2D6350] mb-2"
                   style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.4rem", fontWeight: 600 }}
                 >
                   Professional Community
@@ -405,14 +405,14 @@ export default function Landing() {
                   {/* Mock map grid */}
                   <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 400 300">
                     {[0, 60, 120, 180, 240, 300].map((x) => (
-                      <line key={`v${x}`} x1={x} y1={0} x2={x} y2={300} stroke="#064E3B" strokeWidth="1" />
+                      <line key={`v${x}`} x1={x} y1={0} x2={x} y2={300} stroke="#2D6350" strokeWidth="1" />
                     ))}
                     {[0, 50, 100, 150, 200, 250, 300].map((y) => (
-                      <line key={`h${y}`} x1={0} y1={y} x2={400} y2={y} stroke="#064E3B" strokeWidth="1" />
+                      <line key={`h${y}`} x1={0} y1={y} x2={400} y2={y} stroke="#2D6350" strokeWidth="1" />
                     ))}
-                    <circle cx="200" cy="150" r="40" fill="#C9A84C" opacity="0.3" />
-                    <circle cx="200" cy="150" r="25" fill="#C9A84C" opacity="0.4" />
-                    <circle cx="200" cy="150" r="8" fill="#064E3B" />
+                    <circle cx="200" cy="150" r="40" fill="#B76E79" opacity="0.3" />
+                    <circle cx="200" cy="150" r="25" fill="#B76E79" opacity="0.4" />
+                    <circle cx="200" cy="150" r="8" fill="#2D6350" />
                   </svg>
                   {/* Overlay chips */}
                   {[
@@ -429,14 +429,14 @@ export default function Landing() {
                       {chip.label}
                     </div>
                   ))}
-                  <MapPin size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full text-[#064E3B]" />
+                  <MapPin size={32} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full text-[#2D6350]" />
                 </div>
               </div>
             </div>
 
             {/* Right: text */}
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 bg-[#C9A84C]/15 border border-[#C9A84C]/40 text-[#7A6030] text-xs tracking-[0.15em] font-semibold px-4 py-2 rounded-full">
+              <div className="inline-flex items-center gap-2 bg-[#B76E79]/15 border border-[#B76E79]/40 text-[#8F4E58] text-xs tracking-[0.15em] font-semibold px-4 py-2 rounded-full">
                 COMING SOON
               </div>
               <h2
@@ -465,7 +465,7 @@ export default function Landing() {
                   "Infrastructure & easements",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <CheckCircle size={16} className="text-[#064E3B] mt-0.5 flex-shrink-0" />
+                    <CheckCircle size={16} className="text-[#2D6350] mt-0.5 flex-shrink-0" />
                     <span className="text-[#374151] text-sm">{item}</span>
                   </li>
                 ))}
@@ -479,7 +479,7 @@ export default function Landing() {
       <section id="how-it-works" className="py-24 lg:py-32 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-20 space-y-3">
-            <p className="text-[#C9A84C] text-xs tracking-[0.25em] font-semibold uppercase">Simple by Design</p>
+            <p className="text-[#8F4E58] text-xs tracking-[0.25em] font-semibold uppercase">Simple by Design</p>
             <h2
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
@@ -497,19 +497,19 @@ export default function Landing() {
             {[
               {
                 step: "01",
-                icon: <Shield size={22} className="text-[#064E3B]" />,
+                icon: <Shield size={22} className="text-[#2D6350]" />,
                 title: "Create Your Free Profile",
                 desc: "Sign up, verify your professional credentials, and set your service areas. Your profile is your trusted identity on the network.",
               },
               {
                 step: "02",
-                icon: <FileSearch size={22} className="text-[#064E3B]" />,
+                icon: <FileSearch size={22} className="text-[#2D6350]" />,
                 title: "Find or Post Inspections",
                 desc: "Browse qualified building inspectors, post inspection jobs with your requirements, or receive and review competing bids — all in one place.",
               },
               {
                 step: "03",
-                icon: <ClipboardList size={22} className="text-[#064E3B]" />,
+                icon: <ClipboardList size={22} className="text-[#2D6350]" />,
                 title: "Protect Your Clients",
                 desc: "Receive detailed inspection reports, layer risk overlays, and share findings directly. Funds held in escrow until you approve the work.",
               },
@@ -517,13 +517,13 @@ export default function Landing() {
               <div key={i} className="relative text-center space-y-5">
                 {/* Connector line */}
                 {i < 2 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] right-[-40%] h-px bg-[#064E3B]/15" />
+                  <div className="hidden md:block absolute top-8 left-[60%] right-[-40%] h-px bg-[#2D6350]/15" />
                 )}
-                <div className="w-16 h-16 rounded-full bg-[#F0F7F3] border-2 border-[#064E3B]/15 flex items-center justify-center mx-auto relative z-10">
+                <div className="w-16 h-16 rounded-full bg-[#F0F7F3] border-2 border-[#2D6350]/15 flex items-center justify-center mx-auto relative z-10">
                   {item.icon}
                 </div>
                 <p
-                  className="text-[#C9A84C] font-bold"
+                  className="text-[#B76E79] font-bold"
                   style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.2rem" }}
                 >
                   {item.step}
@@ -548,12 +548,12 @@ export default function Landing() {
           backgroundImage: `linear-gradient(to bottom, rgba(4,40,30,0.88) 0%, rgba(6,55,40,0.84) 100%), url(${heroHouseImg})`,
           backgroundSize: "cover",
           backgroundPosition: "center 60%",
-          backgroundColor: "#064E3B",
+          backgroundColor: "#2D6350",
         }}
       >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-3">
-            <p className="text-[#C9A84C] text-xs tracking-[0.25em] font-semibold uppercase">What Agents Say</p>
+            <p className="text-[#F6F1EA] text-xs tracking-[0.25em] font-semibold uppercase">What Agents Say</p>
             <h2
               className="text-white"
               style={{
@@ -609,7 +609,7 @@ export default function Landing() {
       <section id="pricing" className="py-24 lg:py-32 px-6 bg-[#FAFAF8]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16 space-y-3">
-            <p className="text-[#C9A84C] text-xs tracking-[0.25em] font-semibold uppercase">Simple Pricing</p>
+            <p className="text-[#8F4E58] text-xs tracking-[0.25em] font-semibold uppercase">Simple Pricing</p>
             <h2
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
@@ -630,7 +630,7 @@ export default function Landing() {
             {/* Basic */}
             <div className="bg-white rounded-2xl border border-[#E8E5DC] p-8 space-y-6">
               <div>
-                <p className="text-xs tracking-[0.15em] font-semibold text-[#064E3B]/60 uppercase mb-2">Basic</p>
+                <p className="text-xs tracking-[0.15em] font-semibold text-[#2D6350]/60 uppercase mb-2">Basic</p>
                 <div className="flex items-end gap-1">
                   <span
                     style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "3rem", fontWeight: 700, color: "#0A0A0A", lineHeight: 1 }}
@@ -650,22 +650,22 @@ export default function Landing() {
                   "Secure messaging",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-3">
-                    <CheckCircle size={15} className="text-[#064E3B] mt-0.5 flex-shrink-0" />
+                    <CheckCircle size={15} className="text-[#2D6350] mt-0.5 flex-shrink-0" />
                     <span className="text-[#374151] text-sm">{f}</span>
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => navigate("/auth?mode=signup&plan=basic")}
-                className="w-full text-xs tracking-[0.15em] font-semibold border border-[#064E3B] text-[#064E3B] rounded-full py-3.5 hover:bg-[#064E3B]/5 transition-colors cursor-pointer"
+                className="w-full text-xs tracking-[0.15em] font-semibold border border-[#2D6350] text-[#2D6350] rounded-full py-3.5 hover:bg-[#2D6350]/5 transition-colors cursor-pointer"
               >
                 GET STARTED
               </button>
             </div>
 
             {/* Premium */}
-            <div className="bg-[#064E3B] rounded-2xl p-8 space-y-6 relative overflow-hidden">
-              <div className="absolute top-5 right-5 bg-[#C9A84C] text-[#064E3B] text-xs tracking-[0.1em] font-bold px-3 py-1 rounded-full">
+            <div className="bg-[#2D6350] rounded-2xl p-8 space-y-6 relative overflow-hidden">
+              <div className="absolute top-5 right-5 bg-[#8F4E58] text-white text-xs tracking-[0.1em] font-bold px-3 py-1 rounded-full">
                 MOST POPULAR
               </div>
               <div>
@@ -690,14 +690,14 @@ export default function Landing() {
                   "Client brief management",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-3">
-                    <CheckCircle size={15} className="text-[#C9A84C] mt-0.5 flex-shrink-0" />
+                    <CheckCircle size={15} className="text-[#B76E79] mt-0.5 flex-shrink-0" />
                     <span className="text-white/90 text-sm">{f}</span>
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => navigate("/auth?mode=signup&plan=premium")}
-                className="w-full text-xs tracking-[0.15em] font-semibold bg-[#C9A84C] text-[#064E3B] rounded-full py-3.5 hover:bg-[#b8963d] transition-colors cursor-pointer"
+                className="w-full text-xs tracking-[0.15em] font-semibold bg-[#8F4E58] text-white rounded-full py-3.5 hover:bg-[#B76E79] transition-colors cursor-pointer"
               >
                 START FREE TRIAL
               </button>
@@ -711,9 +711,9 @@ export default function Landing() {
       </section>
 
       {/* ── 11. FINAL CTA ───────────────────────────────────────────────────── */}
-      <section className="bg-[#064E3B] py-24 lg:py-32 px-6 text-center">
+      <section className="bg-[#2D6350] py-24 lg:py-32 px-6 text-center">
         <div className="max-w-2xl mx-auto space-y-8">
-          <p className="text-[#C9A84C] text-xs tracking-[0.25em] font-semibold uppercase">Ready to Begin</p>
+          <p className="text-[#F6F1EA] text-xs tracking-[0.25em] font-semibold uppercase">Ready to Begin</p>
           <h2
             className="text-white"
             style={{
@@ -731,7 +731,7 @@ export default function Landing() {
           </p>
           <button
             onClick={() => navigate("/auth?mode=signup")}
-            className="inline-flex items-center gap-3 text-xs tracking-[0.2em] font-semibold bg-white text-[#064E3B] rounded-full px-10 py-5 hover:bg-[#F0F7F3] transition-colors shadow-lg cursor-pointer"
+            className="inline-flex items-center gap-3 text-xs tracking-[0.2em] font-semibold bg-white text-[#2D6350] rounded-full px-10 py-5 hover:bg-[#F0F7F3] transition-colors shadow-lg cursor-pointer"
           >
             CREATE YOUR FREE ACCOUNT
             <ArrowRight size={14} />
@@ -741,13 +741,13 @@ export default function Landing() {
       </section>
 
       {/* ── 12. FOOTER ──────────────────────────────────────────────────────── */}
-      <footer className="bg-[#042B20] py-12 px-6">
+      <footer className="bg-[#173A31] py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Brand */}
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md bg-[#064E3B] border border-[#C9A84C]/30 flex items-center justify-center">
-                <Building2 size={13} className="text-[#C9A84C]" />
+              <div className="w-7 h-7 rounded-md bg-[#2D6350] border border-[#B76E79]/30 flex items-center justify-center">
+                <Building2 size={13} className="text-[#B76E79]" />
               </div>
               <span
                 className="text-white/70 font-medium"

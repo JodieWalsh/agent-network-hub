@@ -128,7 +128,7 @@ export default function Welcome() {
               <div
                 className="w-3 h-3 rounded-full"
                 style={{
-                  backgroundColor: ["#064E3B", "#E8B4B8", "#3B82F6", "#F59E0B", "#8B5CF6"][
+                  backgroundColor: ["#2D6350", "#E8B4B8", "#3B82F6", "#F59E0B", "#8B5CF6"][
                     Math.floor(Math.random() * 5)
                   ],
                 }}

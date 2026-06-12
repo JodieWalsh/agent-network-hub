@@ -186,7 +186,7 @@ export default function ForumHome() {
               className="pl-9 bg-cream border-forest/10 shadow-subtle"
             />
           </div>
-          <Button variant="outline" onClick={handleSearch} disabled={searching} className="border-rose-gold text-rose-gold hover:bg-rose-gold/10">
+          <Button variant="outline" onClick={handleSearch} disabled={searching} className="border-rose-gold-dark text-rose-gold-dark hover:bg-rose-gold-dark/10 hover:text-rose-gold-dark">
             {searching ? 'Searching...' : 'Search'}
           </Button>
         </div>
@@ -268,7 +268,7 @@ export default function ForumHome() {
                                 </p>
                                 <div className="text-xs text-muted-foreground mt-1">
                                   {category.post_count} posts
-                                  {category.is_premium_only && <span className="ml-1 text-amber-600 font-medium">· Premium</span>}
+                                  {category.is_premium_only && <span className="ml-1 text-rose-gold-dark font-medium">· Premium</span>}
                                 </div>
                               </div>
                             </CardContent>

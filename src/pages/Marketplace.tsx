@@ -136,7 +136,7 @@ export default function Marketplace() {
             </p>
           </div>
           {canAddProperty && (
-            <Button onClick={() => navigate('/marketplace/add')} className="flex items-center gap-2 bg-rose-gold text-white hover:bg-rose-gold-dark">
+            <Button onClick={() => navigate('/marketplace/add')} className="flex items-center gap-2">
               <Plus size={16} />
               Add Property
             </Button>

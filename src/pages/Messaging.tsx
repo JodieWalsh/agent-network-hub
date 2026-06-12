@@ -946,7 +946,6 @@ export default function Messaging() {
                   <Button
                     size="sm"
                     onClick={() => setIsNewMessageModalOpen(true)}
-                    className="bg-rose-gold text-white hover:bg-rose-gold-dark"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     New

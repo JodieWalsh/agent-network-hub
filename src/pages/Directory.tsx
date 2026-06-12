@@ -197,7 +197,7 @@ export default function Directory() {
             <Filter size={18} className="mr-2" />
             Filters
             {hasActiveFilters && (
-              <Badge variant="secondary" className="ml-2 bg-rose-gold text-white">
+              <Badge variant="secondary" className="ml-2 bg-rose-gold-dark text-white">
                 Active
               </Badge>
             )}

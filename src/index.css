@@ -11,44 +11,47 @@
 
 @layer base {
   :root {
-    --background: #FFFFFF;
-    --foreground: #0A0A0A;
-    --card: #FAFAF8;
-    --card-foreground: #0A0A0A;
+    /* Quiet Luxury palette — see CLAUDE.md DESIGN VISION (June 2026) */
+    --background: #F6F1EA;
+    --foreground: #1C1917;
+    --card: #FFFFFF;
+    --card-foreground: #1C1917;
     --popover: #FFFFFF;
-    --popover-foreground: #0A0A0A;
+    --popover-foreground: #1C1917;
 
-    --primary: #064E3B;
+    --primary: #2D6350;
     --primary-foreground: #FFFFFF;
-    --secondary: 167 100% 15%;
+    --secondary: 159 38% 28%;
     --secondary-foreground: 0 0% 100%;
-    --accent: #C9A84C;
-    --accent-foreground: #0A0A0A;
-    --muted: #F5F5F0;
-    --muted-foreground: #7A7A74;
+    --accent: #D8C3B8;
+    --accent-foreground: #1C1917;
+    --muted: #EFE8DF;
+    --muted-foreground: #6B645C;
     --destructive: 358 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: #E8E5DC;
-    --input: #F8F7F2;
-    --ring: #064E3B;
+    --border: #E3D9CD;
+    --input: #FFFFFF;
+    --ring: #B76E79;
 
-    --forest: #064E3B;
-    --forest-light: #1C6A52;
-    --forest-dark: #043826;
-    --rose-gold: #C9A84C;
-    --rose-gold-light: #E4C87F;
-    --rose-gold-dark: #8E7B4A;
-    --cream: #FAF8F2;
-    --cream-dark: #F3F1EB;
+    --forest: #2D6350;
+    --forest-light: #3D7A64;
+    --forest-dark: #173A31;
+    --rose-gold: #B76E79;
+    --rose-gold-light: #D8C3B8;
+    --rose-gold-dark: #8F4E58;
+    --champagne: #D8C3B8;
+    --champagne-dark: #C0A695;
+    --cream: #FBF8F3;
+    --cream-dark: #F0EAE1;
 
-    --sidebar-background: 167 100% 12%;
-    --sidebar-foreground: 0 0% 97%;
-    --sidebar-primary: 46 49% 56%;
-    --sidebar-primary-foreground: 0 0% 97%;
-    --sidebar-accent: 167 80% 28%;
-    --sidebar-accent-foreground: 0 0% 97%;
-    --sidebar-border: 167 70% 18%;
-    --sidebar-ring: 46 49% 56%;
+    --sidebar-background: 160 43% 16%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 351 34% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 38% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 160 40% 13%;
+    --sidebar-ring: 351 34% 57%;
 
     --radius: 0.625rem;
     --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -58,44 +61,46 @@
   }
 
   .dark {
-    --background: #FFFFFF;
-    --foreground: #0A0A0A;
-    --card: #FAFAF8;
-    --card-foreground: #0A0A0A;
+    --background: #F6F1EA;
+    --foreground: #1C1917;
+    --card: #FFFFFF;
+    --card-foreground: #1C1917;
     --popover: #FFFFFF;
-    --popover-foreground: #0A0A0A;
+    --popover-foreground: #1C1917;
 
-    --primary: #064E3B;
+    --primary: #2D6350;
     --primary-foreground: #FFFFFF;
-    --secondary: 167 100% 15%;
+    --secondary: 159 38% 28%;
     --secondary-foreground: 0 0% 100%;
-    --accent: #C9A84C;
-    --accent-foreground: #0A0A0A;
-    --muted: #F5F5F0;
-    --muted-foreground: #7A7A74;
+    --accent: #D8C3B8;
+    --accent-foreground: #1C1917;
+    --muted: #EFE8DF;
+    --muted-foreground: #6B645C;
     --destructive: 358 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: #E8E5DC;
-    --input: #F8F7F2;
-    --ring: #064E3B;
+    --border: #E3D9CD;
+    --input: #FFFFFF;
+    --ring: #B76E79;
 
-    --forest: #064E3B;
-    --forest-light: #1C6A52;
-    --forest-dark: #043826;
-    --rose-gold: #C9A84C;
-    --rose-gold-light: #E4C87F;
-    --rose-gold-dark: #8E7B4A;
-    --cream: #FAF8F2;
-    --cream-dark: #F3F1EB;
+    --forest: #2D6350;
+    --forest-light: #3D7A64;
+    --forest-dark: #173A31;
+    --rose-gold: #B76E79;
+    --rose-gold-light: #D8C3B8;
+    --rose-gold-dark: #8F4E58;
+    --champagne: #D8C3B8;
+    --champagne-dark: #C0A695;
+    --cream: #FBF8F3;
+    --cream-dark: #F0EAE1;
 
-    --sidebar-background: 167 100% 12%;
-    --sidebar-foreground: 0 0% 97%;
-    --sidebar-primary: 46 49% 56%;
-    --sidebar-primary-foreground: 0 0% 97%;
-    --sidebar-accent: 167 80% 28%;
-    --sidebar-accent-foreground: 0 0% 97%;
-    --sidebar-border: 167 70% 18%;
-    --sidebar-ring: 46 49% 56%;
+    --sidebar-background: 160 43% 16%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 351 34% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 38% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 160 40% 13%;
+    --sidebar-ring: 351 34% 57%;
   }
 }
 
@@ -143,7 +148,8 @@
   }
 
   a {
-    @apply text-rose-gold hover:text-rose-gold-dark transition-colors;
+    /* rose-gold-dark base: #B76E79 fails WCAG AA for small text on light backgrounds */
+    @apply text-rose-gold-dark hover:text-rose-gold transition-colors;
   }
 }
 

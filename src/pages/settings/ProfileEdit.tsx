@@ -844,7 +844,7 @@ export default function ProfileEdit() {
             <Button
               type="submit"
               disabled={saving}
-              className="bg-rose-gold text-white hover:bg-rose-gold-dark font-semibold gap-2"
+              className="font-semibold gap-2"
             >
               <Save className="h-4 w-4" />
               {saving ? "Saving..." : "Save Changes"}
