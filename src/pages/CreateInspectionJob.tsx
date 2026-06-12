@@ -348,7 +348,7 @@ export default function CreateInspectionJob() {
       }
 
       toast.success('Draft saved! You can finish it later.');
-      navigate('/inspections');
+      navigate('/inspections/spotlights');
     } catch (error: any) {
       console.error('Error saving draft:', error);
       toast.error(error.message || 'Failed to save draft');

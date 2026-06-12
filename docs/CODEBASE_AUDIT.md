@@ -174,13 +174,15 @@ Tables in migrations but not directly named in src (accessed via RPC): `conversa
 
 ### 🔴 High — functional problems
 
-1. **Legacy duplicate inspection flow is live.** `/inspections` (`Inspections.tsx`) and `/inspections/new` (`PostInspection.tsx`) read/write the **old `inspection_requests` table** (created Dec 2025) using the **mock geocoder**, while the real marketplace runs on `inspection_jobs` via `/inspections/spotlights` and `/inspections/jobs/new`. The dashboard's "Review Offers" button and the PowerTiles "Request Inspection" tile both navigate to `/inspections` — sending users to the legacy page. Jobs posted via `/inspections/new` never appear on the Spotlights board.
+1. ~~**Legacy duplicate inspection flow is live.**~~ **FIXED 12 June 2026.** `/inspections` and `/inspections/new` now permanently redirect to `/inspections/spotlights` and `/inspections/jobs/new`; the dashboard "Review Offers" button and "Request Inspection" tile point directly at the real marketplace. `Inspections.tsx` and `PostInspection.tsx` are now unreachable dead code (kept on disk, no routes) — safe to delete along with `lib/geocoder.ts` consumers once the filter migration (item 3) is done. The legacy `inspection_requests` table still exists in the database.
 
 2. **`supabase.from()` rule violations** (project rule: raw fetch only). DB queries via the supabase client exist in: `AuthContext.tsx`, `Admin.tsx`, `AdminPropertyReviewModal.tsx`, `AddProperty.tsx`, `Marketplace.tsx`, `Inspections.tsx` (~33 call sites, mostly `properties` and `profiles`). These pre-date the rule; flagged for migration. (`storage.from('avatars')` is the Storage API — fine.)
 
 3. **Mock geocoder still active in production filters.** `lib/geocoder.ts` (hardcoded Australian city list) is used by `LocationSearchFilter`, which powers location filtering on **Directory, Marketplace, and Inspections**. International users (33 supported countries) cannot filter by their own locations. The real Mapbox geocoder (`LocationSearch`) is only used in profile/property/brief forms.
 
 4. **Stale generated Supabase types.** `integrations/supabase/types.ts` knows only 3 tables; ~30 exist. Any code relying on these types gets no type safety for newer tables. Regenerate with `npx supabase gen types`.
+
+4b. **`tsc --noEmit` fails with 93 pre-existing errors** (largely consequences of item 4's stale types): `AdminPropertyReviewModal`, `PropertyDetailModal`, `RecentActivity` icon map missing newer notification types, and others. The Vite build succeeds (esbuild doesn't type-check), so these don't block deploys — but type safety is effectively off in the affected files.
 
 ### 🟡 Medium — incomplete features
 

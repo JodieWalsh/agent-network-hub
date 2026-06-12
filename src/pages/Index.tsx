@@ -33,7 +33,7 @@ const Dashboard = () => {
   const quickActions = [
     { label: "New Brief", path: "/briefs/new" },
     { label: "Post Property", path: "/marketplace/add" },
-    { label: "Review Offers", path: "/inspections" },
+    { label: "Review Offers", path: "/inspections/spotlights" },
   ];
 
   return (

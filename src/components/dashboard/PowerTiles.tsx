@@ -45,7 +45,7 @@ const tiles = [
     icon: ClipboardCheck,
     title: "Request Inspection",
     description: "Coordinate property inspections",
-    path: "/inspections",
+    path: "/inspections/jobs/new",
   },
   {
     icon: FileText,
