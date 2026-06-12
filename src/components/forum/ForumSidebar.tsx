@@ -33,29 +33,38 @@ export function ForumSidebar({
 
   return (
     <div className="space-y-4">
-      {/* My Activity */}
+      {/* My Activity — luxury stat card treatment matching dashboard StatsGrid */}
       {userStats && (
-        <Card>
+        <Card
+          className="border-white/60 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 shadow-[0_2px_4px_rgba(94,70,55,0.08),0_24px_56px_-8px_rgba(183,110,121,0.3),0_14px_36px_rgba(140,95,70,0.16),0_6px_16px_rgba(94,70,55,0.1)]"
+          style={{
+            background:
+              "linear-gradient(150deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.74) 55%, rgba(246,241,234,0.68) 100%)",
+            borderTop: "1px solid rgba(183,110,121,0.3)",
+          }}
+        >
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Your Activity</CardTitle>
+            <CardTitle className="text-xs font-medium uppercase tracking-[0.2em] text-[#8F4E58]">
+              Your Activity
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-lg font-bold font-serif text-forest">{userStats.post_count}</div>
-                <div className="text-xs text-muted-foreground">Posts</div>
+              <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
+                <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.post_count}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Posts</div>
               </div>
-              <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-lg font-bold font-serif text-forest">{userStats.reply_count}</div>
-                <div className="text-xs text-muted-foreground">Replies</div>
+              <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
+                <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.reply_count}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Replies</div>
               </div>
-              <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-lg font-bold text-forest">{userStats.reputation_points}</div>
-                <div className="text-xs text-muted-foreground">Reputation</div>
+              <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
+                <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.reputation_points}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Reputation</div>
               </div>
-              <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-lg font-bold text-forest">{userStats.solutions_count}</div>
-                <div className="text-xs text-muted-foreground">Solutions</div>
+              <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
+                <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.solutions_count}</div>
+                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Solutions</div>
               </div>
             </div>
             <div className="flex gap-2 mt-3">
