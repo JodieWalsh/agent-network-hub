@@ -705,19 +705,18 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 - **Real-time:** `postgres_changes` for persistent data, `broadcast` for ephemeral data, `presence` for online status
 - **Auth headers:** Extracted from `localStorage` for REST calls (`sb-{ref}-auth-token`)
 
-### Supabase Management API (for migrations & admin)
-Used to apply migrations and run ad-hoc SQL when the Supabase CLI isn't available:
-```
-# Get service role key
-GET https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/api-keys
-Authorization: Bearer sbp_fbb3d371e81e96d2646f29d96191f334a480fa05
+### Supabase API Keys (updated June 2026)
 
-# Execute SQL
-POST https://api.supabase.com/v1/projects/yrjtdunljzxasyohjdnw/database/query
-Authorization: Bearer sbp_fbb3d371e81e96d2646f29d96191f334a480fa05
-Content-Type: application/json
-Body: { "query": "SELECT 1" }
-```
+**The legacy JWT-format keys (anon / service_role) were DISABLED by Supabase on 30 May 2026.** The old Management API token (`sbp_...`) documented here previously is also dead. Do not use either.
+
+**Current key setup:**
+- **Publishable key** (`sb_publishable_...`) — frontend key, in `.env` as `VITE_SUPABASE_PUBLISHABLE_KEY`. Safe to expose.
+- **Secret key** (`sb_secret_...`) — the `edge_functions_service` key from Supabase Dashboard → Settings → API Keys. Stored in `.env` (gitignored) as `SUPABASE_SECRET_KEY`. **Never commit it or expose it to the frontend.** All root-level admin scripts (`seed-*.mjs`, `check-*.mjs`, etc.) read it via `process.env.SUPABASE_SECRET_KEY` (dotenv).
+
+**Patterns for admin/server-side operations:**
+1. **Service-level REST access** — `apikey: $SUPABASE_SECRET_KEY` + `Authorization: Bearer $SUPABASE_SECRET_KEY` headers against `{SUPABASE_URL}/rest/v1/...` (bypasses RLS like the old service_role key).
+2. **User-level operations / SECURITY DEFINER RPCs** — authenticate as the seeded admin via `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` with `apikey: <publishable key>` and the credentials in `seed-admin.mjs`, then call REST/RPC endpoints with that access token. Prefer this when the app's own RPCs already do the job.
+
 **Note:** For complex SQL with dollar-quoting (`$$`), use a Node.js `.cjs` script file to avoid shell escaping issues (the project has `"type": "module"` in package.json so `.cjs` extension is needed for CommonJS).
 
 ### Edge Function Pattern
@@ -770,10 +769,13 @@ serve(async (req: Request) => {
 ## Environment Variables
 ```
 VITE_SUPABASE_URL=https://yrjtdunljzxasyohjdnw.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
 VITE_SUPABASE_PROJECT_ID=yrjtdunljzxasyohjdnw
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 VITE_MAPBOX_ACCESS_TOKEN=pk.xxx
+
+# Server-side only (admin scripts) — never commit, never expose to frontend:
+SUPABASE_SECRET_KEY=sb_secret_xxx
 ```
 
 For Supabase Edge Functions (set via `supabase secrets set`):
