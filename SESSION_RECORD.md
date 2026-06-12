@@ -35,7 +35,7 @@ Major design and infrastructure day — 14 commits. The quiet-luxury aesthetic n
 `dashboard-verify.mjs`, `auth-verify.mjs`, `palette-verify.mjs`, `sidebar-probe.mjs` — puppeteer login + screenshots + WCAG contrast audits. Run after every visual change.
 
 ## 📌 Noted (not done in this session)
-- **Work Regions feature** — planned and specced (spec written outside this session). Spec committed end of day as `docs/WORK_REGIONS_SPEC.docx` (`c90d3dc`). Next session: read the spec, then implement.
+- **Work Regions feature** — planned and specced (spec written outside this session). Spec committed end of day and converted to Markdown: `docs/WORK_REGIONS_SPEC.md`. Next session: read the spec, then implement Phase 1A/1B.
 
 ## ⚠️ Known issues carried forward (see docs/CODEBASE_AUDIT.md)
 - Mock geocoder (Australian cities only) still powers Directory/Marketplace/Inspections filters
