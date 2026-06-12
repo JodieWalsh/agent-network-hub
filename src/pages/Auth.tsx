@@ -247,7 +247,7 @@ export default function Auth() {
           </h2>
           <div className="mt-5 h-[2px] w-16 rounded-full bg-[#B76E79]" />
           <p className="mt-6 hidden max-w-sm font-serif text-xl leading-relaxed text-white lg:block">
-            Where Australia&rsquo;s leading property professionals connect.
+            Where property professionals connect.
           </p>
         </div>
       </div>
