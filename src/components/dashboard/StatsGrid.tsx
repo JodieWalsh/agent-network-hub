@@ -29,7 +29,7 @@ function StatCard({ icon: Icon, label, value, trend }: StatCardProps) {
         )}
       </div>
       <div>
-        <p className="font-serif text-4xl font-semibold tabular-nums text-[#2D6350]">{value}</p>
+        <p className="font-sans text-4xl font-semibold tabular-nums text-[#2D6350]">{value}</p>
         <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#1C1917]">{label}</p>
       </div>
     </div>
