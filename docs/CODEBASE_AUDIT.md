@@ -188,7 +188,7 @@ Tables in migrations but not directly named in src (accessed via RPC): `conversa
 
 5. **Review system half-built.** `inspection_reviews` table exists and `PublicProfile.tsx` reads it, but there is no UI to write reviews ("Review feature coming soon!" toast) and `MyInspectionWork` hardcodes `averageRating: 4.8`.
 
-6. **Dashboard stats are hardcoded placeholders.** `StatsGrid.tsx` shows static values (4 inspections, 12 properties, 7 messages, 4.9 rating) — not wired to real data.
+6. ~~**Dashboard stats are hardcoded placeholders.**~~ **FIXED 12 June 2026.** `StatsGrid.tsx` now queries real data: active job count (PostgREST `count=exact` HEAD request), owned property count, live unread messages from `MessageNotificationContext`, and average `inspection_reviews` rating ("—" when none).
 
 7. **Old design palette outside the dashboard/auth.** `index.css` still defines `--forest: #064E3B` and `--rose-gold: #C9A84C` (old gold), so every page styled with `text-forest`/`bg-rose-gold` tokens (forum, messaging, briefs, marketplace, etc.) renders the pre-redesign palette. `Landing.tsx` and `Welcome.tsx` also hardcode old hex values. Only Dashboard + Auth use the new quiet-luxury palette (#2D6350/#B76E79).
 
