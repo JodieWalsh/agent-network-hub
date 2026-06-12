@@ -74,9 +74,9 @@ const membershipLabels: Record<string, string> = {
 };
 
 const membershipColors: Record<string, string> = {
-  free: "bg-[#2D6350]/30 text-white border-[rgba(255,255,255,0.15)]",
-  basic: "bg-[#2D6350]/40 text-[#D8C3B8] border-[rgba(216,195,184,0.4)]",
-  premium: "bg-[#2D6350]/40 text-[#D8C3B8] border-[rgba(216,195,184,0.5)]",
+  free: "bg-white/[0.04] text-white/80 border-[rgba(255,255,255,0.2)]",
+  basic: "bg-white/[0.04] text-[#D8C3B8] border-[rgba(216,195,184,0.5)]",
+  premium: "bg-white/[0.06] text-[#D8C3B8] border-[rgba(216,195,184,0.5)]",
 };
 
 export function AppSidebar() {
@@ -420,7 +420,7 @@ export function AppSidebar() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "w-full justify-center text-[11px] uppercase tracking-[0.15em] py-1.5 font-medium",
+                    "w-full justify-center font-sans text-[10px] uppercase tracking-[0.2em] py-1.5 font-normal border backdrop-blur-sm",
                     membershipColors[getMembershipTier()]
                   )}
                 >
