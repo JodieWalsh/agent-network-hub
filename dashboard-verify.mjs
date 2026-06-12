@@ -55,10 +55,12 @@ async function contrastAudit(page) {
           bg = { r: +m[1], g: +m[2], b: +m[3] };
           break;
         }
-        // Gradient backgrounds: approximate from background-image presence on dark hero
+        // Gradient backgrounds: use the first effectively-opaque colour stop
+        // (skip translucent sheen/shade overlay layers)
         if (s.backgroundImage && s.backgroundImage.includes('gradient')) {
-          const gm = s.backgroundImage.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-          if (gm) { bg = { r: +gm[1], g: +gm[2], b: +gm[3] }; break; }
+          const stops = [...s.backgroundImage.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/g)];
+          const solid = stops.find((m) => m[4] === undefined || parseFloat(m[4]) >= 0.5);
+          if (solid) { bg = { r: +solid[1], g: +solid[2], b: +solid[3] }; break; }
         }
         node = node.parentElement;
       }

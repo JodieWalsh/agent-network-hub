@@ -294,9 +294,13 @@ export function AppSidebar() {
       {/* Sidebar — Dark Forest Green */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-[#173A31] to-[#0F2420] text-white z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 h-full w-64 text-white z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 10%, rgba(255,255,255,0) 18%), linear-gradient(0deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.12) 18%, rgba(0,0,0,0) 40%), linear-gradient(180deg, #173A31 0%, #14302A 50%, #0F2420 100%)",
+        }}
       >
         {/* Logo Section — Luxury Header */}
         <div className="p-6 border-b border-[rgba(255,255,255,0.12)]">

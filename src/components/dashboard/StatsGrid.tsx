@@ -10,10 +10,11 @@ interface StatCardProps {
 function StatCard({ icon: Icon, label, value, trend }: StatCardProps) {
   return (
     <div
-      className="rounded-[20px] border border-white/60 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 shadow-[0_2px_6px_rgba(94,70,55,0.06),0_12px_32px_rgba(183,110,121,0.14),0_6px_20px_rgba(94,70,55,0.12)] hover:shadow-[0_4px_10px_rgba(94,70,55,0.08),0_18px_44px_rgba(183,110,121,0.2),0_10px_28px_rgba(94,70,55,0.14)]"
+      className="rounded-[20px] border border-white/60 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 shadow-[0_2px_4px_rgba(94,70,55,0.08),0_24px_56px_-8px_rgba(183,110,121,0.3),0_14px_36px_rgba(140,95,70,0.16),0_6px_16px_rgba(94,70,55,0.1)] hover:shadow-[0_4px_8px_rgba(94,70,55,0.1),0_32px_68px_-8px_rgba(183,110,121,0.38),0_18px_44px_rgba(140,95,70,0.2),0_8px_20px_rgba(94,70,55,0.12)]"
       style={{
         background:
-          "linear-gradient(150deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.72) 55%, rgba(246,241,234,0.68) 100%)",
+          "linear-gradient(150deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.74) 55%, rgba(246,241,234,0.68) 100%)",
+        borderTop: "1px solid rgba(183,110,121,0.3)",
       }}
     >
       <div className="mb-4 flex items-center justify-between">
