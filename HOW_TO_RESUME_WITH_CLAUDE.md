@@ -2,9 +2,30 @@
 
 This document explains how to start a new Claude session and get up to speed fast.
 
-**Last Updated:** May 30, 2026
+**Last Updated:** June 12, 2026
 **Project:** Buyers Agent Hub (agent-network-hub)
 **Live URL:** https://agent-network-hub-1ynd.vercel.app
+
+---
+
+## 📍 WHERE WE ARE (June 12, 2026)
+
+The entire app now uses the **quiet luxury design system** (see CLAUDE.md → DESIGN VISION). Dashboard, Auth, and every other page passed WCAG contrast audits. The legacy inspection routing bug is fixed. A full codebase audit lives at `docs/CODEBASE_AUDIT.md` — read it for the honest state of everything.
+
+**Start every session by reading:** `CLAUDE.md`, then `docs/CODEBASE_AUDIT.md`, then the latest entry in `SESSION_RECORD.md`.
+
+**Verify visual changes with the puppeteer scripts in repo root** (they log in as the seeded admin and run WCAG contrast audits):
+- `node dashboard-verify.mjs` — dashboard, desktop + 375px mobile + drawer
+- `node auth-verify.mjs` — auth page, both modes + mobile
+- `node palette-verify.mjs` — landing, forums, messages, marketplace, directory, briefs, pricing, settings
+Dev server for these: `npm run dev -- --port 8081`
+
+**Next up:**
+1. **Work Regions feature** — Jodie says this is fully planned and specced, but the spec is NOT in the repo. Ask Jodie where it lives before starting.
+2. Replace mock geocoder in Directory/Marketplace/Inspections filters with Mapbox (`LocationSearchFilter` → real geocoder) — international users currently can't filter by location
+3. Regenerate Supabase types (`npx supabase gen types`) — fixes most of the 93 pre-existing tsc errors
+4. Delete dead code: `Inspections.tsx`, `PostInspection.tsx`, `WelcomeHeader.tsx`, `NavLink.tsx`
+5. Resend activation (set `RESEND_API_KEY`, verify domain) + review system completion — see audit items 5–10
 
 ---
 
@@ -71,12 +92,12 @@ ALL database operations use raw fetch() to the Supabase REST API instead.
 NEVER use supabase.from() — it will hang!
 Always use the raw fetch pattern documented in PROJECT_CONTEXT.md.
 
-DESIGN SYSTEM:
-- Deep forest green headers (#064E3B)
-- Rose gold/copper accents (#E8B4B8)
-- Cormorant Garamond serif headings
-- DM Sans body font
-- Luxury real estate aesthetic
+DESIGN SYSTEM (Quiet Luxury — full spec in CLAUDE.md DESIGN VISION section):
+- Forest green primary #2D6350, deep green #173A31
+- Rose gold accent #B76E79 (use #8F4E58 for small text on light backgrounds)
+- Champagne #D8C3B8, warm ivory background #F6F1EA, charcoal text #1C1917
+- Cormorant Garamond display headings ONLY; DM Sans everything else
+- Numbers always DM Sans tabular-nums (never Cormorant)
 - Design reference saved to docs/design-reference.png
 
 KEY PROJECT FILES TO READ FIRST:
@@ -98,9 +119,9 @@ COMPLETED MAJOR SYSTEMS:
 - Global location system (Mapbox, PostGIS, works worldwide)
 
 NEXT PRIORITY:
-Stripe Connect payout flow — inspectors receive 90% of inspection fee automatically
-when job poster approves report. Platform takes 10%. Escrow until approval.
-Edge functions already scaffolded: stripe-connect-onboarding, stripe-connect-dashboard.
+See "WHERE WE ARE (June 12, 2026)" at the top of HOW_TO_RESUME_WITH_CLAUDE.md.
+(Stripe Connect payouts, multi-currency, forum phases 1-3, email via Resend,
+and the quiet luxury redesign are all DONE.)
 
 Please read PROJECT_CONTEXT.md first, then let me know you're ready and I'll tell you what I need help with.
 ```
@@ -283,15 +304,18 @@ Check `docs/DANI_APPROVAL_CHECKLIST.md` before making changes to:
 
 ---
 
-## 📋 Backlog (Prioritised)
+## 📋 Backlog (Prioritised — June 12, 2026)
 
-1. **Stripe Connect payout flow** ← NEXT
-2. Complete email notification testing
-3. Domain verification for buyersagenthub.com (Resend)
-4. CRM system with client management and automated workflows
-5. Expanded user/job types (pest inspectors, property managers)
-6. Document templates for buyer agent client communications
-7. Enhanced marketplace filtering
+1. **Work Regions feature** ← NEXT (spec reportedly exists — ask Jodie where; not in repo)
+2. Real Mapbox geocoding in Directory/Marketplace/Inspections filters (mock geocoder is AU-only)
+3. Regenerate Supabase types + clear the 93 pre-existing tsc errors
+4. Review system completion (table exists, no write UI; ratings hardcoded)
+5. Wire dashboard stats to real data (currently placeholders)
+6. Email notification testing + buyersagenthub.com domain verification (Resend)
+7. Dead code cleanup (Inspections.tsx, PostInspection.tsx, WelcomeHeader.tsx, NavLink.tsx)
+8. Migrate remaining ~33 supabase.from() calls to raw fetch (AuthContext, Admin, Marketplace...)
+9. CRM system with client management and automated workflows
+10. Expanded user/job types (pest inspectors, property managers)
 
 ---
 
@@ -325,4 +349,4 @@ Check `docs/DANI_APPROVAL_CHECKLIST.md` before making changes to:
 
 ---
 
-*Last Updated: May 30, 2026 — Security audit completed, keys rotated, .env protected*
+*Last Updated: June 12, 2026 — Quiet luxury design rollout complete, legacy routing fixed, codebase audited, admin scripts migrated to SUPABASE_SECRET_KEY*

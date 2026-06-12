@@ -1,5 +1,52 @@
 # Agent Hub - Development Session Record
-**Date:** January 9, 2026
+
+---
+
+# Session: June 12, 2026
+**Session Focus:** Quiet luxury redesign rollout, legacy routing fix, codebase audit, Supabase key migration
+
+## 🎯 Session Summary
+
+Major design and infrastructure day — 14 commits. The quiet-luxury aesthetic now covers the entire app, a product-breaking routing bug was fixed, and a full codebase audit was produced.
+
+## ✅ Accomplished (with commits)
+
+### Design — Quiet Luxury Rollout
+- `0e6c1a4` Premium dashboard redesign (hero aurora, frosted stat cards, forest sidebar, ivory top bar)
+- `336627c` Deeper glassmorphism: stronger aurora, warm glow shadows, sidebar/page gradients
+- `b845428` Sidebar depth gradient fixed (was rendering but imperceptible), card luxury feel; added `sidebar-probe.mjs` diagnostic
+- `29b53bb` Dashboard polish + full mobile responsiveness at 375px (44px touch targets, drawer, bottom nav palette fix)
+- `032a400` Stats numbers reverted to DM Sans (Cormorant breaks multi-digit figures — "12" read as "I 2")
+- `2584b0b` Detail polish: discreet membership badge, frosted action cards
+- `6dea5d3` **Auth page luxury redesign** — split-panel with aurora left panel, ivory form right; all auth logic untouched
+- `07f1cd7` Auth tagline globalised ("Where property professionals connect")
+- `aae7158` DESIGN VISION section added to CLAUDE.md (palette, typography, non-negotiable rules)
+- `5429262` **Quiet luxury palette applied across ALL pages** — index.css token swap (old #064E3B/#C9A84C gold → #2D6350/#B76E79), shared Button default variant fixed (was white-on-gold at 2.2:1 contrast), Landing/Welcome hexes replaced, ~18 contrast failures fixed. Zero contrast issues across landing, forums, messages, marketplace, directory, briefs, pricing, settings + dashboard + auth
+- `fece5c5` Forum "Your Activity" panel upgraded to luxury stat card style
+
+### Fixes
+- `b5d764e` **Legacy inspection routing fixed** — dashboard buttons were sending users to the dead `inspection_requests` flow; `/inspections` and `/inspections/new` now permanently redirect to the real marketplace (`/inspections/spotlights`, `/inspections/jobs/new`)
+
+### Documentation & Infrastructure
+- `7c0fc2e` **Comprehensive codebase audit** → `docs/CODEBASE_AUDIT.md` (41 pages, all components, 30+ tables, TODOs, ranked broken/incomplete items)
+- `6f26928` **Supabase key migration documented** — legacy JWT keys disabled by Supabase 30 May 2026; new `sb_secret_` key in gitignored `.env` as `SUPABASE_SECRET_KEY`; all admin scripts updated to read from env (the old JWT had been hardcoded in committed scripts on the public repo); CLAUDE.md Management API section rewritten
+
+### Verification tooling added this session
+`dashboard-verify.mjs`, `auth-verify.mjs`, `palette-verify.mjs`, `sidebar-probe.mjs` — puppeteer login + screenshots + WCAG contrast audits. Run after every visual change.
+
+## 📌 Noted (not done in this session)
+- **Work Regions feature** — Jodie reports this is fully planned and specced, but no spec exists in the repo or this session's work. Next session: ask Jodie where the spec lives before starting implementation.
+
+## ⚠️ Known issues carried forward (see docs/CODEBASE_AUDIT.md)
+- Mock geocoder (Australian cities only) still powers Directory/Marketplace/Inspections filters
+- `integrations/supabase/types.ts` stale (3 of ~30 tables); 93 pre-existing `tsc --noEmit` errors
+- ~33 `supabase.from()` calls remain (AuthContext, Admin, Marketplace, AddProperty, etc.)
+- Review system half-built; dashboard stats hardcoded; Resend email needs API key to activate
+- Legacy pages `Inspections.tsx`/`PostInspection.tsx` now unreachable — safe to delete in a cleanup
+
+---
+
+# Session: January 9, 2026
 **Session Focus:** Bug fixes, Client Brief system completion, Profile caching implementation
 
 ---
