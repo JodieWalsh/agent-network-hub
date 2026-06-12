@@ -74,9 +74,9 @@ const membershipLabels: Record<string, string> = {
 };
 
 const membershipColors: Record<string, string> = {
-  free: "bg-white/10 text-white/70 border-white/20",
-  basic: "bg-white/10 text-rose-gold border-rose-gold/30",
-  premium: "bg-rose-gold/20 text-rose-gold border-rose-gold/40",
+  free: "bg-white/10 text-white border-[rgba(255,255,255,0.12)]",
+  basic: "bg-white/10 text-[#D8C3B8] border-[#D8C3B8]/40",
+  premium: "bg-[#B76E79]/20 text-[#D8C3B8] border-[#B76E79]/40",
 };
 
 export function AppSidebar() {
@@ -277,7 +277,7 @@ export function AppSidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-forest text-white shadow-card lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#173A31] text-white shadow-card lg:hidden"
         aria-label="Toggle menu"
       >
         {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
@@ -294,14 +294,14 @@ export function AppSidebar() {
       {/* Sidebar — Dark Forest Green */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-[#064E3B] text-[#F9F5EB] z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 h-full w-64 bg-[#173A31] text-white z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo Section — Luxury Header */}
-        <div className="p-6 border-b border-[#0C382C]/40 bg-[#064E3B]">
+        <div className="p-6 border-b border-[rgba(255,255,255,0.12)] bg-[#173A31]">
           <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileOpen(false)}>
-            <span className="hidden sm:block font-serif text-lg uppercase tracking-[0.35em] text-[#F9F5EB]">
+            <span className="hidden sm:block font-serif text-lg uppercase tracking-[0.35em] text-[#D8C3B8]">
               BUYERS AGENT HUB
             </span>
           </Link>
@@ -317,14 +317,14 @@ export function AppSidebar() {
                     <button
                       onClick={() => toggleExpand(item.label)}
                       className={cn(
-                        "w-full flex items-center justify-between px-4 py-3 rounded-[18px] text-sm font-medium transition-all duration-200",
+                        "w-full flex items-center justify-between px-4 py-3 rounded-r-xl border-l-[3px] text-sm font-medium transition-all duration-200",
                         isParentActive(item)
-                          ? "bg-[#C9A84C]/15 text-[#C9A84C]"
-                          : "text-[#F9F5EB]/90 hover:bg-white/10 hover:text-white"
+                          ? "border-[#B76E79] bg-white/[0.08] text-white"
+                          : "border-transparent text-white hover:bg-white/10"
                       )}
                     >
                       <span className="flex items-center gap-3">
-                        <item.icon size={18} strokeWidth={1.5} />
+                        <item.icon size={18} strokeWidth={1.5} className="text-[#D8C3B8]" />
                         {item.label}
                       </span>
                       <ChevronDown
@@ -336,20 +336,20 @@ export function AppSidebar() {
                       />
                     </button>
                     {expandedItems.includes(item.label) && (
-                      <ul className="mt-2 ml-2 pl-4 border-l border-sidebar-border/50 space-y-1">
+                      <ul className="mt-2 ml-2 pl-4 border-l border-[rgba(255,255,255,0.12)] space-y-1">
                         {item.children.map((child) => (
                           <li key={child.label}>
                             <Link
                               to={child.path}
                               onClick={() => setIsMobileOpen(false)}
                               className={cn(
-                                "flex items-center gap-3 px-4 py-2.5 rounded-[16px] text-sm transition-all duration-200",
+                                "flex items-center gap-3 px-4 py-2.5 rounded-r-xl border-l-[3px] text-sm transition-all duration-200",
                                 isActive(child.path)
-                                  ? "text-[#C9A84C] font-semibold bg-[#C9A84C]/10"
-                                  : "text-[#F9F5EB]/80 hover:text-white hover:bg-white/10"
+                                  ? "border-[#B76E79] bg-white/[0.08] text-white font-semibold"
+                                  : "border-transparent text-white hover:bg-white/10"
                               )}
                             >
-                              <child.icon size={15} strokeWidth={1.5} />
+                              <child.icon size={15} strokeWidth={1.5} className="text-[#D8C3B8]" />
                               {child.label}
                             </Link>
                           </li>
@@ -362,18 +362,18 @@ export function AppSidebar() {
                     to={item.path}
                     onClick={() => setIsMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-[18px] text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 px-4 py-3 rounded-r-xl border-l-[3px] text-sm font-medium transition-all duration-200",
                       isActive(item.path)
-                        ? "bg-[#C9A84C]/15 text-[#C9A84C]"
-                        : "text-[#F9F5EB]/90 hover:bg-white/10 hover:text-white"
+                        ? "border-[#B76E79] bg-white/[0.08] text-white"
+                        : "border-transparent text-white hover:bg-white/10"
                     )}
                   >
-                    <item.icon size={18} strokeWidth={1.5} />
+                    <item.icon size={18} strokeWidth={1.5} className="text-[#D8C3B8]" />
                     <span className="flex-1">{item.label}</span>
                     {item.label === "Messaging" && unreadMessageCount > 0 && (
                       <Badge
                         variant="default"
-                        className="bg-[#C9A84C] text-[#064E3B] text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-0 ml-2"
+                        className="bg-[#B76E79] text-white text-xs px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-0 ml-2"
                       >
                         {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                       </Badge>
@@ -386,27 +386,27 @@ export function AppSidebar() {
         </nav>
 
         {/* User Section — Premium Card */}
-        <div className="p-4 border-t border-sidebar-border/30 bg-gradient-to-t from-sidebar-background/80 to-sidebar-background/50 space-y-3">
+        <div className="p-4 border-t border-[rgba(255,255,255,0.12)] bg-[#173A31] space-y-3">
           {user ? (
             <>
-              <div className="px-4 py-3 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/30">
+              <div className="px-4 py-3 rounded-lg bg-white/[0.06] border border-[rgba(255,255,255,0.12)]">
                 <div className="flex items-center gap-3">
                   {profile?.avatar_url ? (
                     <img
                       src={profile.avatar_url}
                       alt={profile.full_name || user.email || 'User'}
-                      className="w-10 h-10 rounded-lg object-cover ring-2 ring-rose-gold/30"
+                      className="w-10 h-10 rounded-lg object-cover ring-2 ring-[#B76E79]/40"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-rose-gold/20 flex items-center justify-center ring-2 ring-rose-gold/20">
-                      <span className="text-sm font-semibold text-rose-gold">{getUserInitials()}</span>
+                    <div className="w-10 h-10 rounded-lg bg-[#B76E79]/20 flex items-center justify-center ring-2 ring-[#B76E79]/30">
+                      <span className="text-sm font-semibold text-[#D8C3B8]">{getUserInitials()}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">
                       {profile?.full_name || user.user_metadata?.full_name || user.email}
                     </p>
-                    <p className="text-xs text-sidebar-foreground/60 truncate">{getUserType()}</p>
+                    <p className="text-xs text-white/70 truncate">{getUserType()}</p>
                   </div>
                 </div>
               </div>
@@ -427,14 +427,14 @@ export function AppSidebar() {
 
               {/* Notifications Badge */}
               <div className="px-4">
-                <div className="flex items-center justify-between text-xs text-sidebar-foreground/60 mb-2">
+                <div className="flex items-center justify-between text-xs text-white/70 mb-2">
                   <span>Notifications</span>
                 </div>
               </div>
 
               <button
                 onClick={handleSignOut}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 w-full rounded-[18px] text-sm font-medium text-[#F9F5EB]/80 hover:bg-[#C9A84C]/15 hover:text-[#F9F5EB] transition-all duration-200"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 w-full rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
               >
                 <LogOut size={15} />
                 Sign Out
@@ -444,7 +444,7 @@ export function AppSidebar() {
             <Link
               to="/auth"
               onClick={() => setIsMobileOpen(false)}
-              className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-semibold bg-gradient-to-r from-rose-gold to-rose-gold-dark text-white hover:shadow-hover transition-all duration-200"
+              className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-semibold bg-[#B76E79] text-white hover:bg-[#a55d68] hover:shadow-hover transition-all duration-200"
             >
               <LogIn size={16} />
               Sign In

@@ -1,4 +1,4 @@
-import { Building2, ClipboardCheck, FileText, ArrowRight } from "lucide-react";
+import { Building2, ClipboardCheck, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface PowerTileProps {
@@ -14,17 +14,17 @@ function PowerTile({ icon: Icon, title, description, path }: PowerTileProps) {
   return (
     <button
       onClick={() => navigate(path)}
-      className="group p-6 rounded-[18px] border border-rose-gold/15 bg-cream shadow-card hover:shadow-hover transition-all duration-200 text-left w-full"
+      className="group w-full rounded-[20px] border border-[#2D6350]/12 bg-white p-6 text-left shadow-[0_4px_18px_rgba(94,70,55,0.07)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B76E79]/40 hover:shadow-[0_10px_30px_rgba(94,70,55,0.12)]"
     >
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-forest/10 flex items-center justify-center flex-shrink-0 group-hover:bg-forest/15 transition-colors">
-          <Icon size={18} className="text-forest" />
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[#2D6350]/8 transition-colors group-hover:bg-[#B76E79]/12">
+          <Icon size={18} className="text-[#2D6350] transition-colors group-hover:text-[#B76E79]" />
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold mb-1 text-forest">
+        <div className="min-w-0 flex-1">
+          <h3 className="mb-1 text-base font-semibold text-[#173A31]">
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[#1C1917]">
             {description}
           </p>
         </div>
@@ -56,7 +56,7 @@ const tiles = [
 
 export function PowerTiles() {
   return (
-    <div className="grid md:grid-cols-3 gap-6">
+    <div className="grid gap-5 md:grid-cols-3">
       {tiles.map((tile) => (
         <PowerTile key={tile.title} {...tile} />
       ))}

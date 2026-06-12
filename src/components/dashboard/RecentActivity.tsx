@@ -20,7 +20,6 @@ import {
   Award,
   Clock,
   Bell,
-  MessageSquare,
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -48,20 +47,37 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   job_cancelled: XCircle,
 };
 
-// Color classes for notification types
-const NOTIFICATION_COLORS: Record<NotificationType, string> = {
-  bid_received: 'text-blue-600 bg-blue-50',
-  bid_accepted: 'text-green-600 bg-green-50',
-  bid_declined: 'text-amber-600 bg-amber-50',
-  bid_edited: 'text-purple-600 bg-purple-50',
-  job_assigned: 'text-forest bg-forest/10',
-  report_submitted: 'text-emerald-600 bg-emerald-50',
-  payment_released: 'text-green-600 bg-green-50',
-  review_received: 'text-amber-500 bg-amber-50',
-  badge_earned: 'text-purple-600 bg-purple-50',
-  job_expired: 'text-gray-600 bg-gray-100',
-  job_cancelled: 'text-red-600 bg-red-50',
-};
+function ActivityShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[24px] border border-[#2D6350]/15 bg-[#FBF8F3] p-7 shadow-[0_6px_24px_rgba(94,70,55,0.07)]">
+      {children}
+    </div>
+  );
+}
+
+function ActivityHeader({ onViewAll }: { onViewAll?: () => void }) {
+  return (
+    <div className="mb-5 flex items-center justify-between">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-[#8F4E58]">
+          Recent activity
+        </p>
+        <h2 className="mt-2 font-serif text-2xl font-semibold text-[#173A31]">
+          Activity Snapshot
+        </h2>
+      </div>
+      {onViewAll && (
+        <button
+          onClick={onViewAll}
+          className="flex items-center gap-1 text-xs font-medium text-[#2D6350] transition-colors hover:text-[#B76E79]"
+        >
+          View All
+          <ArrowRight size={12} />
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function RecentActivity() {
   const { user } = useAuth();
@@ -106,124 +122,98 @@ export function RecentActivity() {
   // Loading state
   if (loading) {
     return (
-      <div className="p-6 rounded-md border border-border bg-white">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-foreground">
-            Recent Activity
-          </h2>
-        </div>
+      <ActivityShell>
+        <ActivityHeader />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-start gap-3 p-2.5 animate-pulse">
-              <div className="w-8 h-8 rounded-full bg-muted" />
+            <div key={i} className="flex animate-pulse items-start gap-3 p-2.5">
+              <div className="h-8 w-8 rounded-full bg-[#2D6350]/10" />
               <div className="flex-1">
-                <div className="h-3 bg-muted rounded w-3/4 mb-2" />
-                <div className="h-2 bg-muted rounded w-1/2" />
+                <div className="mb-2 h-3 w-3/4 rounded bg-[#2D6350]/10" />
+                <div className="h-2 w-1/2 rounded bg-[#2D6350]/10" />
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </ActivityShell>
     );
   }
 
   // Not logged in state
   if (!user) {
     return (
-      <div className="p-6 rounded-md border border-border bg-white">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-foreground">
-            Recent Activity
-          </h2>
-        </div>
+      <ActivityShell>
+        <ActivityHeader />
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Bell className="h-8 w-8 text-muted-foreground/30 mb-2" />
-          <p className="text-sm text-muted-foreground">
+          <Bell className="mb-2 h-8 w-8 text-[#2D6350]/30" />
+          <p className="text-sm text-[#1C1917]">
             Sign in to see your activity
           </p>
         </div>
-      </div>
+      </ActivityShell>
     );
   }
 
   // Empty state
   if (notifications.length === 0) {
     return (
-      <div className="p-6 rounded-md border border-border bg-white">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-foreground">
-            Recent Activity
-          </h2>
-        </div>
+      <ActivityShell>
+        <ActivityHeader />
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Bell className="h-8 w-8 text-muted-foreground/30 mb-2" />
-          <p className="text-sm text-muted-foreground">
+          <Bell className="mb-2 h-8 w-8 text-[#2D6350]/30" />
+          <p className="text-sm text-[#1C1917]">
             No activity yet
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="mt-1 text-xs text-[#1C1917]/70">
             Your notifications will appear here
           </p>
         </div>
-      </div>
+      </ActivityShell>
     );
   }
 
   return (
-    <div className="p-6 rounded-[18px] border border-forest/10 bg-cream shadow-card">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-forest/70">Recent Activity</p>
-          <h2 className="text-xl font-serif font-semibold text-forest">Activity Snapshot</h2>
-        </div>
-        <button
-          onClick={() => navigate('/activity')}
-          className="text-xs text-forest hover:text-forest/80 font-medium transition-colors flex items-center gap-1"
-        >
-          View All
-          <ArrowRight size={12} />
-        </button>
-      </div>
+    <ActivityShell>
+      <ActivityHeader onViewAll={() => navigate('/activity')} />
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {notifications.map((notification) => {
           const Icon = NOTIFICATION_ICONS[notification.type] || Bell;
-          const colorClasses = NOTIFICATION_COLORS[notification.type] || 'text-gray-600 bg-gray-100';
 
           return (
             <button
               key={notification.id}
               onClick={() => handleNotificationClick(notification)}
               className={cn(
-                "w-full flex items-start gap-3 p-3 rounded-lg transition-colors duration-150 text-left",
-                "hover:bg-muted/50",
-                !notification.read && "bg-forest/5"
+                "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors duration-150",
+                "hover:bg-white",
+                !notification.read
+                  ? "border-[#2D6350]/15 bg-white"
+                  : "border-transparent"
               )}
             >
               {/* Icon */}
-              <div className={cn(
-                "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-                colorClasses
-              )}>
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#2D6350]/12 bg-[#F6F1EA] text-[#2D6350]">
                 <Icon size={14} />
               </div>
 
               {/* Content */}
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <p className={cn(
-                    "text-sm truncate",
-                    !notification.read ? "font-medium text-foreground" : "text-muted-foreground"
+                    "truncate text-sm text-[#1C1917]",
+                    !notification.read && "font-semibold"
                   )}>
                     {notification.title}
                   </p>
                   {!notification.read && (
-                    <span className="w-2 h-2 rounded-full bg-forest flex-shrink-0 mt-1.5" />
+                    <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-[#B76E79]" />
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                <p className="mt-0.5 line-clamp-1 text-xs text-[#1C1917]/70">
                   {notification.message}
                 </p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
+                <p className="mt-1 text-xs tabular-nums text-[#1C1917]/55">
                   {formatNotificationTime(notification.created_at)}
                 </p>
               </div>
@@ -231,6 +221,6 @@ export function RecentActivity() {
           );
         })}
       </div>
-    </div>
+    </ActivityShell>
   );
 }
