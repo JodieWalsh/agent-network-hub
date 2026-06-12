@@ -41,13 +41,23 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto space-y-8 px-4 py-6 sm:px-6 lg:px-8">
         {/* Hero welcome card — deep forest gradient */}
         <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#173A31] to-[#2D6350] p-10 lg:p-12 shadow-[0_24px_60px_rgba(23,58,49,0.28)]">
-          {/* Aurora gradient overlay */}
+          {/* Aurora gradient overlay — ambient light bleeding in from top right */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 65% 55% at 85% 0%, rgba(183,110,121,0.22), transparent 65%), radial-gradient(ellipse 55% 65% at 8% 100%, rgba(216,195,184,0.16), transparent 60%)",
+                "radial-gradient(ellipse 70% 80% at 92% -10%, rgba(183,110,121,0.45), transparent 60%), radial-gradient(ellipse 45% 50% at 75% 5%, rgba(216,195,184,0.35), transparent 65%), radial-gradient(ellipse 55% 65% at 5% 105%, rgba(216,195,184,0.18), transparent 60%)",
+            }}
+          />
+          {/* Soft light bloom in the corner itself */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(216,195,184,0.35) 0%, rgba(183,110,121,0.18) 45%, transparent 70%)",
+              filter: "blur(12px)",
             }}
           />
           <div className="relative">
@@ -71,7 +81,7 @@ const Dashboard = () => {
             <button
               key={action.label}
               onClick={() => navigate(action.path)}
-              className="rounded-full bg-[#2D6350] px-7 py-3 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(23,58,49,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#B76E79] hover:shadow-[0_8px_22px_rgba(183,110,121,0.32)]"
+              className="rounded-full bg-[#2D6350] px-8 py-3.5 text-sm font-semibold tracking-[0.05em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.12),0_5px_16px_rgba(23,58,49,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#B76E79] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_26px_rgba(183,110,121,0.38)]"
             >
               {action.label}
             </button>

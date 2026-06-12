@@ -8,7 +8,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-[#F6F1EA]">
+    <div className="min-h-screen bg-gradient-to-b from-[#F6F1EA] to-[#EDE8E0]">
       {/* Sidebar - Desktop */}
       <AppSidebar />
 

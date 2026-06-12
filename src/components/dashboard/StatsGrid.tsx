@@ -9,7 +9,13 @@ interface StatCardProps {
 
 function StatCard({ icon: Icon, label, value, trend }: StatCardProps) {
   return (
-    <div className="rounded-[20px] border border-[#2D6350]/10 bg-white/80 p-6 shadow-[0_4px_18px_rgba(94,70,55,0.08)] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(94,70,55,0.12)]">
+    <div
+      className="rounded-[20px] border border-white/60 p-6 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 shadow-[0_2px_6px_rgba(94,70,55,0.06),0_12px_32px_rgba(183,110,121,0.14),0_6px_20px_rgba(94,70,55,0.12)] hover:shadow-[0_4px_10px_rgba(94,70,55,0.08),0_18px_44px_rgba(183,110,121,0.2),0_10px_28px_rgba(94,70,55,0.14)]"
+      style={{
+        background:
+          "linear-gradient(150deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.72) 55%, rgba(246,241,234,0.68) 100%)",
+      }}
+    >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#B76E79]/12">
           <Icon size={16} className="text-[#B76E79]" />

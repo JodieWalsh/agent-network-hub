@@ -294,12 +294,12 @@ export function AppSidebar() {
       {/* Sidebar — Dark Forest Green */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-[#173A31] text-white z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-[#173A31] to-[#0F2420] text-white z-50 flex flex-col transition-transform duration-300 lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo Section — Luxury Header */}
-        <div className="p-6 border-b border-[rgba(255,255,255,0.12)] bg-[#173A31]">
+        <div className="p-6 border-b border-[rgba(255,255,255,0.12)]">
           <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileOpen(false)}>
             <span className="hidden sm:block font-serif text-lg uppercase tracking-[0.35em] text-[#D8C3B8]">
               BUYERS AGENT HUB
@@ -386,7 +386,7 @@ export function AppSidebar() {
         </nav>
 
         {/* User Section — Premium Card */}
-        <div className="p-4 border-t border-[rgba(255,255,255,0.12)] bg-[#173A31] space-y-3">
+        <div className="p-4 border-t border-[rgba(255,255,255,0.12)] space-y-3">
           {user ? (
             <>
               <div className="px-4 py-3 rounded-lg bg-white/[0.06] border border-[rgba(255,255,255,0.12)]">
