@@ -22,6 +22,49 @@ Read this first before doing any work on this project.
 
 ---
 
+## DESIGN VISION — QUIET LUXURY
+
+The visual target for Buyers Agent Hub is "quiet modern luxury" — a private members club for serious Australian property professionals. Every design decision should reinforce this feeling.
+
+AESTHETIC: Refined glassmorphism, warm aurora gradients, frosted panels, ambient light, editorial spacing. NOT generic SaaS, NOT neon, NOT over-rounded, NOT template-looking.
+
+COLOUR SYSTEM (exact values — never deviate):
+- Forest green primary: #2D6350
+- Deep green shadow: #173A31
+- Rose gold accent: #B76E79
+- Champagne highlight: #D8C3B8
+- Warm ivory background: #F6F1EA
+- Body text on ivory: #1C1917
+- Body text on green: #FFFFFF
+- Mist border: rgba(255,255,255,0.12)
+
+TYPOGRAPHY:
+- Cormorant Garamond: display headings and hero moments ONLY
+- DM Sans: all UI text, body, buttons, labels
+- Tabular numerals for all stats
+
+DESIGN RULES (non-negotiable):
+1. NEVER use hsl(var(--colour)) in Tailwind — always use var(--colour) directly
+2. Every button MUST have explicit text colour — never inherited
+3. White text on dark green backgrounds only
+4. Dark charcoal text on ivory/white backgrounds only
+5. Always verify with puppeteer screenshots before committing
+6. Never change shared components without checking all pages
+
+MATERIAL FEEL:
+- Frosted glass panels: backdrop-blur-md, bg-white/80
+- Warm shadows with rose gold bloom
+- Subtle hover lift on interactive elements
+- Fine borders, never heavy outlines
+- Aurora gradients behind hero sections
+- Generous padding — never cramped
+
+TONE: Professional, premium, confident, discreet, high-trust. Like a premium hotel lobby meets serious property platform.
+
+DESIGN REFERENCE: See docs/design-reference.png for the visual north star.
+
+---
+
 ## Project Structure
 
 ```
