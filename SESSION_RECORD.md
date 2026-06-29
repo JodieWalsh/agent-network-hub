@@ -2,6 +2,32 @@
 
 ---
 
+# Session: June 29, 2026
+**Session Focus:** Post-break reassessment + security remediation (.env exposure fixed, keys rotated)
+
+## 🎯 Session Summary
+Returned after a few weeks away. Reassessed true repo state against the 12 June snapshot, then discovered and remediated a security exposure: `.env` was being tracked by git and was live on the public repo.
+
+## ✅ Accomplished
+- **Reassessment:** Confirmed repo is on `main`, in sync with origin, builds cleanly (~9s). Confirmed the dashboard-stats work (commit 92c4d6c, 12 June) is genuinely present — StatsGrid uses real raw-fetch queries, not placeholders. NOTE: this commit landed ~11 min after the 12 June docs were written, so earlier docs incorrectly listed dashboard stats as "to do".
+- **Security — .env exposure FIXED:**
+  - Found `.env` was tracked despite being in .gitignore (it had been committed before the ignore rule, so git kept tracking it). It was present in 7 commits and on public origin/main.
+  - Ran `git rm --cached .env` and committed "chore: stop tracking .env (security)" (176afd5) — git no longer tracks it; .gitignore now actually takes effect.
+  - **Rotated Supabase secret key** (sb_secret_): created new `edge_functions_service_v2`, updated local .env, deleted old exposed `edge_functions_service`. (Edge functions use a separate auto-injected SERVICE_ROLE_KEY, so nothing live broke.)
+  - **Rotated Supabase access token** (sbp_): created "Claude Code Deployment 2026 v2", updated local .env, deleted old "Claude Code Deployment 2026". Three other access tokens were already expired.
+  - Confirmed STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET in .env were only "xxx" placeholders — never real, nothing to rotate.
+
+## ⚠️ Carried forward / to check another day
+- **Optional:** Restrict Mapbox token by URL (account.mapbox.com) so the public publishable token can't be quota-abused.
+- **Optional (cosmetic):** Scrub old secret values from git history (git filter-repo + force-push). Low priority now that keys are rotated and dead.
+- **Investigate:** Edge functions reference SUPABASE_SERVICE_ROLE_KEY (legacy JWT, per notes disabled 30 May 2026) — confirm functions still authenticate correctly.
+- **Investigate:** send-email logged "missing SUPABASE_SECRET_KEYS" — confirm whether emails are actually sending.
+
+## 📝 Tooling note
+- **Fable 5 is currently unavailable** (Mythos/Fable tier access suspended). Use Opus 4.8 (high effort) in Claude Code for complex tasks instead. Update any prompts that say "Fable 5".
+
+---
+
 # Session: June 12, 2026
 **Session Focus:** Quiet luxury redesign rollout, legacy routing fix, codebase audit, Supabase key migration
 

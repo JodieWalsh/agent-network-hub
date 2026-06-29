@@ -2,15 +2,17 @@
 
 This document explains how to start a new Claude session and get up to speed fast.
 
-**Last Updated:** June 12, 2026
+**Last Updated:** June 29, 2026
 **Project:** Buyers Agent Hub (agent-network-hub)
 **Live URL:** https://agent-network-hub-1ynd.vercel.app
 
 ---
 
-## 📍 WHERE WE ARE (June 12, 2026)
+## 📍 WHERE WE ARE (June 29, 2026)
 
 The entire app now uses the **quiet luxury design system** (see CLAUDE.md → DESIGN VISION). Dashboard, Auth, and every other page passed WCAG contrast audits. The legacy inspection routing bug is fixed. A full codebase audit lives at `docs/CODEBASE_AUDIT.md` — read it for the honest state of everything.
+
+**Update (June 29, 2026):** Dashboard stats are now wired to real data (done 12 June, commit `92c4d6c` — `StatsGrid` uses real raw-fetch queries, no longer placeholders). A security remediation also happened 29 June: `.env` was untracked from git, and the Supabase secret key + access token were rotated — see the 29 June entry in `SESSION_RECORD.md` for full detail. **Tooling note:** Fable 5 is currently unavailable, so use **Opus 4.8** (high effort) in Claude Code for complex tasks.
 
 **Start every session by reading:** `CLAUDE.md`, then `docs/CODEBASE_AUDIT.md`, then the latest entry in `SESSION_RECORD.md`.
 
@@ -54,6 +56,10 @@ These rules were established May 30, 2026 after a security audit. Follow them ev
 - Rotated Mapbox token (old `Default public token` deleted, new `buyers-agent-hub-production` created)
 - Added `.env` to `.gitignore` — will never be committed again
 - Saved all keys to private Google Drive backup
+
+### What Was Done (June 29, 2026)
+
+- **June 29, 2026:** Discovered .env was still tracked by git and exposed on public repo. Untracked it (git rm --cached), rotated Supabase secret key and access token, deleted old keys. .gitignore now effective. Stripe secrets in .env were only placeholders.
 
 ### Current Key Locations
 
@@ -304,18 +310,17 @@ Check `docs/DANI_APPROVAL_CHECKLIST.md` before making changes to:
 
 ---
 
-## 📋 Backlog (Prioritised — June 12, 2026)
+## 📋 Backlog (Prioritised — June 29, 2026)
 
 1. **Work Regions feature** ← NEXT (spec: docs/WORK_REGIONS_SPEC.md)
 2. Real Mapbox geocoding in Directory/Marketplace/Inspections filters (mock geocoder is AU-only)
 3. Regenerate Supabase types + clear the 93 pre-existing tsc errors
 4. Review system completion (table exists, no write UI; ratings hardcoded)
-5. Wire dashboard stats to real data (currently placeholders)
-6. Email notification testing + buyersagenthub.com domain verification (Resend)
-7. Dead code cleanup (Inspections.tsx, PostInspection.tsx, WelcomeHeader.tsx, NavLink.tsx)
-8. Migrate remaining ~33 supabase.from() calls to raw fetch (AuthContext, Admin, Marketplace...)
-9. CRM system with client management and automated workflows
-10. Expanded user/job types (pest inspectors, property managers)
+5. Email notification testing + buyersagenthub.com domain verification (Resend)
+6. Dead code cleanup (Inspections.tsx, PostInspection.tsx, WelcomeHeader.tsx, NavLink.tsx)
+7. Migrate remaining ~33 supabase.from() calls to raw fetch (AuthContext, Admin, Marketplace...)
+8. CRM system with client management and automated workflows
+9. Expanded user/job types (pest inspectors, property managers)
 
 ---
 
