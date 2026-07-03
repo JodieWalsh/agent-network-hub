@@ -2,6 +2,24 @@
 
 ---
 
+# Session: July 4, 2026
+**Session Focus:** CRM Phase 2 started — dashboard snapshot widgets complete.
+
+## 🎯 Session Summary
+First piece of CRM Phase 2 (the safest, read-only piece) built and shipped: a CRM snapshot section on the main dashboard.
+
+## ✅ Accomplished (with commits)
+- **`7eaaae0` — CRM snapshot widgets + quick actions on the dashboard** (`src/components/dashboard/CrmSnapshot.tsx`, rendered in `Index.tsx` below StatsGrid, verified via `crm-snapshot-verify.mjs`):
+  - Three clickable frosted metric cards (exact StatsGrid styling): **Clients Needing Attention**, **Tasks Due Today**, **Active Households** — all navigate to `/clients`.
+  - **Needs-attention preview** (top 3 households + reason, linking to `/clients/:id`) with a calm caught-up empty state; quick actions **View Clients** / **New Client**.
+  - Read-only over the CRM tables only (`clients`, `client_tasks`) — raw fetch, `agent_id`-filtered, no briefs tables touched. Gated by `CAN_MANAGE_CLIENT_BRIEFS` (same as the `/clients` routes). "Needing attention" reuses the exact `needsAttention()` rule from Clients.tsx; "due today" uses local-midnight boundaries.
+  - Verified empty + seeded states with puppeteer (desktop + 375px mobile, zero WCAG contrast issues, no horizontal scroll); seeded test data deleted, all 5 CRM tables confirmed back to 0 rows. `tsc --noEmit` and `npm run build` clean.
+
+## ⏭️ Next up
+- **Clients ↔ Briefs linking** (CRM Phase 2, docs/CRM_ROADMAP.md): nullable `client_id` FK migration on `client_briefs` (re-verify live schema first), then linking UI + brief summary in the Client record (household-name source-of-truth rule, decision 3).
+
+---
+
 # Session: July 3, 2026 (later that day)
 **Session Focus:** CRM Phase 1 leftovers — stage controls + Kanban board. **CRM Phase 1 is now fully complete.**
 

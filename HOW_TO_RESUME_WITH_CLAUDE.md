@@ -2,17 +2,17 @@
 
 This document explains how to start a new Claude session and get up to speed fast.
 
-**Last Updated:** July 3, 2026
+**Last Updated:** July 4, 2026
 **Project:** Buyers Agent Hub (agent-network-hub)
 **Live URL:** https://agent-network-hub-1ynd.vercel.app
 
 ---
 
-## 📍 WHERE WE ARE (July 3, 2026)
+## 📍 WHERE WE ARE (July 4, 2026)
 
 The entire app now uses the **quiet luxury design system** (see CLAUDE.md → DESIGN VISION). Dashboard, Auth, and every other page passed WCAG contrast audits. The legacy inspection routing bug is fixed. A full codebase audit lives at `docs/CODEBASE_AUDIT.md` — read it for the honest state of everything.
 
-**Update (July 3, 2026, later that day): CRM Phase 1 is 100% COMPLETE.** The client management system now has: 5 database tables with owner-only RLS (migration `20260703010000`), a Clients list view + New Client form (`/clients`, `/clients/new`), a full Client record page (`/clients/:id`) with Overview/Members/Tasks/Timeline tabs, **stage-change controls** on the record (lifecycle + buying pickers with timeline logging — `a21318f`), and a **Board (Kanban) view** on the Clients page with drag-and-drop stage changes and List/Board + By Relationship/By Buying Stage toggles (`9a741a1`). Earlier commits: `46039ff`, `7b0d002`, `2147eb4`. **Next for the CRM: Phase 2** — add nullable `client_id` FK to `client_briefs`, link Clients ↔ Briefs + brief summary in the record, CRM dashboard widgets. Full plan + locked decisions in `docs/CRM_ROADMAP.md` — read it before any CRM work. Subscription gating for the CRM is Dani item #23 and is NOT yet enforced.
+**Update (July 3, 2026, later that day): CRM Phase 1 is 100% COMPLETE.** The client management system now has: 5 database tables with owner-only RLS (migration `20260703010000`), a Clients list view + New Client form (`/clients`, `/clients/new`), a full Client record page (`/clients/:id`) with Overview/Members/Tasks/Timeline tabs, **stage-change controls** on the record (lifecycle + buying pickers with timeline logging — `a21318f`), and a **Board (Kanban) view** on the Clients page with drag-and-drop stage changes and List/Board + By Relationship/By Buying Stage toggles (`9a741a1`). Earlier commits: `46039ff`, `7b0d002`, `2147eb4`. **Update (July 4, 2026): CRM Phase 2 has started.** The **CRM dashboard snapshot is done** (commit `7eaaae0`): Clients Needing Attention / Tasks Due Today / Active Households widgets + needs-attention preview + View Clients / New Client quick actions on the main dashboard (`CrmSnapshot.tsx` — read-only over CRM tables, gated by `CAN_MANAGE_CLIENT_BRIEFS`, verified with `crm-snapshot-verify.mjs`). **Next Phase 2 step: Clients ↔ Briefs linking** — the nullable `client_id` FK migration on `client_briefs` (re-verify live schema first), then linking UI + brief summary in the Client record. Full plan + locked decisions in `docs/CRM_ROADMAP.md` — read it before any CRM work. Subscription gating for the CRM is Dani item #23 and is NOT yet enforced.
 
 **Update (June 29, 2026):** Dashboard stats are now wired to real data (done 12 June, commit `92c4d6c` — `StatsGrid` uses real raw-fetch queries, no longer placeholders). A security remediation also happened 29 June: `.env` was untracked from git, and the Supabase secret key + access token were rotated — see the 29 June entry in `SESSION_RECORD.md` for full detail. **Tooling note:** Fable 5 is currently unavailable, so use **Opus 4.8** (high effort) in Claude Code for complex tasks.
 
