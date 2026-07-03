@@ -29,6 +29,8 @@ import {
   Building2,
   ClipboardCheck,
   AlertCircle,
+  Link2,
+  ExternalLink,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -92,6 +94,32 @@ interface Activity {
   created_at: string;
 }
 
+/**
+ * The subset of client_briefs columns the CRM reads (READ + link/unlink of
+ * client_id ONLY — no other brief field is ever written from the CRM).
+ * Column list verified against the live DB 4 Jul 2026; types.ts is stale.
+ */
+interface BriefSummary {
+  id: string;
+  brief_name: string | null;
+  client_name: string | null;
+  status: string;
+  budget_min: number | null;
+  budget_max: number | null;
+  bedrooms_min: number | null;
+  bedrooms_max: number | null;
+  bathrooms_min: number | null;
+  bathrooms_max: number | null;
+  preferred_suburbs: string[] | null;
+  location_summary: string | null;
+  property_types: string[] | null;
+  must_have_features: string[] | null;
+  updated_at: string;
+}
+
+const BRIEF_COLS =
+  "id,brief_name,client_name,status,budget_min,budget_max,bedrooms_min,bedrooms_max,bathrooms_min,bathrooms_max,preferred_suburbs,location_summary,property_types,must_have_features,updated_at";
+
 /* ------------------------------------------------------------- constants */
 
 const LIFECYCLE_LABELS: Record<string, string> = {
@@ -148,6 +176,15 @@ const EVENT_LABELS: Record<string, string> = {
   task_completed: "Task completed",
   lifecycle_stage_changed: "Lifecycle stage changed",
   buying_stage_changed: "Buying stage changed",
+  brief_linked: "Brief linked",
+  brief_unlinked: "Brief unlinked",
+};
+
+const BRIEF_STATUS_LABELS: Record<string, string> = {
+  active: "Active",
+  matched: "Matched",
+  on_hold: "On Hold",
+  archived: "Archived",
 };
 
 /* --------------------------------------------------------------- helpers */
@@ -201,6 +238,44 @@ function daysSince(value: string | null): number | null {
 function stageLabel(map: Record<string, string>, token: unknown): string {
   if (!token) return "Not started";
   return map[token as string] || String(token);
+}
+
+function fmtMoney(value: number | null): string {
+  if (value === null || value === undefined) return "—";
+  return `$${value.toLocaleString("en-AU")}`;
+}
+
+function briefBudget(b: BriefSummary): string {
+  if (!b.budget_min && !b.budget_max) return "Budget not set";
+  return `${fmtMoney(b.budget_min)} – ${fmtMoney(b.budget_max)}`;
+}
+
+function briefLocation(b: BriefSummary): string {
+  if (b.location_summary) return b.location_summary;
+  if (b.preferred_suburbs && b.preferred_suburbs.length > 0)
+    return b.preferred_suburbs.slice(0, 3).join(", ") + (b.preferred_suburbs.length > 3 ? "…" : "");
+  return "No locations recorded";
+}
+
+function rangeLabel(min: number | null, max: number | null): string {
+  if (!min && !max) return "Any";
+  if (min && max) return min === max ? `${min}` : `${min}–${max}`;
+  return min ? `${min}+` : `up to ${max}`;
+}
+
+/** Muted, elegant brief-status badge — quiet luxury, never traffic-light chips. */
+function BriefStatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "active"
+      ? "border-[#2D6350]/25 bg-[#2D6350]/[0.08] text-[#2D6350]"
+      : status === "matched"
+      ? "border-[#B76E79]/30 bg-[#B76E79]/[0.09] text-[#8F4E58]"
+      : "border-[#1C1917]/15 bg-[#D8C3B8]/25 text-[#57534E]";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-3 py-1 font-sans text-xs font-medium ${tone}`}>
+      {BRIEF_STATUS_LABELS[status] || status}
+    </span>
+  );
 }
 
 /* ------------------------------------------------------- shared visuals */
@@ -305,7 +380,7 @@ function Modal({
 
 /* ------------------------------------------------------------ component */
 
-type TabKey = "overview" | "members" | "tasks" | "timeline";
+type TabKey = "overview" | "members" | "tasks" | "brief" | "timeline";
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -316,6 +391,7 @@ export default function ClientDetail() {
   const [members, setMembers] = useState<Member[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [brief, setBrief] = useState<BriefSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("overview");
 
@@ -338,6 +414,11 @@ export default function ClientDetail() {
   const [snoozeDate, setSnoozeDate] = useState("");
   const [rescheduleTask, setRescheduleTask] = useState<Task | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkableBriefs, setLinkableBriefs] = useState<BriefSummary[]>([]);
+  const [linkableLoading, setLinkableLoading] = useState(false);
+  const [briefChoice, setBriefChoice] = useState("");
+  const [unlinkOpen, setUnlinkOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -346,17 +427,21 @@ export default function ClientDetail() {
     if (!user || !id) return;
     try {
       const headers = restHeaders();
-      const [cRes, mRes, tRes, aRes] = await Promise.all([
+      const [cRes, mRes, tRes, aRes, bRes] = await Promise.all([
         fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${id}&agent_id=eq.${user.id}&select=*`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_members?client_id=eq.${id}&agent_id=eq.${user.id}&select=*&order=is_primary_contact.desc,created_at.asc`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_tasks?client_id=eq.${id}&agent_id=eq.${user.id}&select=*&order=status.asc,due_at.asc.nullslast`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_activities?client_id=eq.${id}&agent_id=eq.${user.id}&select=*&order=created_at.desc&limit=100`, { headers }),
+        // The household's linked brief, if any (READ-only over client_briefs)
+        fetch(`${supabaseUrl}/rest/v1/client_briefs?client_id=eq.${id}&agent_id=eq.${user.id}&select=${BRIEF_COLS}&limit=1`, { headers }),
       ]);
       const [c] = cRes.ok ? await cRes.json() : [];
       setClient(c || null);
       setMembers(mRes.ok ? await mRes.json() : []);
       setTasks(tRes.ok ? await tRes.json() : []);
       setActivities(aRes.ok ? await aRes.json() : []);
+      const [b] = bRes.ok ? await bRes.json() : [];
+      setBrief(b || null);
     } catch (error) {
       console.error("Error loading client record:", error);
     } finally {
@@ -425,6 +510,74 @@ export default function ClientDetail() {
       await loadAll();
     } catch (e) {
       console.error(e); toast.error("Could not update the stage.");
+    } finally { setBusy(false); }
+  };
+
+  /* Brief linking (CRM Phase 2) — the ONLY write the CRM ever makes to
+     client_briefs is setting/clearing client_id. All other brief data is
+     read-only here; clients.household_name stays the display name in the
+     CRM (source-of-truth rule, roadmap decision 3). */
+
+  const openLinkDialog = async () => {
+    if (!user) return;
+    setBriefChoice("");
+    setLinkOpen(true);
+    setLinkableLoading(true);
+    try {
+      // Only this agent's briefs that aren't already linked to a household
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/client_briefs?agent_id=eq.${user.id}&client_id=is.null&select=${BRIEF_COLS}&order=updated_at.desc`,
+        { headers: restHeaders() }
+      );
+      setLinkableBriefs(res.ok ? await res.json() : []);
+    } catch (e) {
+      console.error("Could not load briefs:", e);
+      setLinkableBriefs([]);
+    } finally {
+      setLinkableLoading(false);
+    }
+  };
+
+  const linkBrief = async () => {
+    if (!user || !id || !briefChoice) return;
+    const chosen = linkableBriefs.find((b) => b.id === briefChoice);
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/client_briefs?id=eq.${briefChoice}&agent_id=eq.${user.id}`,
+        { method: "PATCH", headers: restHeaders(true), body: JSON.stringify({ client_id: id }) }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      await writeActivity("brief_linked", {
+        brief_id: briefChoice,
+        brief_name: chosen?.brief_name || chosen?.client_name || "Brief",
+      });
+      toast.success("Brief linked to this household");
+      setLinkOpen(false);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not link the brief.");
+    } finally { setBusy(false); }
+  };
+
+  const unlinkBrief = async () => {
+    if (!user || !brief) return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/client_briefs?id=eq.${brief.id}&agent_id=eq.${user.id}`,
+        { method: "PATCH", headers: restHeaders(true), body: JSON.stringify({ client_id: null }) }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      await writeActivity("brief_unlinked", {
+        brief_id: brief.id,
+        brief_name: brief.brief_name || brief.client_name || "Brief",
+      });
+      toast.success("Brief unlinked");
+      setUnlinkOpen(false);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not unlink the brief.");
     } finally { setBusy(false); }
   };
 
@@ -640,10 +793,10 @@ export default function ClientDetail() {
     { key: "overview", label: "Overview", icon: UserRound },
     { key: "members", label: "Members", icon: UserRound },
     { key: "tasks", label: "Tasks", icon: ClipboardList },
+    { key: "brief", label: "Brief", icon: FileText },
     { key: "timeline", label: "Timeline", icon: History },
   ];
   const comingSoon = [
-    { label: "Brief", icon: FileText },
     { label: "Properties", icon: Building2 },
     { label: "Inspections", icon: ClipboardCheck },
   ];
@@ -721,7 +874,10 @@ export default function ClientDetail() {
             <button id="qa-add-task" onClick={() => setTaskOpen(true)} className={subtleBtn}>
               <Plus size={13} /> Add Task
             </button>
-            {["Open Brief", "Link Property", "Request Inspection"].map((label) => (
+            <button id="qa-open-brief" onClick={() => setTab("brief")} className={subtleBtn}>
+              <FileText size={13} /> {brief ? "Open Brief" : "Link Brief"}
+            </button>
+            {["Link Property", "Request Inspection"].map((label) => (
               <button
                 key={label}
                 disabled
@@ -953,6 +1109,90 @@ export default function ClientDetail() {
             </div>
           )}
 
+          {tab === "brief" && (
+            <div className={`${panelClass} p-6`} style={panelStyle}>
+              {!brief ? (
+                /* ------------------------------- no brief linked yet */
+                <div className="py-10 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B76E79]/12">
+                    <FileText size={18} className="text-[#8F4E58]" />
+                  </div>
+                  <h2 className="mt-4 font-serif text-xl font-semibold text-[#1C1917]">No brief linked</h2>
+                  <p className="mx-auto mt-2 max-w-md font-sans text-sm text-[#57534E]">
+                    Connect one of your client briefs to this household to see its
+                    search criteria here and keep everything in one place.
+                  </p>
+                  <button id="link_brief_btn" onClick={openLinkDialog} className={`${primaryBtn} mt-6`}>
+                    <Link2 size={15} /> Link a Brief
+                  </button>
+                </div>
+              ) : (
+                /* ------------------------------------ linked brief summary */
+                <div>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h2 className="font-serif text-2xl font-semibold text-[#1C1917]">
+                        {brief.brief_name || "Client Brief"}
+                      </h2>
+                      <p className="mt-1 font-sans text-xs text-[#57534E]">
+                        Name on brief: {brief.client_name || "—"} · shown here as{" "}
+                        <span className="font-medium text-[#1C1917]">{client.household_name}</span>
+                      </p>
+                    </div>
+                    <BriefStatusBadge status={brief.status} />
+                  </div>
+
+                  <dl className="mt-6 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                    {[
+                      ["Budget", briefBudget(brief)],
+                      ["Bedrooms", rangeLabel(brief.bedrooms_min, brief.bedrooms_max)],
+                      ["Bathrooms", rangeLabel(brief.bathrooms_min, brief.bathrooms_max)],
+                      ["Locations", briefLocation(brief)],
+                      ["Property types", brief.property_types?.length ? brief.property_types.join(", ").replace(/_/g, " ") : "Any"],
+                      ["Last updated", formatDate(brief.updated_at)],
+                    ].map(([k, v]) => (
+                      <div key={k as string} className="flex items-baseline justify-between gap-4 border-b border-[#1C1917]/[0.05] pb-2">
+                        <dt className="font-sans text-xs uppercase tracking-[0.14em] text-[#57534E]">{k}</dt>
+                        <dd className="text-right font-sans text-sm tabular-nums text-[#1C1917]">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  {brief.must_have_features && brief.must_have_features.length > 0 && (
+                    <div className="mt-5">
+                      <p className="font-sans text-xs uppercase tracking-[0.14em] text-[#57534E]">Must-haves</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {brief.must_have_features.slice(0, 6).map((f) => (
+                          <span key={f} className="rounded-full border border-[#2D6350]/20 bg-[#2D6350]/[0.05] px-3 py-1 font-sans text-xs text-[#2D6350]">
+                            {f.replace(/_/g, " ")}
+                          </span>
+                        ))}
+                        {brief.must_have_features.length > 6 && (
+                          <span className="px-1 py-1 font-sans text-xs text-[#57534E]">
+                            +{brief.must_have_features.length - 6} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-7 flex flex-wrap gap-3 border-t border-[#1C1917]/[0.06] pt-5">
+                    <button id="open_full_brief" onClick={() => navigate(`/briefs/${brief.id}`)} className={primaryBtn}>
+                      <ExternalLink size={15} /> Open Full Brief
+                    </button>
+                    <button
+                      id="unlink_brief_btn"
+                      onClick={() => setUnlinkOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[#1C1917]/15 bg-white/80 px-5 py-2.5 font-sans text-sm font-semibold text-[#57534E] transition-colors hover:border-[#8F4E58]/40 hover:text-[#8F4E58]"
+                    >
+                      Unlink
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {tab === "timeline" && (
             <div className={`${panelClass} p-6`} style={panelStyle}>
               <h2 className="mb-5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-[#2D6350]">Timeline</h2>
@@ -971,6 +1211,7 @@ export default function ClientDetail() {
                       : (ctx.title as string) ||
                         (ctx.member as string) ||
                         (ctx.excerpt as string) ||
+                        (ctx.brief_name as string) ||
                         (ctx.household_name as string) ||
                         "";
                     return (
@@ -1188,6 +1429,75 @@ export default function ClientDetail() {
         <div className="mt-5 flex justify-end gap-3">
           <button onClick={() => setRescheduleTask(null)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
           <button id="reschedule_save" onClick={applyReschedule} disabled={busy} className={primaryBtn}>Reschedule</button>
+        </div>
+      </Modal>
+
+      <Modal title="Link a Brief" open={linkOpen} onClose={() => setLinkOpen(false)}>
+        <p className="mb-4 font-sans text-sm text-[#57534E]">
+          Choose one of your briefs to connect to{" "}
+          <span className="font-semibold text-[#1C1917]">{client.household_name}</span>.
+          Only briefs not already linked to another household are shown.
+        </p>
+        {linkableLoading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-[#2D6350]/[0.06]" />
+            ))}
+          </div>
+        ) : linkableBriefs.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-[#2D6350]/20 bg-[#F6F1EA]/60 px-5 py-6 text-center font-sans text-sm text-[#57534E]">
+            No unlinked briefs available — create one from the Client Briefs page first.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {linkableBriefs.map((b) => {
+              const isSelected = b.id === briefChoice;
+              return (
+                <button
+                  key={b.id}
+                  data-brief-option={b.brief_name || b.client_name || b.id}
+                  onClick={() => setBriefChoice(b.id)}
+                  className={
+                    isSelected
+                      ? "flex w-full items-center justify-between gap-3 rounded-xl border border-[#2D6350]/50 bg-[#2D6350]/[0.07] px-4 py-3 text-left"
+                      : "flex w-full items-center justify-between gap-3 rounded-xl border border-[#1C1917]/10 bg-white/70 px-4 py-3 text-left transition-colors hover:border-[#2D6350]/30 hover:bg-[#2D6350]/[0.04]"
+                  }
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-sans text-sm font-semibold text-[#1C1917]">
+                      {b.brief_name || "Untitled brief"}
+                      {b.client_name ? <span className="font-normal text-[#57534E]"> · {b.client_name}</span> : null}
+                    </span>
+                    <span className="block truncate font-sans text-xs tabular-nums text-[#57534E]">
+                      {briefBudget(b)} · {briefLocation(b)}
+                    </span>
+                  </span>
+                  {isSelected && <Check size={15} strokeWidth={2.5} className="shrink-0 text-[#2D6350]" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setLinkOpen(false)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
+          <button id="link_brief_save" onClick={linkBrief} disabled={busy || !briefChoice} className={primaryBtn}>
+            <Link2 size={15} /> Link Brief
+          </button>
+        </div>
+      </Modal>
+
+      <Modal title="Unlink Brief" open={unlinkOpen} onClose={() => setUnlinkOpen(false)}>
+        <p className="font-sans text-sm text-[#57534E]">
+          Disconnect{" "}
+          <span className="font-semibold text-[#1C1917]">{brief?.brief_name || brief?.client_name || "this brief"}</span>{" "}
+          from {client.household_name}? The brief itself is untouched — it simply
+          returns to your unlinked briefs and can be re-linked any time.
+        </p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setUnlinkOpen(false)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
+          <button id="unlink_brief_confirm" onClick={unlinkBrief} disabled={busy} className={primaryBtn}>
+            Unlink Brief
+          </button>
         </div>
       </Modal>
     </DashboardLayout>
