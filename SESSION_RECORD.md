@@ -18,8 +18,9 @@ The CRM now connects to briefs. First the safe schema step, then the full linkin
   - **Source-of-truth rule (roadmap decision 3):** `household_name` stays the primary display name; the brief's own `client_name` shows only as a footnote and is never modified. The ONLY write the CRM makes to `client_briefs` is set/clear `client_id`; existing briefs pages untouched.
   - Verified with puppeteer (7 audited states, desktop + 375px mobile, zero WCAG contrast issues, no horizontal scroll); DB checks confirmed link → `client_id` = household id + timeline entry, unlink → null + entry. Test household + test brief deleted; CRM tables at 0 rows, `client_briefs` back to its 4 pre-existing rows.
 
+- **Verified (read-only check, no code changed):** the `household_name` source-of-truth rule is honoured everywhere in the CRM (Clients list/board, dashboard snapshot, client record) — no changes needed, that Phase 2 odds-and-end is complete. Also committed the outstanding puppeteer devDependency (`b1e9dc4`).
+
 ## ⏭️ Next up
-- Phase 2 odds and ends: surface `household_name` (source-of-truth) anywhere else briefs appear in the CRM.
 - **CRM Phase 3** (docs/CRM_ROADMAP.md): property + inspection linking into the Client record.
 
 ---
