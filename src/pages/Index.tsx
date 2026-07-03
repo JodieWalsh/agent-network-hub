@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Building2, Droplets, Landmark, Map } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
+import { CrmSnapshot } from "@/components/dashboard/CrmSnapshot";
 import { PowerTiles } from "@/components/dashboard/PowerTiles";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,6 +92,10 @@ const Dashboard = () => {
 
         {/* Stats row — frosted metric cards */}
         <StatsGrid />
+
+        {/* CRM snapshot — only rendered for users with CRM access
+            (CAN_MANAGE_CLIENT_BRIEFS, same gate as the /clients routes) */}
+        <CrmSnapshot />
 
         <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
           <div className="space-y-6">
