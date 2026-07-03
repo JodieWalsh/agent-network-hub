@@ -2,6 +2,29 @@
 
 ---
 
+# Session: July 3, 2026 (later that day)
+**Session Focus:** CRM Phase 1 leftovers — stage controls + Kanban board. **CRM Phase 1 is now fully complete.**
+
+## 🎯 Session Summary
+Finished the two Phase 1 leftovers. Both verified with puppeteer (zero WCAG contrast issues, desktop + 375px mobile), tested end-to-end against the live DB, test data deleted afterwards — all 5 CRM tables back to 0 rows.
+
+## ✅ Accomplished (with commits)
+- **`a21318f` — Stage-change controls on the Client record** (`src/pages/ClientDetail.tsx` + `stage-controls-verify.mjs`):
+  - Lifecycle + buying stage badges on the summary panel are now clickable → frosted stage-picker modal ("Current" chip, selected check, Update disabled until changed). Buying picker includes "Not started" (clears the stage); a dashed "Set buying stage" control appears when null.
+  - On save: raw-fetch PATCH (id + agent_id filtered), resets `stage_entered_at` / `buying_stage_entered_at` so days-in-stage stays accurate, writes `lifecycle_stage_changed` / `buying_stage_changed` timeline activity with `{ from, to }` tokens, refreshes in place (no reload).
+  - Timeline renders stage events as prose: "From New Enquiry to Discovery Booked".
+- **`9a741a1` — Clients board (Kanban) view** (`src/pages/Clients.tsx` + `board-view-verify.mjs`):
+  - List/Board segmented toggle (session state only, no localStorage); on the board a second toggle: "By Relationship" (lifecycle columns) / "By Buying Stage" (buying columns + "Not Started" column for null). Never both at once.
+  - Cards: Cormorant household name, members, needs-attention flag, next action + date, and the *other* stage as a subtle badge. Click/Enter opens the record.
+  - Native HTML5 drag-and-drop between columns: optimistic move + same PATCH/timestamp/timeline logic as the ClientDetail stage dialogs, toast on success, graceful rollback on failure. Calm dashed empty states.
+  - Mobile (375px): board scrolls inside its own container (no page-level scroll), cards tappable; HTML5 drag doesn't fire on touch — change stages from the record page on mobile.
+- **Note:** `npx tsc --noEmit` is now fully clean (exit 0) — the "93 pre-existing errors" in older notes no longer exist.
+
+## ⏭️ Next up
+- **CRM Phase 2** (docs/CRM_ROADMAP.md): nullable `client_id` FK on `client_briefs`, Clients ↔ Briefs linking + brief summary in the record, CRM dashboard widgets + quick actions.
+
+---
+
 # Session: July 3, 2026
 **Session Focus:** CRM Phase 1 built (database + Clients list + Client record)
 
