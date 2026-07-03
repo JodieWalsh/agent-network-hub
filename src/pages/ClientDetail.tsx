@@ -17,6 +17,7 @@ import {
   Plus,
   Star,
   Check,
+  ChevronDown,
   Clock,
   CalendarClock,
   Pencil,
@@ -145,6 +146,8 @@ const EVENT_LABELS: Record<string, string> = {
   note_added: "Note added",
   task_created: "Task created",
   task_completed: "Task completed",
+  lifecycle_stage_changed: "Lifecycle stage changed",
+  buying_stage_changed: "Buying stage changed",
 };
 
 /* --------------------------------------------------------------- helpers */
@@ -194,6 +197,12 @@ function daysSince(value: string | null): number | null {
   return Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 86400000));
 }
 
+/** Human label for a stage token; null/undefined reads as "Not started". */
+function stageLabel(map: Record<string, string>, token: unknown): string {
+  if (!token) return "Not started";
+  return map[token as string] || String(token);
+}
+
 /* ------------------------------------------------------- shared visuals */
 
 const panelStyle = {
@@ -212,20 +221,61 @@ const primaryBtn =
 const subtleBtn =
   "inline-flex items-center gap-1.5 rounded-lg border border-[#2D6350]/25 bg-white/70 px-3 py-1.5 font-sans text-xs font-semibold text-[#2D6350] transition-colors hover:bg-[#2D6350]/[0.06]";
 
-function LifecycleBadge({ stage }: { stage: string }) {
+function LifecycleBadge({ stage, onChange }: { stage: string; onChange?: () => void }) {
+  const inner = LIFECYCLE_LABELS[stage] || stage;
+  if (!onChange) {
+    return (
+      <span className="inline-flex items-center rounded-full border border-[#2D6350]/25 bg-[#2D6350]/[0.08] px-3 py-1 font-sans text-xs font-medium text-[#2D6350]">
+        {inner}
+      </span>
+    );
+  }
   return (
-    <span className="inline-flex items-center rounded-full border border-[#2D6350]/25 bg-[#2D6350]/[0.08] px-3 py-1 font-sans text-xs font-medium text-[#2D6350]">
-      {LIFECYCLE_LABELS[stage] || stage}
-    </span>
+    <button
+      id="stage-badge-lifecycle"
+      onClick={onChange}
+      aria-label={`Change lifecycle stage (currently ${inner})`}
+      className="inline-flex items-center gap-1.5 rounded-full border border-[#2D6350]/25 bg-[#2D6350]/[0.08] px-3 py-1 font-sans text-xs font-medium text-[#2D6350] transition-colors hover:border-[#2D6350]/45 hover:bg-[#2D6350]/[0.14]"
+    >
+      {inner}
+      <ChevronDown size={12} strokeWidth={2.25} className="opacity-70" />
+    </button>
   );
 }
 
-function BuyingBadge({ stage }: { stage: string | null }) {
-  if (!stage) return null;
+function BuyingBadge({ stage, onChange }: { stage: string | null; onChange?: () => void }) {
+  if (!stage && !onChange) return null;
+  if (!onChange) {
+    return (
+      <span className="inline-flex items-center rounded-md border border-[#B76E79]/30 bg-[#B76E79]/[0.09] px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58]">
+        {BUYING_LABELS[stage!] || stage}
+      </span>
+    );
+  }
+  if (!stage) {
+    return (
+      <button
+        id="stage-badge-buying"
+        onClick={onChange}
+        aria-label="Set buying stage (not started)"
+        className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[#8F4E58]/40 bg-white/50 px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58] transition-colors hover:border-[#8F4E58]/70 hover:bg-[#B76E79]/[0.09]"
+      >
+        Set buying stage
+        <ChevronDown size={12} strokeWidth={2.25} className="opacity-70" />
+      </button>
+    );
+  }
+  const inner = BUYING_LABELS[stage] || stage;
   return (
-    <span className="inline-flex items-center rounded-md border border-[#B76E79]/30 bg-[#B76E79]/[0.09] px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58]">
-      {BUYING_LABELS[stage] || stage}
-    </span>
+    <button
+      id="stage-badge-buying"
+      onClick={onChange}
+      aria-label={`Change buying stage (currently ${inner})`}
+      className="inline-flex items-center gap-1.5 rounded-md border border-[#B76E79]/30 bg-[#B76E79]/[0.09] px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58] transition-colors hover:border-[#B76E79]/55 hover:bg-[#B76E79]/[0.16]"
+    >
+      {inner}
+      <ChevronDown size={12} strokeWidth={2.25} className="opacity-70" />
+    </button>
   );
 }
 
@@ -282,6 +332,8 @@ export default function ClientDetail() {
     first_name: "", last_name: "", email: "", phone: "",
     role_in_household: "other", is_primary_contact: false, is_decision_maker: false,
   });
+  const [stageDialog, setStageDialog] = useState<null | "lifecycle" | "buying">(null);
+  const [stageChoice, setStageChoice] = useState("");
   const [snoozeTask, setSnoozeTask] = useState<Task | null>(null);
   const [snoozeDate, setSnoozeDate] = useState("");
   const [rescheduleTask, setRescheduleTask] = useState<Task | null>(null);
@@ -340,6 +392,40 @@ export default function ClientDetail() {
       headers: restHeaders(true),
       body: JSON.stringify({ client_id: id, agent_id: user.id, actor_user_id: user.id, event_type, event_context }),
     }).catch((e) => console.error("Timeline write failed:", e));
+  };
+
+  const openStageDialog = (which: "lifecycle" | "buying") => {
+    if (!client) return;
+    setStageChoice(which === "lifecycle" ? client.lifecycle_stage : client.buying_stage || "");
+    setStageDialog(which);
+  };
+
+  const saveStage = async () => {
+    if (!user || !id || !client || !stageDialog) return;
+    const isLifecycle = stageDialog === "lifecycle";
+    const from = isLifecycle ? client.lifecycle_stage : client.buying_stage;
+    const to = isLifecycle ? stageChoice : stageChoice || null;
+    if (to === from) { setStageDialog(null); return; }
+    setBusy(true);
+    try {
+      const now = new Date().toISOString();
+      // Reset the matching entered-at timestamp so "days in stage" stays accurate.
+      const patch = isLifecycle
+        ? { lifecycle_stage: to, stage_entered_at: now }
+        : { buying_stage: to, buying_stage_entered_at: to ? now : null };
+      const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${id}&agent_id=eq.${user.id}`, {
+        method: "PATCH",
+        headers: restHeaders(true),
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await writeActivity(isLifecycle ? "lifecycle_stage_changed" : "buying_stage_changed", { from, to });
+      toast.success(isLifecycle ? "Lifecycle stage updated" : "Buying stage updated");
+      setStageDialog(null);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not update the stage.");
+    } finally { setBusy(false); }
   };
 
   const saveNote = async () => {
@@ -608,10 +694,10 @@ export default function ClientDetail() {
                 ))}
               </div>
 
-              {/* Stage badges */}
+              {/* Stage badges — click to change */}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <LifecycleBadge stage={client.lifecycle_stage} />
-                <BuyingBadge stage={client.buying_stage} />
+                <LifecycleBadge stage={client.lifecycle_stage} onChange={() => openStageDialog("lifecycle")} />
+                <BuyingBadge stage={client.buying_stage} onChange={() => openStageDialog("buying")} />
               </div>
             </div>
 
@@ -876,12 +962,17 @@ export default function ClientDetail() {
                 <ol className="relative space-y-0 border-l-2 border-[#D8C3B8] pl-6">
                   {activities.map((a) => {
                     const ctx = a.event_context || {};
-                    const detail =
-                      (ctx.title as string) ||
-                      (ctx.member as string) ||
-                      (ctx.excerpt as string) ||
-                      (ctx.household_name as string) ||
-                      "";
+                    const stageMap =
+                      a.event_type === "lifecycle_stage_changed" ? LIFECYCLE_LABELS
+                      : a.event_type === "buying_stage_changed" ? BUYING_LABELS
+                      : null;
+                    const detail = stageMap
+                      ? `From ${stageLabel(stageMap, ctx.from)} to ${stageLabel(stageMap, ctx.to)}`
+                      : (ctx.title as string) ||
+                        (ctx.member as string) ||
+                        (ctx.excerpt as string) ||
+                        (ctx.household_name as string) ||
+                        "";
                     return (
                       <li key={a.id} className="relative pb-6">
                         <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full border-2 border-[#B76E79] bg-[#F6F1EA]" />
@@ -903,6 +994,61 @@ export default function ClientDetail() {
       </div>
 
       {/* -------------------------------------------------------- Dialogs */}
+      <Modal
+        title={stageDialog === "buying" ? "Change Buying Stage" : "Change Lifecycle Stage"}
+        open={!!stageDialog}
+        onClose={() => setStageDialog(null)}
+      >
+        <p className="mb-4 font-sans text-sm text-[#57534E]">
+          {stageDialog === "buying"
+            ? "Where is this household in the buying process?"
+            : "Where does this relationship stand?"}
+        </p>
+        <div className="space-y-2">
+          {(stageDialog === "buying"
+            ? [["", "Not started"] as [string, string], ...Object.entries(BUYING_LABELS)]
+            : Object.entries(LIFECYCLE_LABELS)
+          ).map(([token, label]) => {
+            const current = stageDialog === "buying" ? client.buying_stage || "" : client.lifecycle_stage;
+            const isCurrent = token === current;
+            const isSelected = token === stageChoice;
+            return (
+              <button
+                key={token || "none"}
+                id={`stage-opt-${token || "none"}`}
+                onClick={() => setStageChoice(token)}
+                className={
+                  isSelected
+                    ? "flex w-full items-center justify-between rounded-xl border border-[#2D6350]/50 bg-[#2D6350]/[0.07] px-4 py-2.5 text-left font-sans text-sm font-semibold text-[#173A31]"
+                    : "flex w-full items-center justify-between rounded-xl border border-[#1C1917]/10 bg-white/70 px-4 py-2.5 text-left font-sans text-sm font-medium text-[#1C1917] transition-colors hover:border-[#2D6350]/30 hover:bg-[#2D6350]/[0.04]"
+                }
+              >
+                <span className="flex items-center gap-2">
+                  {label}
+                  {isCurrent && (
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                      Current
+                    </span>
+                  )}
+                </span>
+                {isSelected && <Check size={15} strokeWidth={2.5} className="shrink-0 text-[#2D6350]" />}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setStageDialog(null)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
+          <button
+            id="stage_save"
+            onClick={saveStage}
+            disabled={busy || stageChoice === (stageDialog === "buying" ? client.buying_stage || "" : client.lifecycle_stage)}
+            className={primaryBtn}
+          >
+            Update Stage
+          </button>
+        </div>
+      </Modal>
+
       <Modal title="Add Note" open={noteOpen} onClose={() => setNoteOpen(false)}>
         <label htmlFor="note_body" className={labelClass}>Note</label>
         <textarea
