@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import AddProperty from "./pages/AddProperty";
 import Clients from "./pages/Clients";
 import ClientForm from "./pages/ClientForm";
+import ClientDetail from "./pages/ClientDetail";
 import ClientBriefs from "./pages/ClientBriefs";
 import ClientBriefForm from "./pages/ClientBriefForm";
 import ClientBriefDetail from "./pages/ClientBriefDetail";
@@ -135,6 +136,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
                   <ClientForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients/:id"
+              element={
+                <ProtectedRoute requiredPermission="CAN_MANAGE_CLIENT_BRIEFS" showForbidden>
+                  <ClientDetail />
                 </ProtectedRoute>
               }
             />
