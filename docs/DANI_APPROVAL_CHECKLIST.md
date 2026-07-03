@@ -512,6 +512,21 @@ Develo (develo.com.au) can provide automatic flood risk, bushfire ratings, herit
 
 ---
 
+### 23. CRM — Subscription Tier Gating
+**Added:** July 3, 2026
+**Location:** New CRM (Clients) module — full plan in `docs/CRM_ROADMAP.md`
+
+The CRM (household client-management system) is being built now. The intent is that CRM access is a **paid** feature: free users should NOT get CRM access; paying subscribers should. The code will be built with a single, clean gate point so this can be switched on later — but **which tiers get CRM access is a pricing/product decision for Dani and is deliberately NOT hard-coded yet.**
+
+**Questions for Dani:**
+- [ ] Should the CRM be paid-only (free users excluded)?
+- [ ] Which tiers get CRM access — Premium only, or Basic + Premium?
+- [ ] Any usage limits by tier (e.g. max active households on Basic)?
+- [ ] Should there be a limited free preview/trial of the CRM to drive upgrades?
+- [ ] Does CRM access require an *active* subscription status (not just a tier label)?
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*

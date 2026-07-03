@@ -11,6 +11,7 @@ Before making changes, please read the documentation:
 | [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md) | Architecture, features, database, key files reference |
 | [Key Features](docs/KEY_FEATURES.md) | Platform features and how they work |
 | [Dani's Approval Checklist](docs/DANI_APPROVAL_CHECKLIST.md) | Business decisions needing review |
+| [CRM Roadmap](docs/CRM_ROADMAP.md) | Phased plan, decisions, and risks for the CRM (client management) module |
 | [Project To-Do List](docs/PROJECT_TODO.md) | Future development tasks |
 
 ## Tech Stack
