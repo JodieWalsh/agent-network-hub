@@ -2,6 +2,39 @@
 
 ---
 
+# Session: July 3, 2026
+**Session Focus:** CRM Phase 1 built (database + Clients list + Client record)
+
+## 🎯 Session Summary
+Planned and built the entire first phase of the CRM (client management system): database, Clients list view with create flow, and the full Client record page. Everything verified with puppeteer screenshots (zero WCAG contrast issues, desktop + 375px mobile) and tested end-to-end through the real UI; all test data deleted afterwards, CRM tables left at 0 rows.
+
+## ✅ Accomplished (with commits)
+- **Planning:** Read the full CRM spec (docs/CRM_DESIGN_SPEC.docx), created `docs/CRM_ROADMAP.md` (phased plan + decisions + risks), added subscription-gating as Dani item #23, referenced roadmap from README (`3114c84`).
+- **`46039ff` — CRM Phase 1 database** (migration `20260703010000_create_crm_core_tables.sql`, applied via Management API and verified):
+  - 5 tables: `clients` (households, two-layer stages), `client_members` (partial unique index = max one primary contact), `client_tasks` (one model, shared vs member via nullable `client_member_id`), `client_notes`, `client_activities` (append-only timeline, no UPDATE policy).
+  - **Owner-only RLS** on every table (`auth.uid() = agent_id`) — 19 policies, zero `USING (true)`.
+- **`7b0d002` — Clients list view + New Client form** (`src/pages/Clients.tsx`, `src/pages/ClientForm.tsx`, routes + sidebar nav):
+  - List: household name, members summary, lifecycle badge (forest) vs buying badge (rose), next action, last contact, needs-attention flag; calm empty state.
+  - Form: household + dynamic members (exactly-one-primary), live-client-needs-next-action validated in the form (never DB). Save chain: client → members → primary pointer → `client_created` timeline entry.
+- **`2147eb4` — Client record page** (`src/pages/ClientDetail.tsx` at `/clients/:id`):
+  - Summary panel (member chips, both stage badges, next action, quick actions; Open Brief / Link Property / Request Inspection present but disabled "Soon").
+  - Tabs: Overview (stage age, open tasks, recent activity), Members (add/edit via frosted modal, primary + decision-maker flags), Tasks (create shared/member tasks, complete/snooze/reschedule), Timeline (newest-first feed). Brief/Properties/Inspections tabs are "Soon" placeholders.
+  - All dialogs are custom frosted modals — no `window.confirm` anywhere.
+- **Verification:** `clients-verify.mjs` + `client-detail-verify.mjs` — zero contrast issues across 15 audits, no mobile horizontal scroll, full save/interaction chains confirmed in DB. Test households deleted; all 5 CRM tables confirmed back to 0 rows.
+
+## 🔒 Locked decisions (full detail in docs/CRM_ROADMAP.md)
+1. Owner field is **`agent_id`** on every CRM table (matches briefs; NOT the spec's assigned_user_id).
+2. CRM **reuses `CAN_MANAGE_CLIENT_BRIEFS`** — no new permission.
+3. Once a brief links to a household, **`clients.household_name` is source of truth** over `client_briefs.client_name` (Phase 2 rule, recorded now).
+4. **Subscription gating is Dani item #23 and NOT yet enforced** — single gate point marked by comment at the CRM routes in App.tsx; tiers deliberately not hard-coded.
+5. **Owner-only RLS** — deliberately did NOT copy the briefs "Authenticated users can view all" policy (CRM rows are PII; no agent can see another agent's clients).
+
+## ⏭️ Next up
+- Phase 1 leftovers: Kanban board view on Clients page; stage-change controls on the Client record (stages currently display-only).
+- Phase 2: add nullable `client_id` FK to `client_briefs`, link Clients ↔ Briefs, brief summary in record, CRM dashboard widgets + quick actions.
+
+---
+
 # Session: June 29, 2026
 **Session Focus:** Post-break reassessment + security remediation (.env exposure fixed, keys rotated)
 
