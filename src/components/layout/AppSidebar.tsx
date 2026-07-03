@@ -24,6 +24,7 @@ import {
   ClipboardList,
   Sparkles,
   Crown,
+  Contact,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -186,8 +187,9 @@ export function AppSidebar() {
         ] : []),
       ],
     },
-    // Verified professionals and admins can create briefs
+    // Verified professionals and admins get the CRM and briefs
     ...(profile?.role === 'verified_professional' || profile?.role === 'admin' ? [
+      { label: "Clients", icon: Contact, path: "/clients" },
       { label: "Client Briefs", icon: FileText, path: "/briefs" },
     ] : []),
     { label: "Forums", icon: MessagesSquare, path: "/forums" },
