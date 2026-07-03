@@ -2,6 +2,28 @@
 
 ---
 
+# Session: July 4, 2026 (later that day)
+**Session Focus:** Clients ↔ Briefs linking — **the core of CRM Phase 2 is now done** (dashboard snapshot + FK + linking).
+
+## 🎯 Session Summary
+The CRM now connects to briefs. First the safe schema step, then the full linking experience on the Client record — all verified end-to-end through the real UI with test data, then cleaned up.
+
+## ✅ Accomplished (with commits)
+- **`8e0bef6` — nullable `client_id` FK added to `client_briefs`** (migration `20260704010000`, applied via Management API): UUID → `clients(id)` ON DELETE SET NULL + partial index `idx_client_briefs_client_id`. Live schema re-verified before AND after (113 → 114 columns); all 4 existing briefs untouched (row count + `max(updated_at)` identical, every `client_id` null).
+- **`d017fa2` — full Clients ↔ Briefs linking** (`src/pages/ClientDetail.tsx` + `brief-link-verify.mjs`):
+  - "Brief" is now a real tab on the Client record (Properties/Inspections remain "Soon"); the "Open Brief" quick action is live (reads "Link Brief" when unlinked).
+  - **Link:** frosted modal listing only this agent's briefs with `client_id` null (a brief can never be poached from another household); PATCH sets `client_id` (filtered by brief id + agent_id) and writes a `brief_linked` timeline event `{brief_id, brief_name}`.
+  - **Summary card:** brief name, muted status badge, budget, bed/bath, locations, property types, last updated, must-have chips; "Open Full Brief" → existing `/briefs/:id`.
+  - **Unlink:** frosted confirm dialog (never `window.confirm`) clears `client_id` + writes `brief_unlinked`.
+  - **Source-of-truth rule (roadmap decision 3):** `household_name` stays the primary display name; the brief's own `client_name` shows only as a footnote and is never modified. The ONLY write the CRM makes to `client_briefs` is set/clear `client_id`; existing briefs pages untouched.
+  - Verified with puppeteer (7 audited states, desktop + 375px mobile, zero WCAG contrast issues, no horizontal scroll); DB checks confirmed link → `client_id` = household id + timeline entry, unlink → null + entry. Test household + test brief deleted; CRM tables at 0 rows, `client_briefs` back to its 4 pre-existing rows.
+
+## ⏭️ Next up
+- Phase 2 odds and ends: surface `household_name` (source-of-truth) anywhere else briefs appear in the CRM.
+- **CRM Phase 3** (docs/CRM_ROADMAP.md): property + inspection linking into the Client record.
+
+---
+
 # Session: July 4, 2026
 **Session Focus:** CRM Phase 2 started — dashboard snapshot widgets complete.
 
