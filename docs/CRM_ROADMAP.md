@@ -93,6 +93,22 @@ Owner FK is **`agent_id`** (uuid). Has **`client_name`** (text) and **`brief_nam
 
 ---
 
+## 📚 User-Facing Documentation & Training (to build)
+
+Once the CRM features have settled, we need **end-user documentation** — this is a deliverable, not an afterthought. Written for **non-technical buyers agents** in plain, friendly language (no jargon, no database talk), with matching **video walkthroughs** (scripts first, then recordings).
+
+**Coverage needed (friendly step-by-step guides + video scripts for each):**
+1. Creating a household client (and what "household vs person" means)
+2. Adding and editing household members (primary contact, decision makers)
+3. Managing tasks (shared vs member tasks, complete / snooze / reschedule)
+4. Using the timeline (what gets logged automatically, adding notes)
+5. Moving clients through stages — on the client record *and* by dragging cards on the board view (and why there are two stage layers: relationship vs buying)
+6. The dashboard snapshot (what "needs attention" means, tasks due today, quick actions)
+7. Linking a brief to a household (and unlinking; what the summary card shows)
+8. Viewing a household's inspections (why they arrive via the brief)
+
+**Notes:** keep each guide short enough to read in a couple of minutes; screenshots from the real app (quiet-luxury UI); videos ~2–3 minutes each. Update whenever a covered feature changes. Not built yet — recorded here so it isn't forgotten.
+
 ## 📌 Follow-up doc tasks
 - **Update `README.md`** to reference this roadmap (`docs/CRM_ROADMAP.md`) so the CRM plan is discoverable from the project entry point.
 - Subscription-gating decision is logged as item **#23** in `docs/DANI_APPROVAL_CHECKLIST.md`.
