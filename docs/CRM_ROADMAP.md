@@ -1,11 +1,9 @@
 # CRM Roadmap — Buyers Agent Hub
 
 **Created:** July 3, 2026
-**Status:** Planning complete — awaiting go-ahead to build Phase 1 database.
+**Status (updated July 4, 2026):** Phases 1, 2, and 3 (core) are **COMPLETE and live** — data model, client record (all tabs real), list + board views, dashboard widgets, brief linking, and property/inspection integration are built. Remaining: **Phase 4** (saved views, automations, alerts), the **later phases** (email/calendar/AI), and the **user-facing documentation + training**.
 **Source spec:** `docs/CRM_DESIGN_SPEC.docx` (~6,000 words — full multi-phase vision).
 **Design system:** Quiet Luxury (see `CLAUDE.md` → DESIGN VISION).
-
-> ⚠️ **This is a plan, not built code.** No CRM tables or CRM UI exist yet. Do not treat any table/field name below as existing in the database until Phase 1 is actually implemented.
 
 ---
 
