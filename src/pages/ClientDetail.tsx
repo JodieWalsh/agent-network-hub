@@ -155,6 +155,52 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   expired: "Expired",
 };
 
+/**
+ * CRM Phase 3 (properties): the household's property pipeline.
+ * READS the marketplace properties table (never writes it); WRITES only
+ * client_properties (owner-only RLS on agent_id). Property columns verified
+ * against the live DB 4 Jul 2026 — types.ts is stale.
+ */
+interface PropertyInfo {
+  id: string;
+  title: string | null;
+  price: number | null;
+  currency: string | null;
+  full_address: string | null;
+  property_address: string | null;
+  street_address: string | null;
+  suburb: string | null;
+  city: string | null;
+  state: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  parking_spaces: number | null;
+}
+
+interface LinkedProperty {
+  id: string;
+  property_id: string;
+  status: string;
+  status_entered_at: string | null;
+  notes: string | null;
+  property: PropertyInfo | null;
+}
+
+const PROP_COLS =
+  "id,title,price,currency,full_address,property_address,street_address,suburb,city,state,bedrooms,bathrooms,parking_spaces";
+
+/** Pipeline order matters: candidate → … → purchased, with passed parked. */
+const CP_STATUSES = ["candidate", "shortlisted", "due_diligence", "offered", "purchased", "passed"] as const;
+
+const CP_STATUS_LABELS: Record<string, string> = {
+  candidate: "Candidate",
+  shortlisted: "Shortlisted",
+  due_diligence: "Due Diligence",
+  offered: "Offered",
+  purchased: "Purchased",
+  passed: "Passed",
+};
+
 /* ------------------------------------------------------------- constants */
 
 const LIFECYCLE_LABELS: Record<string, string> = {
@@ -213,6 +259,9 @@ const EVENT_LABELS: Record<string, string> = {
   buying_stage_changed: "Buying stage changed",
   brief_linked: "Brief linked",
   brief_unlinked: "Brief unlinked",
+  property_linked: "Property linked",
+  property_status_changed: "Property status changed",
+  property_unlinked: "Property unlinked",
 };
 
 const BRIEF_STATUS_LABELS: Record<string, string> = {
@@ -306,6 +355,64 @@ function jobBudget(j: InspectionJob): string {
     ? `${fmtMoney(j.budget_min)} – ${fmtMoney(j.budget_max)}`
     : "—";
   return j.budget_currency && j.budget_currency !== "AUD" ? `${base} ${j.budget_currency}` : base;
+}
+
+/** Live rows vary: newer listings use street_address + city, older ones
+ *  full_address / property_address / suburb — fall through them all. */
+function propAddress(p: PropertyInfo | null): string {
+  if (!p) return "Property unavailable";
+  return (
+    p.full_address ||
+    p.property_address ||
+    [p.street_address, p.suburb || p.city, p.state].filter(Boolean).join(", ") ||
+    "Address not recorded"
+  );
+}
+
+function propPrice(p: PropertyInfo | null): string {
+  if (!p || p.price === null || p.price === undefined) return "—";
+  const base = `$${p.price.toLocaleString("en-AU")}`;
+  return p.currency && p.currency !== "AUD" ? `${base} ${p.currency}` : base;
+}
+
+function propSpecs(p: PropertyInfo | null): string {
+  if (!p) return "";
+  const parts: string[] = [];
+  if (p.bedrooms !== null && p.bedrooms !== undefined) parts.push(`${p.bedrooms} bed`);
+  if (p.bathrooms !== null && p.bathrooms !== undefined) parts.push(`${p.bathrooms} bath`);
+  if (p.parking_spaces !== null && p.parking_spaces !== undefined) parts.push(`${p.parking_spaces} car`);
+  return parts.join(" · ");
+}
+
+/** Pipeline badge — clickable to change status (same affordance as stage badges). */
+function CpStatusBadge({ status, onChange, rowKey }: { status: string; onChange?: () => void; rowKey?: string }) {
+  const tone =
+    status === "purchased"
+      ? "border-[#2D6350]/25 bg-[#2D6350]/[0.08] text-[#2D6350]"
+      : status === "offered" || status === "due_diligence"
+      ? "border-[#B76E79]/30 bg-[#B76E79]/[0.09] text-[#8F4E58]"
+      : status === "passed"
+      ? "border-[#1C1917]/12 bg-white/60 text-[#57534E]"
+      : "border-[#1C1917]/15 bg-[#D8C3B8]/25 text-[#57534E]"; // candidate / shortlisted
+  const inner = CP_STATUS_LABELS[status] || status;
+  if (!onChange) {
+    return (
+      <span className={`inline-flex items-center rounded-full border px-3 py-1 font-sans text-xs font-medium ${tone}`}>
+        {inner}
+      </span>
+    );
+  }
+  return (
+    <button
+      data-cp-status-btn={rowKey}
+      onClick={onChange}
+      aria-label={`Change property status (currently ${inner})`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-sans text-xs font-medium transition-colors hover:border-[#2D6350]/45 ${tone}`}
+    >
+      {inner}
+      <ChevronDown size={12} strokeWidth={2.25} className="opacity-70" />
+    </button>
+  );
 }
 
 /** Muted, elegant inspection-status badge in the quiet-luxury palette. */
@@ -442,7 +549,7 @@ function Modal({
 
 /* ------------------------------------------------------------ component */
 
-type TabKey = "overview" | "members" | "tasks" | "brief" | "inspections" | "timeline";
+type TabKey = "overview" | "members" | "tasks" | "brief" | "properties" | "inspections" | "timeline";
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -457,6 +564,8 @@ export default function ClientDetail() {
   const [jobs, setJobs] = useState<InspectionJob[]>([]);
   const [reportJobIds, setReportJobIds] = useState<Set<string>>(new Set());
   const [inspectorNames, setInspectorNames] = useState<Record<string, string>>({});
+  const [linkedProps, setLinkedProps] = useState<LinkedProperty[]>([]);
+  const [showPassed, setShowPassed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("overview");
 
@@ -484,6 +593,16 @@ export default function ClientDetail() {
   const [linkableLoading, setLinkableLoading] = useState(false);
   const [briefChoice, setBriefChoice] = useState("");
   const [unlinkOpen, setUnlinkOpen] = useState(false);
+  const [addPropOpen, setAddPropOpen] = useState(false);
+  const [propQuery, setPropQuery] = useState("");
+  const [propResults, setPropResults] = useState<PropertyInfo[]>([]);
+  const [propSearched, setPropSearched] = useState(false);
+  const [propSearching, setPropSearching] = useState(false);
+  const [propChoice, setPropChoice] = useState<PropertyInfo | null>(null);
+  const [propNote, setPropNote] = useState("");
+  const [statusDialogFor, setStatusDialogFor] = useState<LinkedProperty | null>(null);
+  const [cpStatusChoice, setCpStatusChoice] = useState("");
+  const [unlinkPropFor, setUnlinkPropFor] = useState<LinkedProperty | null>(null);
   const [busy, setBusy] = useState(false);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -492,13 +611,15 @@ export default function ClientDetail() {
     if (!user || !id) return;
     try {
       const headers = restHeaders();
-      const [cRes, mRes, tRes, aRes, bRes] = await Promise.all([
+      const [cRes, mRes, tRes, aRes, bRes, cpRes] = await Promise.all([
         fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${id}&agent_id=eq.${user.id}&select=*`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_members?client_id=eq.${id}&agent_id=eq.${user.id}&select=*&order=is_primary_contact.desc,created_at.asc`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_tasks?client_id=eq.${id}&agent_id=eq.${user.id}&select=*&order=status.asc,due_at.asc.nullslast`, { headers }),
         fetch(`${supabaseUrl}/rest/v1/client_activities?client_id=eq.${id}&agent_id=eq.${user.id}&select=*&order=created_at.desc&limit=100`, { headers }),
         // The household's linked brief, if any (READ-only over client_briefs)
         fetch(`${supabaseUrl}/rest/v1/client_briefs?client_id=eq.${id}&agent_id=eq.${user.id}&select=${BRIEF_COLS}&limit=1`, { headers }),
+        // The household's property pipeline (embeds the marketplace property, read-only)
+        fetch(`${supabaseUrl}/rest/v1/client_properties?client_id=eq.${id}&agent_id=eq.${user.id}&select=id,property_id,status,status_entered_at,notes,property:properties(${PROP_COLS})&order=created_at.asc`, { headers }),
       ]);
       const [c] = cRes.ok ? await cRes.json() : [];
       setClient(c || null);
@@ -507,6 +628,7 @@ export default function ClientDetail() {
       setActivities(aRes.ok ? await aRes.json() : []);
       const [b] = bRes.ok ? await bRes.json() : [];
       setBrief(b || null);
+      setLinkedProps(cpRes.ok ? await cpRes.json() : []);
 
       // Inspections read-through (Phase 3): household → linked brief → jobs.
       // READ-ONLY — never writes to inspection tables.
@@ -675,6 +797,125 @@ export default function ClientDetail() {
       await loadAll();
     } catch (e) {
       console.error(e); toast.error("Could not unlink the brief.");
+    } finally { setBusy(false); }
+  };
+
+  /* Property pipeline (CRM Phase 3) — READS properties (marketplace table,
+     never written from the CRM); WRITES only client_properties rows owned
+     by this agent. */
+
+  const searchProperties = async () => {
+    if (!user) return;
+    // PostgREST or=() syntax breaks on commas/parens — strip them from the term
+    const q = propQuery.trim().replace(/[,()]/g, " ").replace(/\s+/g, " ").trim();
+    if (!q) { toast.error("Type an address, suburb, or title to search."); return; }
+    setPropSearching(true);
+    try {
+      const enc = encodeURIComponent(`*${q}*`);
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/properties?select=${PROP_COLS}&or=(full_address.ilike.${enc},property_address.ilike.${enc},street_address.ilike.${enc},suburb.ilike.${enc},city.ilike.${enc},title.ilike.${enc})&order=created_at.desc&limit=8`,
+        { headers: restHeaders() }
+      );
+      setPropResults(res.ok ? await res.json() : []);
+      setPropSearched(true);
+    } catch (e) {
+      console.error("Property search failed:", e);
+      setPropResults([]);
+      setPropSearched(true);
+    } finally {
+      setPropSearching(false);
+    }
+  };
+
+  const openAddProperty = () => {
+    setPropQuery(""); setPropResults([]); setPropSearched(false);
+    setPropChoice(null); setPropNote("");
+    setAddPropOpen(true);
+  };
+
+  const linkProperty = async () => {
+    if (!user || !id || !propChoice) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/client_properties`, {
+        method: "POST",
+        headers: restHeaders(true),
+        body: JSON.stringify({
+          client_id: id,
+          property_id: propChoice.id,
+          agent_id: user.id,
+          status: "candidate",
+          notes: propNote.trim() || null,
+        }),
+      });
+      if (res.status === 409) {
+        toast.error("That property is already linked to this household.");
+        return;
+      }
+      if (!res.ok) throw new Error(await res.text());
+      await writeActivity("property_linked", {
+        property_id: propChoice.id,
+        address: propAddress(propChoice),
+      });
+      toast.success("Property linked");
+      setAddPropOpen(false);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not link the property.");
+    } finally { setBusy(false); }
+  };
+
+  const openCpStatusDialog = (lp: LinkedProperty) => {
+    setCpStatusChoice(lp.status);
+    setStatusDialogFor(lp);
+  };
+
+  const saveCpStatus = async () => {
+    if (!user || !statusDialogFor || !cpStatusChoice) return;
+    if (cpStatusChoice === statusDialogFor.status) { setStatusDialogFor(null); return; }
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/client_properties?id=eq.${statusDialogFor.id}&agent_id=eq.${user.id}`,
+        {
+          method: "PATCH",
+          headers: restHeaders(true),
+          body: JSON.stringify({ status: cpStatusChoice, status_entered_at: new Date().toISOString() }),
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      await writeActivity("property_status_changed", {
+        property_id: statusDialogFor.property_id,
+        address: propAddress(statusDialogFor.property),
+        from: statusDialogFor.status,
+        to: cpStatusChoice,
+      });
+      toast.success("Property status updated");
+      setStatusDialogFor(null);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not update the property status.");
+    } finally { setBusy(false); }
+  };
+
+  const unlinkProperty = async () => {
+    if (!user || !unlinkPropFor) return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/client_properties?id=eq.${unlinkPropFor.id}&agent_id=eq.${user.id}`,
+        { method: "DELETE", headers: restHeaders() }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      await writeActivity("property_unlinked", {
+        property_id: unlinkPropFor.property_id,
+        address: propAddress(unlinkPropFor.property),
+      });
+      toast.success("Property unlinked");
+      setUnlinkPropFor(null);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not unlink the property.");
     } finally { setBusy(false); }
   };
 
@@ -891,11 +1132,9 @@ export default function ClientDetail() {
     { key: "members", label: "Members", icon: UserRound },
     { key: "tasks", label: "Tasks", icon: ClipboardList },
     { key: "brief", label: "Brief", icon: FileText },
+    { key: "properties", label: "Properties", icon: Building2 },
     { key: "inspections", label: "Inspections", icon: ClipboardCheck },
     { key: "timeline", label: "Timeline", icon: History },
-  ];
-  const comingSoon = [
-    { label: "Properties", icon: Building2 },
   ];
 
   return (
@@ -974,7 +1213,10 @@ export default function ClientDetail() {
             <button id="qa-open-brief" onClick={() => setTab("brief")} className={subtleBtn}>
               <FileText size={13} /> {brief ? "Open Brief" : "Link Brief"}
             </button>
-            {["Link Property", "Request Inspection"].map((label) => (
+            <button id="qa-link-property" onClick={() => setTab("properties")} className={subtleBtn}>
+              <Building2 size={13} /> Link Property
+            </button>
+            {["Request Inspection"].map((label) => (
               <button
                 key={label}
                 disabled
@@ -1003,16 +1245,6 @@ export default function ClientDetail() {
             >
               {t.label}
             </button>
-          ))}
-          {comingSoon.map((t) => (
-            <span
-              key={t.label}
-              title="Coming in a later phase"
-              className="flex items-center gap-1.5 px-4 py-2.5 font-sans text-sm font-medium text-[#57534E] opacity-60"
-            >
-              {t.label}
-              <span className="rounded-full bg-[#D8C3B8]/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[#57534E]">Soon</span>
-            </span>
           ))}
         </div>
 
@@ -1290,6 +1522,122 @@ export default function ClientDetail() {
             </div>
           )}
 
+          {tab === "properties" && (
+            <div className={`${panelClass} p-6`} style={panelStyle}>
+              {(() => {
+                const active = linkedProps.filter((lp) => lp.status !== "passed");
+                const passed = linkedProps.filter((lp) => lp.status === "passed");
+
+                const card = (lp: LinkedProperty) => (
+                  <li key={lp.id} data-cp-row={propAddress(lp.property)} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-sans text-[15px] font-semibold text-[#1C1917]">
+                          {propAddress(lp.property)}
+                        </p>
+                        <CpStatusBadge
+                          status={lp.status}
+                          rowKey={propAddress(lp.property)}
+                          onChange={() => openCpStatusDialog(lp)}
+                        />
+                      </div>
+                      {lp.property?.title && (
+                        <p className="mt-0.5 truncate font-sans text-sm text-[#57534E]">{lp.property.title}</p>
+                      )}
+                      <p className="mt-0.5 font-sans text-xs tabular-nums text-[#57534E]">
+                        <span className="font-semibold text-[#2D6350]">{propPrice(lp.property)}</span>
+                        {propSpecs(lp.property) ? ` · ${propSpecs(lp.property)}` : ""}
+                        {daysSince(lp.status_entered_at) !== null
+                          ? ` · ${daysSince(lp.status_entered_at)} day${daysSince(lp.status_entered_at) === 1 ? "" : "s"} in ${CP_STATUS_LABELS[lp.status].toLowerCase()}`
+                          : ""}
+                      </p>
+                      {lp.notes && (
+                        <p className="mt-1 font-sans text-sm italic text-[#57534E]">"{lp.notes}"</p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        data-cp-unlink={propAddress(lp.property)}
+                        onClick={() => setUnlinkPropFor(lp)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#1C1917]/12 bg-white/70 px-3 py-1.5 font-sans text-xs font-semibold text-[#57534E] transition-colors hover:border-[#8F4E58]/40 hover:text-[#8F4E58]"
+                      >
+                        Unlink
+                      </button>
+                    </div>
+                  </li>
+                );
+
+                if (linkedProps.length === 0) {
+                  return (
+                    <div className="py-10 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B76E79]/12">
+                        <Building2 size={18} className="text-[#8F4E58]" />
+                      </div>
+                      <h2 className="mt-4 font-serif text-xl font-semibold text-[#1C1917]">No properties yet</h2>
+                      <p className="mx-auto mt-2 max-w-md font-sans text-sm text-[#57534E]">
+                        Build this household's pipeline — link candidate properties
+                        and move them through shortlist, due diligence, and offer.
+                      </p>
+                      <button id="add_property_btn" onClick={openAddProperty} className={`${primaryBtn} mt-6`}>
+                        <Plus size={15} /> Add Property
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    <div className="mb-5 flex items-center justify-between">
+                      <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-[#2D6350]">
+                        Property Pipeline <span className="tabular-nums">({active.length})</span>
+                      </h2>
+                      <button id="add_property_btn" onClick={openAddProperty} className={subtleBtn}>
+                        <Plus size={13} /> Add Property
+                      </button>
+                    </div>
+
+                    {active.length === 0 ? (
+                      <p className="font-sans text-sm text-[#57534E]">
+                        Nothing in the active pipeline — every linked property has been passed on.
+                      </p>
+                    ) : (
+                      CP_STATUSES.filter((s) => s !== "passed").map((s) => {
+                        const group = active.filter((lp) => lp.status === s);
+                        if (group.length === 0) return null;
+                        return (
+                          <div key={s} className="mb-4">
+                            <p className="border-b border-[#1C1917]/[0.06] pb-1.5 font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-[#57534E]">
+                              {CP_STATUS_LABELS[s]} <span className="tabular-nums">({group.length})</span>
+                            </p>
+                            <ul className="divide-y divide-[#1C1917]/[0.06]">{group.map(card)}</ul>
+                          </div>
+                        );
+                      })
+                    )}
+
+                    {passed.length > 0 && (
+                      <div className="mt-6 border-t border-[#1C1917]/[0.06] pt-4">
+                        <button
+                          id="passed_toggle"
+                          onClick={() => setShowPassed((v) => !v)}
+                          aria-expanded={showPassed}
+                          className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-[#57534E] transition-colors hover:text-[#1C1917]"
+                        >
+                          <ChevronDown
+                            size={13}
+                            className={`transition-transform ${showPassed ? "" : "-rotate-90"}`}
+                          />
+                          Passed <span className="tabular-nums">({passed.length})</span>
+                        </button>
+                        {showPassed && <ul className="mt-2 divide-y divide-[#1C1917]/[0.06] opacity-80">{passed.map(card)}</ul>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {tab === "inspections" && (
             <div className={`${panelClass} p-6`} style={panelStyle}>
               {!brief ? (
@@ -1388,13 +1736,15 @@ export default function ClientDetail() {
                     const stageMap =
                       a.event_type === "lifecycle_stage_changed" ? LIFECYCLE_LABELS
                       : a.event_type === "buying_stage_changed" ? BUYING_LABELS
+                      : a.event_type === "property_status_changed" ? CP_STATUS_LABELS
                       : null;
                     const detail = stageMap
-                      ? `From ${stageLabel(stageMap, ctx.from)} to ${stageLabel(stageMap, ctx.to)}`
+                      ? `${ctx.address ? `${ctx.address as string} — from` : "From"} ${stageLabel(stageMap, ctx.from)} to ${stageLabel(stageMap, ctx.to)}`
                       : (ctx.title as string) ||
                         (ctx.member as string) ||
                         (ctx.excerpt as string) ||
                         (ctx.brief_name as string) ||
+                        (ctx.address as string) ||
                         (ctx.household_name as string) ||
                         "";
                     return (
@@ -1680,6 +2030,166 @@ export default function ClientDetail() {
           <button onClick={() => setUnlinkOpen(false)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
           <button id="unlink_brief_confirm" onClick={unlinkBrief} disabled={busy} className={primaryBtn}>
             Unlink Brief
+          </button>
+        </div>
+      </Modal>
+
+      <Modal title="Add Property" open={addPropOpen} onClose={() => setAddPropOpen(false)}>
+        <p className="mb-4 font-sans text-sm text-[#57534E]">
+          Find a marketplace property to add to{" "}
+          <span className="font-semibold text-[#1C1917]">{client.household_name}</span>'s pipeline.
+        </p>
+        <div className="flex gap-2">
+          <input
+            id="prop_search_input"
+            type="text"
+            value={propQuery}
+            onChange={(e) => setPropQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") searchProperties(); }}
+            placeholder="Search by address, suburb, or title…"
+            className={inputClass}
+          />
+          <button id="prop_search_btn" onClick={searchProperties} disabled={propSearching} className={primaryBtn}>
+            Search
+          </button>
+        </div>
+
+        <div className="mt-4">
+          {propSearching ? (
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-14 animate-pulse rounded-xl bg-[#2D6350]/[0.06]" />
+              ))}
+            </div>
+          ) : !propSearched ? (
+            <p className="px-1 font-sans text-xs text-[#57534E]">
+              Results appear here — up to 8 of the newest matches.
+            </p>
+          ) : propResults.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[#2D6350]/20 bg-[#F6F1EA]/60 px-5 py-6 text-center font-sans text-sm text-[#57534E]">
+              No properties matched that search.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {propResults.map((p) => {
+                const already = linkedProps.some((lp) => lp.property_id === p.id);
+                const isSelected = propChoice?.id === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    data-prop-result={propAddress(p)}
+                    onClick={() => !already && setPropChoice(p)}
+                    disabled={already}
+                    className={
+                      already
+                        ? "flex w-full items-center justify-between gap-3 rounded-xl border border-[#1C1917]/10 bg-white/40 px-4 py-3 text-left opacity-60"
+                        : isSelected
+                        ? "flex w-full items-center justify-between gap-3 rounded-xl border border-[#2D6350]/50 bg-[#2D6350]/[0.07] px-4 py-3 text-left"
+                        : "flex w-full items-center justify-between gap-3 rounded-xl border border-[#1C1917]/10 bg-white/70 px-4 py-3 text-left transition-colors hover:border-[#2D6350]/30 hover:bg-[#2D6350]/[0.04]"
+                    }
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-sans text-sm font-semibold text-[#1C1917]">
+                        {propAddress(p)}
+                      </span>
+                      <span className="block truncate font-sans text-xs tabular-nums text-[#57534E]">
+                        {propPrice(p)}{propSpecs(p) ? ` · ${propSpecs(p)}` : ""}{p.title ? ` · ${p.title}` : ""}
+                      </span>
+                    </span>
+                    {already ? (
+                      <span className="shrink-0 rounded-full bg-[#D8C3B8]/40 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                        Linked
+                      </span>
+                    ) : (
+                      isSelected && <Check size={15} strokeWidth={2.5} className="shrink-0 text-[#2D6350]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {propChoice && (
+          <div className="mt-4">
+            <label htmlFor="prop_note" className={labelClass}>Why this property? (optional)</label>
+            <textarea
+              id="prop_note"
+              rows={2}
+              value={propNote}
+              onChange={(e) => setPropNote(e.target.value)}
+              placeholder="e.g. Ticks the north-facing garden and school catchment."
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setAddPropOpen(false)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
+          <button id="link_property_save" onClick={linkProperty} disabled={busy || !propChoice} className={primaryBtn}>
+            <Plus size={15} /> Link Property
+          </button>
+        </div>
+      </Modal>
+
+      <Modal title="Change Property Status" open={!!statusDialogFor} onClose={() => setStatusDialogFor(null)}>
+        <p className="mb-4 font-sans text-sm text-[#57534E]">
+          Where is{" "}
+          <span className="font-semibold text-[#1C1917]">{propAddress(statusDialogFor?.property || null)}</span>{" "}
+          in this household's pipeline?
+        </p>
+        <div className="space-y-2">
+          {CP_STATUSES.map((token) => {
+            const isCurrent = token === statusDialogFor?.status;
+            const isSelected = token === cpStatusChoice;
+            return (
+              <button
+                key={token}
+                id={`cp-status-opt-${token}`}
+                onClick={() => setCpStatusChoice(token)}
+                className={
+                  isSelected
+                    ? "flex w-full items-center justify-between rounded-xl border border-[#2D6350]/50 bg-[#2D6350]/[0.07] px-4 py-2.5 text-left font-sans text-sm font-semibold text-[#173A31]"
+                    : "flex w-full items-center justify-between rounded-xl border border-[#1C1917]/10 bg-white/70 px-4 py-2.5 text-left font-sans text-sm font-medium text-[#1C1917] transition-colors hover:border-[#2D6350]/30 hover:bg-[#2D6350]/[0.04]"
+                }
+              >
+                <span className="flex items-center gap-2">
+                  {CP_STATUS_LABELS[token]}
+                  {isCurrent && (
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                      Current
+                    </span>
+                  )}
+                </span>
+                {isSelected && <Check size={15} strokeWidth={2.5} className="shrink-0 text-[#2D6350]" />}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setStatusDialogFor(null)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
+          <button
+            id="cp_status_save"
+            onClick={saveCpStatus}
+            disabled={busy || cpStatusChoice === statusDialogFor?.status}
+            className={primaryBtn}
+          >
+            Update Status
+          </button>
+        </div>
+      </Modal>
+
+      <Modal title="Unlink Property" open={!!unlinkPropFor} onClose={() => setUnlinkPropFor(null)}>
+        <p className="font-sans text-sm text-[#57534E]">
+          Remove{" "}
+          <span className="font-semibold text-[#1C1917]">{propAddress(unlinkPropFor?.property || null)}</span>{" "}
+          from {client.household_name}'s pipeline? The property listing itself is
+          untouched — only this household's link (and its note) is removed.
+        </p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setUnlinkPropFor(null)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
+          <button id="unlink_property_confirm" onClick={unlinkProperty} disabled={busy} className={primaryBtn}>
+            Unlink Property
           </button>
         </div>
       </Modal>
