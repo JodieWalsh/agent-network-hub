@@ -22,10 +22,11 @@
  */
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Contact, AlertCircle, CalendarClock } from "lucide-react";
+import { Plus, Contact, AlertCircle, CalendarClock, Hourglass } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { getStageAge } from "@/lib/stage-age";
 
 interface ClientRow {
   id: string;
@@ -37,6 +38,8 @@ interface ClientRow {
   next_action_type: string | null;
   next_action_date: string | null;
   last_contact_at: string | null;
+  stage_entered_at: string | null;
+  buying_stage_entered_at: string | null;
   created_at: string;
 }
 
@@ -113,7 +116,14 @@ function needsAttention(client: ClientRow): boolean {
  * Pure client-side predicates: no new tables, no writes. "Needs attention"
  * reuses needsAttention() above so chip counts always match the row flags.
  */
-type SavedViewKey = "all" | "attention" | "prospects" | "active" | "closed" | "settling";
+type SavedViewKey =
+  | "all"
+  | "attention"
+  | "stalling"
+  | "prospects"
+  | "active"
+  | "closed"
+  | "settling";
 
 const PROSPECT_STAGES = ["new_enquiry", "discovery_booked", "discovery_completed"];
 
@@ -129,6 +139,12 @@ const SAVED_VIEWS: {
     label: "Needs attention",
     matches: needsAttention,
     emptyCopy: "Nothing needs attention right now",
+  },
+  {
+    key: "stalling",
+    label: "Stalling",
+    matches: (c) => getStageAge(c).stalling,
+    emptyCopy: "Nothing is stalling — every household is moving",
   },
   {
     key: "prospects",
@@ -182,6 +198,29 @@ function BuyingBadge({ stage }: { stage: string | null }) {
   return (
     <span className="inline-flex items-center rounded-md border border-[#B76E79]/30 bg-[#B76E79]/[0.09] px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58]">
       {BUYING_LABELS[stage] || stage}
+    </span>
+  );
+}
+
+/**
+ * Gentle stage-age indicator (Phase 4) — a calm champagne chip shown only
+ * when a household is past its stage threshold. Fine clients render nothing.
+ */
+function StallingChip({ client }: { client: ClientRow }) {
+  const age = getStageAge(client);
+  if (!age.stalling || age.days === null) return null;
+  const label =
+    age.layer === "buying"
+      ? BUYING_LABELS[age.stage] || age.stage
+      : LIFECYCLE_LABELS[age.stage] || age.stage;
+  return (
+    <span
+      data-stalling={age.days}
+      title={`In ${label} for ${age.days} days`}
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/30 px-2 py-0.5 font-sans text-[11px] font-medium text-[#8F4E58]"
+    >
+      <Hourglass size={10} strokeWidth={2} />
+      <span className="tabular-nums">{age.days} days</span>
     </span>
   );
 }
@@ -259,7 +298,7 @@ export default function Clients() {
       try {
         const headers = restHeaders();
         const res = await fetch(
-          `${supabaseUrl}/rest/v1/clients?select=id,household_name,household_type,lifecycle_stage,buying_stage,client_status,next_action_type,next_action_date,last_contact_at,created_at&agent_id=eq.${user.id}&order=updated_at.desc`,
+          `${supabaseUrl}/rest/v1/clients?select=id,household_name,household_type,lifecycle_stage,buying_stage,client_status,next_action_type,next_action_date,last_contact_at,stage_entered_at,buying_stage_entered_at,created_at&agent_id=eq.${user.id}&order=updated_at.desc`,
           { headers }
         );
         if (!res.ok) throw new Error(`Fetch clients failed: ${res.status}`);
@@ -464,7 +503,12 @@ export default function Clients() {
             ) : null}
           </span>
         </div>
-        {otherBadge && <div className="mt-3">{otherBadge}</div>}
+        {(otherBadge || getStageAge(client).stalling) && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {otherBadge}
+            <StallingChip client={client} />
+          </div>
+        )}
       </div>
     );
   };
@@ -676,7 +720,7 @@ export default function Clients() {
                     >
                       {/* Household + members */}
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="font-sans text-[15px] font-semibold text-[#1C1917]">
                             {client.household_name}
                           </p>
@@ -686,6 +730,7 @@ export default function Clients() {
                               Needs attention
                             </span>
                           )}
+                          <StallingChip client={client} />
                         </div>
                         <p className="mt-0.5 font-sans text-sm text-[#57534E]">
                           {members.length > 0

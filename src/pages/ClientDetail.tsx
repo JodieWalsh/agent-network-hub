@@ -32,10 +32,12 @@ import {
   Link2,
   ExternalLink,
   X,
+  Hourglass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { getStageAge } from "@/lib/stage-age";
 
 /* ---------------------------------------------------------------- types */
 
@@ -1127,6 +1129,13 @@ export default function ClientDetail() {
   const lifecycleDays = daysSince(client.stage_entered_at);
   const buyingDays = daysSince(client.buying_stage_entered_at);
 
+  // Stage-age nudge (Phase 4) — same rule as the Clients page "Stalling" chip.
+  const stageAge = getStageAge(client);
+  const stageAgeLabel =
+    stageAge.layer === "buying"
+      ? stageLabel(BUYING_LABELS, stageAge.stage)
+      : stageLabel(LIFECYCLE_LABELS, stageAge.stage);
+
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: "overview", label: "Overview", icon: UserRound },
     { key: "members", label: "Members", icon: UserRound },
@@ -1188,6 +1197,24 @@ export default function ClientDetail() {
                 <LifecycleBadge stage={client.lifecycle_stage} onChange={() => openStageDialog("lifecycle")} />
                 <BuyingBadge stage={client.buying_stage} onChange={() => openStageDialog("buying")} />
               </div>
+
+              {/* Gentle stage-age nudge (Phase 4) — calm champagne, never a red alert */}
+              {stageAge.stalling && stageAge.days !== null && (
+                <div
+                  data-stage-nudge={stageAge.days}
+                  className="mt-3 inline-flex items-start gap-2 rounded-xl border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.22] px-3.5 py-2.5"
+                >
+                  <Hourglass size={13} strokeWidth={2} className="mt-0.5 shrink-0 text-[#8F4E58]" />
+                  <p className="font-sans text-xs leading-relaxed text-[#57534E]">
+                    This household has been in{" "}
+                    <span className="font-semibold text-[#1C1917]">{stageAgeLabel}</span> for{" "}
+                    <span className="font-semibold tabular-nums text-[#1C1917]">
+                      {stageAge.days} days
+                    </span>{" "}
+                    — consider a next step.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Next action + last contact */}
