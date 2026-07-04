@@ -2,6 +2,23 @@
 
 ---
 
+# Session: July 4, 2026 (later that day — part 4)
+**Session Focus:** CRM Phase 4 begun — Saved Views + gentle stage-age "stalling" alerts shipped.
+
+## 🎯 Session Summary
+Phase 4 (workflow refinement) is underway with two read-only pieces: preset filter chips over the Clients page and calm nudges for households sitting too long in a stage. No schema changes, no new tables — both features are pure client-side reads over existing data. Both verified end-to-end with seeded real data, zero WCAG contrast issues, and the database left clean (all six CRM tables confirmed 0 rows after each verify run).
+
+## ✅ Accomplished (with commits)
+- **`9935478` — Saved Views filter chips** (`src/pages/Clients.tsx` + `saved-views-verify.mjs`): a chip row above the List/Board toggle — **All / Needs attention / Prospects / Active clients / Closing/closed / Settling** — each with a live count over all clients. Active chip in forest green, inactive quiet ivory. Filters BOTH list and board (cards reduced, columns intact), persists across the view toggle in component state, calm per-view empty states with a "View all clients" escape hatch. "Needs attention" reuses the exact `needsAttention()` rule so counts always match row flags.
+- **`af93074` — Stage-age stalling alerts** (`src/lib/stage-age.ts` new + `Clients.tsx`, `ClientDetail.tsx`, `stage-age-verify.mjs`): thresholds in ONE commented constant (`STAGE_AGE_THRESHOLD_DAYS`: new_enquiry 7 / discovery_booked 14 / discovery_completed 10 / engaged 30; closed stages never nudge). Small champagne hourglass chips on list rows and board cards (tooltip "In New Enquiry for 20 days"), a gentle inline nudge on the client record ("…— consider a next step"), and a **"Stalling" saved-view chip**. Key design point: **engaged households are measured by `buying_stage_entered_at`** — a household actively moving through buying stages is never called stalling (proven in the verify: 60-days-engaged client whose buying stage moved 3 days ago shows no nudge). Degrades gracefully on null timestamps.
+- **`ede3bb4` — roadmap status refresh** (start of session): CRM_ROADMAP.md header updated to "Phases 1–3 complete"; README already linked the roadmap.
+
+## ⏭️ Next up
+- **Phase 4 remaining: lightweight automations & smart defaults** (brief complete → suggest "Brief confirmed"; offer logged → suggest "Offer submitted"; require reason on pause/lost) — see docs/CRM_ROADMAP.md.
+- Then the later phases (email/calendar/comms/AI) and the **user-facing documentation + training** (roadmap 📚 section).
+
+---
+
 # Session: July 4, 2026 (later that day — part 3)
 **Session Focus:** CRM Phase 3 Properties built — **every client-record tab is now real** (no "Soon" placeholders left).
 

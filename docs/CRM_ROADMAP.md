@@ -1,7 +1,7 @@
 # CRM Roadmap — Buyers Agent Hub
 
 **Created:** July 3, 2026
-**Status (updated July 4, 2026):** Phases 1, 2, and 3 (core) are **COMPLETE and live** — data model, client record (all tabs real), list + board views, dashboard widgets, brief linking, and property/inspection integration are built. Remaining: **Phase 4** (saved views, automations, alerts), the **later phases** (email/calendar/AI), and the **user-facing documentation + training**.
+**Status (updated July 4, 2026, later that day):** Phases 1, 2, and 3 (core) are **COMPLETE and live**; **Phase 4 is UNDERWAY** — saved views (`9935478`) and stage-age stalling alerts (`af93074`) are done. Remaining: the **Phase 4 automations/smart defaults**, the **later phases** (email/calendar/AI), and the **user-facing documentation + training**.
 **Source spec:** `docs/CRM_DESIGN_SPEC.docx` (~6,000 words — full multi-phase vision).
 **Design system:** Quiet Luxury (see `CLAUDE.md` → DESIGN VISION).
 
@@ -48,10 +48,10 @@ A calm, premium *operating system* for a boutique buyers-agent business — **no
 - Link inspection jobs/reports to clients. Note: `inspection_jobs` **already** has a `client_brief_id` FK, so household ↔ inspection can flow via the brief or directly — decide at build time to avoid double-linking.
 - Surface operational status across those modules in the Client record.
 
-### Phase 4 — Workflow refinement
-- Saved views (All active, Prospects, Discovery pipeline, Signed, Buying in progress, Offers live, Needs attention, No next action, Paused/lost).
-- Lightweight automations & smart defaults (e.g. brief complete → suggest "Brief confirmed"; offer logged → suggest "Offer submitted"; settlement → suggest "Closed won"; require reason on pause/lost).
-- Stage-age alerts and "needs attention" flags (no next action, overdue tasks, stale contact).
+### Phase 4 — Workflow refinement *(underway — 2 of 3 done, July 4 2026)*
+- ✅ **DONE** — Saved views (commit `9935478`): built-in filter chips on the Clients page — All / Needs attention / Prospects / Active clients / Closing/closed / Settling (+ Stalling, added with the alerts below) — live counts, filter both list and board, per-view empty states. Preset filters only (no user-created views/table — kept simple by design).
+- ✅ **DONE** — Stage-age alerts (commit `af93074`): gentle champagne "stalling" nudges on list rows, board cards, and the client record when a household sits past its stage threshold; thresholds in one constant (`src/lib/stage-age.ts`); engaged households measured by buying-stage age so active movers aren't flagged; "needs attention" flags already existed (Phase 1). Read-only, no schema changes.
+- ⏳ **TO DO** — Lightweight automations & smart defaults (e.g. brief complete → suggest "Brief confirmed"; offer logged → suggest "Offer submitted"; settlement → suggest "Closed won"; require reason on pause/lost).
 
 ### Later phases — Communications & AI *(long-horizon vision from spec)*
 - **Email integration** (Google Workspace / Microsoft 365): *selective* logging only — never sync-everything; match to members by verified email, roll up to household, strict privacy/exclusion rules.
