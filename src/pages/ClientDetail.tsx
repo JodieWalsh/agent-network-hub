@@ -120,6 +120,41 @@ interface BriefSummary {
 const BRIEF_COLS =
   "id,brief_name,client_name,status,budget_min,budget_max,bedrooms_min,bedrooms_max,bathrooms_min,bathrooms_max,preferred_suburbs,location_summary,property_types,must_have_features,updated_at";
 
+/**
+ * CRM Phase 3 (inspections): READ-ONLY over inspection_jobs/_reports.
+ * The chain is household → linked brief (client_briefs.client_id) →
+ * inspection_jobs.client_brief_id. No schema change, no writes — posting
+ * and managing inspections stays in the existing marketplace flow.
+ */
+interface InspectionJob {
+  id: string;
+  title: string | null;
+  property_address: string | null;
+  status: string;
+  budget_amount: number | null;
+  budget_min: number | null;
+  budget_max: number | null;
+  budget_currency: string | null;
+  agreed_price: number | null;
+  assigned_inspector_id: string | null;
+  created_at: string;
+}
+
+const JOB_COLS =
+  "id,title,property_address,status,budget_amount,budget_min,budget_max,budget_currency,agreed_price,assigned_inspector_id,created_at";
+
+const JOB_STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  open: "Open",
+  assigned: "Assigned",
+  pending_inspector_setup: "Awaiting Setup",
+  in_progress: "In Progress",
+  pending_review: "Pending Review",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  expired: "Expired",
+};
+
 /* ------------------------------------------------------------- constants */
 
 const LIFECYCLE_LABELS: Record<string, string> = {
@@ -263,6 +298,33 @@ function rangeLabel(min: number | null, max: number | null): string {
   return min ? `${min}+` : `up to ${max}`;
 }
 
+function jobBudget(j: InspectionJob): string {
+  const settled = j.agreed_price ?? j.budget_amount;
+  const base = settled
+    ? fmtMoney(settled)
+    : j.budget_min || j.budget_max
+    ? `${fmtMoney(j.budget_min)} – ${fmtMoney(j.budget_max)}`
+    : "—";
+  return j.budget_currency && j.budget_currency !== "AUD" ? `${base} ${j.budget_currency}` : base;
+}
+
+/** Muted, elegant inspection-status badge in the quiet-luxury palette. */
+function JobStatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "completed"
+      ? "border-[#2D6350]/25 bg-[#2D6350]/[0.08] text-[#2D6350]"
+      : ["assigned", "in_progress", "pending_review", "pending_inspector_setup"].includes(status)
+      ? "border-[#B76E79]/30 bg-[#B76E79]/[0.09] text-[#8F4E58]"
+      : status === "open"
+      ? "border-[#1C1917]/15 bg-[#D8C3B8]/25 text-[#57534E]"
+      : "border-[#1C1917]/12 bg-white/60 text-[#57534E]";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-3 py-1 font-sans text-xs font-medium ${tone}`}>
+      {JOB_STATUS_LABELS[status] || status}
+    </span>
+  );
+}
+
 /** Muted, elegant brief-status badge — quiet luxury, never traffic-light chips. */
 function BriefStatusBadge({ status }: { status: string }) {
   const tone =
@@ -380,7 +442,7 @@ function Modal({
 
 /* ------------------------------------------------------------ component */
 
-type TabKey = "overview" | "members" | "tasks" | "brief" | "timeline";
+type TabKey = "overview" | "members" | "tasks" | "brief" | "inspections" | "timeline";
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -392,6 +454,9 @@ export default function ClientDetail() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [brief, setBrief] = useState<BriefSummary | null>(null);
+  const [jobs, setJobs] = useState<InspectionJob[]>([]);
+  const [reportJobIds, setReportJobIds] = useState<Set<string>>(new Set());
+  const [inspectorNames, setInspectorNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("overview");
 
@@ -442,6 +507,38 @@ export default function ClientDetail() {
       setActivities(aRes.ok ? await aRes.json() : []);
       const [b] = bRes.ok ? await bRes.json() : [];
       setBrief(b || null);
+
+      // Inspections read-through (Phase 3): household → linked brief → jobs.
+      // READ-ONLY — never writes to inspection tables.
+      if (b) {
+        const jRes = await fetch(
+          `${supabaseUrl}/rest/v1/inspection_jobs?client_brief_id=eq.${b.id}&requesting_agent_id=eq.${user.id}&select=${JOB_COLS}&order=created_at.desc`,
+          { headers }
+        );
+        const jobRows: InspectionJob[] = jRes.ok ? await jRes.json() : [];
+        setJobs(jobRows);
+        if (jobRows.length > 0) {
+          const jobIds = jobRows.map((j) => j.id).join(",");
+          const inspectorIds = [...new Set(jobRows.map((j) => j.assigned_inspector_id).filter(Boolean))];
+          const [rRes, pRes] = await Promise.all([
+            fetch(`${supabaseUrl}/rest/v1/inspection_reports?job_id=in.(${jobIds})&select=job_id`, { headers }),
+            inspectorIds.length > 0
+              ? fetch(`${supabaseUrl}/rest/v1/profiles?id=in.(${inspectorIds.join(",")})&select=id,full_name`, { headers })
+              : Promise.resolve(null),
+          ]);
+          const reports: { job_id: string }[] = rRes.ok ? await rRes.json() : [];
+          setReportJobIds(new Set(reports.map((r) => r.job_id)));
+          const profiles: { id: string; full_name: string }[] = pRes && pRes.ok ? await pRes.json() : [];
+          setInspectorNames(Object.fromEntries(profiles.map((p) => [p.id, p.full_name])));
+        } else {
+          setReportJobIds(new Set());
+          setInspectorNames({});
+        }
+      } else {
+        setJobs([]);
+        setReportJobIds(new Set());
+        setInspectorNames({});
+      }
     } catch (error) {
       console.error("Error loading client record:", error);
     } finally {
@@ -794,11 +891,11 @@ export default function ClientDetail() {
     { key: "members", label: "Members", icon: UserRound },
     { key: "tasks", label: "Tasks", icon: ClipboardList },
     { key: "brief", label: "Brief", icon: FileText },
+    { key: "inspections", label: "Inspections", icon: ClipboardCheck },
     { key: "timeline", label: "Timeline", icon: History },
   ];
   const comingSoon = [
     { label: "Properties", icon: Building2 },
-    { label: "Inspections", icon: ClipboardCheck },
   ];
 
   return (
@@ -1188,6 +1285,92 @@ export default function ClientDetail() {
                       Unlink
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "inspections" && (
+            <div className={`${panelClass} p-6`} style={panelStyle}>
+              {!brief ? (
+                /* ------------------- inspections attach via the brief */
+                <div className="py-10 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B76E79]/12">
+                    <ClipboardCheck size={18} className="text-[#8F4E58]" />
+                  </div>
+                  <h2 className="mt-4 font-serif text-xl font-semibold text-[#1C1917]">Inspections arrive via the brief</h2>
+                  <p className="mx-auto mt-2 max-w-md font-sans text-sm text-[#57534E]">
+                    Inspection jobs are attached to a client brief. Link a brief to
+                    this household and any inspections booked against it will
+                    appear here automatically.
+                  </p>
+                  <button id="goto_brief_tab" onClick={() => setTab("brief")} className={`${primaryBtn} mt-6`}>
+                    <FileText size={15} /> Go to Brief Tab
+                  </button>
+                </div>
+              ) : jobs.length === 0 ? (
+                /* ----------------------- brief linked, nothing booked yet */
+                <div className="py-10 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B76E79]/12">
+                    <ClipboardCheck size={18} className="text-[#8F4E58]" />
+                  </div>
+                  <h2 className="mt-4 font-serif text-xl font-semibold text-[#1C1917]">No inspections yet</h2>
+                  <p className="mx-auto mt-2 max-w-md font-sans text-sm text-[#57534E]">
+                    Nothing has been booked against{" "}
+                    <span className="font-medium text-[#1C1917]">{brief.brief_name || "the linked brief"}</span>{" "}
+                    so far. Inspections posted from the marketplace against this
+                    brief will appear here.
+                  </p>
+                </div>
+              ) : (
+                /* ------------------------------------------- jobs list */
+                <div>
+                  <h2 className="mb-5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-[#2D6350]">
+                    Inspections <span className="tabular-nums">({jobs.length})</span>
+                    <span className="ml-2 font-normal normal-case tracking-normal text-[#57534E]">
+                      via {brief.brief_name || "linked brief"}
+                    </span>
+                  </h2>
+                  <ul className="divide-y divide-[#1C1917]/[0.06]">
+                    {jobs.map((j) => (
+                      <li key={j.id} data-job-row={j.title || j.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-sans text-[15px] font-semibold text-[#1C1917]">
+                              {j.title || "Inspection job"}
+                            </p>
+                            <JobStatusBadge status={j.status} />
+                          </div>
+                          <p className="mt-0.5 truncate font-sans text-sm text-[#57534E]">
+                            {j.property_address || "Address not recorded"}
+                          </p>
+                          <p className="mt-0.5 font-sans text-xs tabular-nums text-[#57534E]">
+                            {jobBudget(j)}
+                            {j.assigned_inspector_id
+                              ? ` · Inspector: ${inspectorNames[j.assigned_inspector_id] || "Assigned"}`
+                              : ""}
+                            {` · Posted ${formatDate(j.created_at)}`}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            onClick={() => navigate(`/inspections/spotlights/${j.id}`)}
+                            className={subtleBtn}
+                          >
+                            <ExternalLink size={13} /> View Job
+                          </button>
+                          {reportJobIds.has(j.id) && (
+                            <button
+                              onClick={() => navigate(`/inspections/jobs/${j.id}/report/view`)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2D6350] px-3 py-1.5 font-sans text-xs font-semibold text-white transition-colors hover:bg-[#173A31]"
+                            >
+                              <FileText size={13} /> View Report
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
