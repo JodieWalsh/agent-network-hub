@@ -13,6 +13,12 @@
  * activity — the same behaviour as the stage dialogs on ClientDetail.tsx.
  * Touch devices don't fire HTML5 drag events, so on mobile cards remain
  * tappable (open the record and change stage there).
+ *
+ * Saved views (Phase 4): built-in preset filter chips (All / Needs attention /
+ * Prospects / Active clients / Closing\/closed / Settling) above the view
+ * toggle. Client-side predicates only — no new tables, no writes. The active
+ * view filters both list and board and persists across the toggle in
+ * component state.
  */
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -102,6 +108,56 @@ function needsAttention(client: ClientRow): boolean {
   return new Date(client.next_action_date + "T00:00:00") < today;
 }
 
+/**
+ * Saved views (Phase 4) — built-in preset filters over the loaded clients.
+ * Pure client-side predicates: no new tables, no writes. "Needs attention"
+ * reuses needsAttention() above so chip counts always match the row flags.
+ */
+type SavedViewKey = "all" | "attention" | "prospects" | "active" | "closed" | "settling";
+
+const PROSPECT_STAGES = ["new_enquiry", "discovery_booked", "discovery_completed"];
+
+const SAVED_VIEWS: {
+  key: SavedViewKey;
+  label: string;
+  matches: (c: ClientRow) => boolean;
+  emptyCopy: string;
+}[] = [
+  { key: "all", label: "All", matches: () => true, emptyCopy: "" },
+  {
+    key: "attention",
+    label: "Needs attention",
+    matches: needsAttention,
+    emptyCopy: "Nothing needs attention right now",
+  },
+  {
+    key: "prospects",
+    label: "Prospects",
+    matches: (c) => PROSPECT_STAGES.includes(c.lifecycle_stage),
+    emptyCopy: "No prospects in the book just now",
+  },
+  {
+    key: "active",
+    label: "Active clients",
+    matches: (c) => c.lifecycle_stage === "engaged",
+    emptyCopy: "No engaged clients at the moment",
+  },
+  {
+    key: "closed",
+    label: "Closing/closed",
+    matches: (c) =>
+      c.lifecycle_stage === "closed_won" || c.lifecycle_stage === "closed_lost",
+    emptyCopy: "No closed households yet",
+  },
+  {
+    key: "settling",
+    label: "Settling",
+    matches: (c) =>
+      c.buying_stage === "under_contract" || c.buying_stage === "settlement_support",
+    emptyCopy: "No households approaching settlement right now",
+  },
+];
+
 function formatDate(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-AU", {
@@ -184,6 +240,8 @@ export default function Clients() {
   // View preference lives in component state for the session (no localStorage).
   const [view, setView] = useState<ViewKey>("list");
   const [boardMode, setBoardMode] = useState<BoardMode>("lifecycle");
+  // Saved-view filter — persists across the list/board toggle (same component).
+  const [savedView, setSavedView] = useState<SavedViewKey>("all");
 
   // Drag state
   const [dragId, setDragId] = useState<string | null>(null);
@@ -233,6 +291,24 @@ export default function Clients() {
     load();
   }, [user, supabaseUrl]);
 
+  /* ---------------------------------------------------- saved views */
+
+  // Counts are computed over ALL loaded clients so every chip shows its
+  // matching total regardless of which view is active.
+  const savedViewCounts = useMemo(() => {
+    const counts = {} as Record<SavedViewKey, number>;
+    for (const v of SAVED_VIEWS) counts[v.key] = clients.filter(v.matches).length;
+    return counts;
+  }, [clients]);
+
+  const activeSavedView =
+    SAVED_VIEWS.find((v) => v.key === savedView) ?? SAVED_VIEWS[0];
+
+  const filteredClients = useMemo(
+    () => clients.filter(activeSavedView.matches),
+    [clients, activeSavedView]
+  );
+
   /* -------------------------------------------------- board structure */
 
   const boardColumns = useMemo<{ token: string; label: string }[]>(
@@ -246,15 +322,17 @@ export default function Clients() {
     [boardMode]
   );
 
+  // Board columns are built from the saved-view-filtered set: the active chip
+  // reduces which cards appear in each column, never the columns themselves.
   const clientsByColumn = useMemo(() => {
     const map: Record<string, ClientRow[]> = {};
     for (const col of boardColumns) map[col.token] = [];
-    for (const c of clients) {
+    for (const c of filteredClients) {
       const token = boardMode === "lifecycle" ? c.lifecycle_stage : c.buying_stage || "";
       (map[token] = map[token] || []).push(c);
     }
     return map;
-  }, [clients, boardColumns, boardMode]);
+  }, [filteredClients, boardColumns, boardMode]);
 
   /* ------------------------------------------------- stage move (DnD) */
 
@@ -413,6 +491,43 @@ export default function Clients() {
           </button>
         </div>
 
+        {/* Saved views — preset filter chips (apply to both list and board) */}
+        {clients.length > 0 && !loading && (
+          <div
+            role="group"
+            aria-label="Saved views"
+            className="mb-4 flex flex-wrap items-center gap-2"
+          >
+            {SAVED_VIEWS.map((v) => {
+              const active = savedView === v.key;
+              return (
+                <button
+                  key={v.key}
+                  id={`saved-view-${v.key}`}
+                  onClick={() => setSavedView(v.key)}
+                  aria-pressed={active}
+                  className={
+                    active
+                      ? "inline-flex items-center gap-2 rounded-full bg-[#2D6350] px-4 py-1.5 font-sans text-xs font-semibold text-white shadow-[0_6px_14px_-4px_rgba(23,58,49,0.45)]"
+                      : "inline-flex items-center gap-2 rounded-full border border-[#1C1917]/12 bg-white/70 px-4 py-1.5 font-sans text-xs font-medium text-[#57534E] backdrop-blur-sm transition-colors duration-150 hover:border-[#2D6350]/35 hover:text-[#1C1917]"
+                  }
+                >
+                  {v.label}
+                  <span
+                    className={
+                      active
+                        ? "rounded-full bg-white/[0.18] px-2 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
+                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                    }
+                  >
+                    {savedViewCounts[v.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* View controls */}
         {clients.length > 0 && !loading && (
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -462,6 +577,22 @@ export default function Clients() {
             >
               <Plus size={16} />
               New Client
+            </button>
+          </div>
+        ) : filteredClients.length === 0 ? (
+          /* Calm per-view empty state — the book has clients, this view has none */
+          <div className={`${panelClass} px-8 py-16 text-center`} style={panelStyle}>
+            <p aria-hidden="true" className="font-serif text-2xl text-[#B76E79]">
+              ✦
+            </p>
+            <p className="mt-3 font-serif text-xl font-semibold text-[#1C1917]">
+              {activeSavedView.emptyCopy}
+            </p>
+            <button
+              onClick={() => setSavedView("all")}
+              className="mt-6 rounded-full border border-[#2D6350]/30 bg-white/70 px-5 py-2 font-sans text-xs font-semibold text-[#2D6350] transition-colors duration-150 hover:border-[#2D6350]/50 hover:bg-[#2D6350]/[0.06]"
+            >
+              View all clients
             </button>
           </div>
         ) : view === "board" ? (
@@ -534,7 +665,7 @@ export default function Clients() {
             </div>
 
             <ul className="divide-y divide-[#1C1917]/[0.06]">
-              {clients.map((client) => {
+              {filteredClients.map((client) => {
                 const members = membersByClient[client.id] || [];
                 const attention = needsAttention(client);
                 return (
