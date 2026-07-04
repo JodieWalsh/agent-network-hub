@@ -2,6 +2,24 @@
 
 ---
 
+# Session: July 4, 2026 (later that day — part 2)
+**Session Focus:** CRM Phase 3 begun — read-only Inspections tab on the Client record complete.
+
+## 🎯 Session Summary
+Inspections now surface in the CRM. The safe half of Phase 3 shipped: a fully read-only Inspections tab that rides the existing chain (household → linked brief → `inspection_jobs.client_brief_id`) with **no schema changes, no writes to inspection tables, and no existing pages touched**.
+
+## ✅ Accomplished (with commits)
+- **`91ce949` — read-only Inspections tab** (`src/pages/ClientDetail.tsx` + `inspections-tab-verify.mjs`):
+  - No brief linked → calm "Inspections arrive via the brief" guidance pointing at the Brief tab; brief linked but nothing booked → calm empty state; otherwise a newest-first jobs list: title, quiet-luxury status badge, address, budget (agreed price or range, currency-aware), inspector name when assigned, posted date.
+  - **View Job** → existing `/inspections/spotlights/:id`; **View Report** (only when an `inspection_reports` row exists) → existing `/inspections/jobs/:jobId/report/view`. Routes verified against App.tsx.
+  - Queries filter `requesting_agent_id = user` (+ the linked brief id). Verified end-to-end with seeded test data twice (once including a real report row to prove the View Report button), zero WCAG contrast issues desktop + 375px mobile, all test data deleted (CRM tables 0, briefs back to 4, jobs back to 9).
+- **Two honest incidents, both resolved:** (1) a "contrast issue" turned out to be a screenshot of the wrong page — **pre-existing ProtectedRoute quirk**: on a hard reload it waits max 1s for auth hydration then bounces via `/auth` → `/`; worth a future fix. (2) one verify run failed before its cleanup step, briefly leaving orphan test rows — deleted immediately and all counts re-verified.
+
+## ⏭️ Next up
+- **Phase 3 remaining: the properties side** — new `client_properties` join table (migration) + property picker UI + candidate → shortlisted → due diligence → offer → purchased/lost pipeline (docs/CRM_ROADMAP.md).
+
+---
+
 # Session: July 4, 2026 (later that day)
 **Session Focus:** Clients ↔ Briefs linking — **the core of CRM Phase 2 is now done** (dashboard snapshot + FK + linking).
 
