@@ -2,6 +2,27 @@
 
 ---
 
+# Session: July 4, 2026 (later that day — part 3)
+**Session Focus:** CRM Phase 3 Properties built — **every client-record tab is now real** (no "Soon" placeholders left).
+
+## 🎯 Session Summary
+The household property pipeline shipped: a new CRM-owned join table plus the full Properties tab on the Client record. READ-only over the marketplace `properties` table (its 15 rows provably untouched — count + max updated_at identical before/after); writes go only to `client_properties`.
+
+## ✅ Accomplished (with commits)
+- **`71a1fa0` — `client_properties` join table** (migration `20260704020000`, applied via Management API and verified): client_id/property_id/agent_id FKs (CASCADE), six-status CHECK, `status_entered_at`, nullable `notes`, UNIQUE (client_id, property_id), 4 indexes, updated_at trigger, **owner-only RLS** (4 policies on `auth.uid() = agent_id`, no view-all — mirrors Phase 1 exactly).
+- **`ca429c8` — Properties tab with pipeline** (`src/pages/ClientDetail.tsx` + `properties-tab-verify.mjs`):
+  - **Pipeline view** grouped in order: candidate → shortlisted → due_diligence → offered → purchased, with **passed** in a separate collapsible section. Cards: address, title, currency-aware price, beds/baths/parking, clickable status badge, days-in-status, italic note.
+  - **Add Property modal**: search real listings by address/street/suburb/city/title (read-only, 8 newest matches), optional "why this property" note; insert defaults to candidate + logs `property_linked`. **Duplicate links blocked twice** — disabled "Linked" chip in the modal + DB unique constraint (409 handled with a friendly message).
+  - **Status picker** (same pattern as stage dialogs): PATCH + reset `status_entered_at` + `property_status_changed` {from, to} timeline event, rendered as prose. **Unlink** via frosted confirm + `property_unlinked` event.
+  - "Link Property" quick action is live; **no client-record "Soon" placeholders remain** — Overview, Members, Tasks, Brief, Properties, Inspections, Timeline are all real.
+  - **Data-shape note:** live property rows store addresses in `street_address` + `city` (`full_address`/`property_address`/`suburb` are null there) — address display and search fall through all of them.
+  - Verified end-to-end on real listings (nothing created in `properties`): zero WCAG contrast issues across 10 states desktop + 375px mobile, no h-scroll, all DB checks passed, cleanup confirmed (all 6 CRM tables 0 rows, briefs 4, properties 15 + max updated_at unchanged).
+
+## ⏭️ Next up
+- Nice-to-haves (docs/CRM_ROADMAP.md): surface the property pipeline on the board/dashboard; Phase 4 saved views/automations; **user-facing documentation + training** (roadmap 📚 section).
+
+---
+
 # Session: July 4, 2026 (later that day — part 2)
 **Session Focus:** CRM Phase 3 begun — read-only Inspections tab on the Client record complete.
 
