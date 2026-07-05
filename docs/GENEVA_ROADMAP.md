@@ -1,6 +1,8 @@
 # Geneva Roadmap — Buyers Agent Hub's Internal CRM
 
 **Created:** July 5, 2026 (planning only — no code exists yet)
+> ⚠️ **TEMPORARY DEMO DATA (July 2026):** `geneva-demo-data.mjs seed` populates ~24 fake contacts (all emails `@geneva-demo.example`) so Dani can review a lively dashboard. **Must be wiped after her review**: `node geneva-demo-data.mjs wipe` (deletes ONLY the demo domain — real waitlist leads are never touched; never push demo contacts to Mailchimp). Remove this note once wiped.
+
 **Status (updated July 5/6, 2026):** Phases 1–3 are **COMPLETE and live** — tables + list + form (`8e8b891`, `f718c4a`), the contact record (`9cabd76`), and the Mailchimp push (`c69406d`). The landing-page lead capture pieces 1–2 also shipped (`8feef7a`, `66af5da`) — the full pipeline works: waitlist form → Geneva → button → Mailchimp. **Remaining in v1: Phase 4** (saved views/segments + command-centre dashboard).
 **Source spec:** the full Geneva design spec (shared during planning, deliberately scoped DOWN for an achievable v1). ⚠️ The spec is not yet saved into this repo — add it as `docs/GENEVA_DESIGN_SPEC.docx` (mirroring `docs/CRM_DESIGN_SPEC.docx` for Monaco) so future sessions can read it.
 **Design system:** Quiet Luxury (see `CLAUDE.md` → DESIGN VISION).
