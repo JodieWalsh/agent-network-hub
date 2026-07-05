@@ -9,7 +9,9 @@
 A single reference doc of the quiet-luxury brand: exact colours, fonts, voice/tone, and personality (the "Spotlight"-style signature moments), written **global-friendly** (US/UK expansion). ✅ **Built July 6 — see `docs/BRAND_KIT.md`.** One source of truth for every page, email, and social asset — CLAUDE.md's DESIGN VISION covers the app UI; this extends it to the whole brand.
 
 ## 2. 🗺️ Waitlist Regions
-Capture which regions a buyers agent **represents** (not just where they're based) on the waitlist form. Reuse the app's existing work-regions UI/pattern from user settings. Needs: the `geneva-lead-intake` edge function + `geneva_contacts` extended to store regions.
+Capture which regions a buyers agent **represents** (not just where they're based) on the waitlist form. ✅ **Stage 1 built July 6** — controlled 7-token launch-region multi-select on the waitlist (`geneva_contacts.launch_regions`, migration `20260706020000`), displayed on the Geneva contact record. **Still to come:**
+- **Geneva contacts-list "filter by launch region"** (answer "who are the Buyers Agents in Greater Sydney?") + a **"Demand by region" dashboard widget** on the command centre — Piece-2 territory, small and clean now that tokens are controlled.
+- **Stage 2 — flow-through to profile service areas** at signup (suggest-and-confirm in onboarding, matched by email): deliberately deferred to the **Work Regions** decision (`docs/WORK_REGIONS_SPEC.md`) so the regions plumbing is built once, not twice.
 
 ## 3. 💌 Welcome Email
 Instant on-brand confirmation via **Resend** when someone joins the waitlist (lead-capture piece 4); ongoing nurture stays with Mailchimp. **Prerequisite:** `buyersagenthub.com` domain verification in Resend for the `hello@` from-address (emails currently send from `onboarding@resend.dev`).

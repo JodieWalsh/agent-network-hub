@@ -14,6 +14,7 @@ import {
   Search,
   Layers,
 } from "lucide-react";
+import { LAUNCH_REGION_LABELS } from "@/lib/geneva";
 import heroHouseImg from "@/assets/images/landing/hero-house.jpg";
 import propertyProfImg from "@/assets/images/landing/property-professional-australia.jpg";
 import buildingInspectorImg from "@/assets/images/landing/building-inspector-house.avif";
@@ -59,6 +60,7 @@ const WL_EMPTY = {
   professional_type: "buyers_agent",
   region_city: "",
   company: "",
+  launch_regions: [] as string[], // controlled tokens from LAUNCH_REGION_LABELS
   consent: false,
   website: "", // honeypot — humans never see or fill this
 };
@@ -71,6 +73,14 @@ function WaitlistSection() {
 
   const set = (field: keyof typeof WL_EMPTY, value: string | boolean) =>
     setDraft((d) => ({ ...d, [field]: value }));
+
+  const toggleRegion = (token: string) =>
+    setDraft((d) => ({
+      ...d,
+      launch_regions: d.launch_regions.includes(token)
+        ? d.launch_regions.filter((t) => t !== token)
+        : [...d.launch_regions, token],
+    }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +117,7 @@ function WaitlistSection() {
             region_city: draft.region_city.trim() || undefined,
             company: draft.company.trim() || undefined,
             consent_opt_in: draft.consent === true,
+            ...(draft.launch_regions.length > 0 ? { launch_regions: draft.launch_regions } : {}),
             website: draft.website,
             ...utm,
           }),
@@ -245,6 +256,38 @@ function WaitlistSection() {
                       ))}
                     </select>
                   </div>
+                  {/* Launch-region multi-select — optional, controlled tokens.
+                      Chips wrap and allow multi-line labels so nothing
+                      overflows at 375px or large accessibility font sizes. */}
+                  <fieldset className="sm:col-span-2">
+                    <legend className={wlLabelClass}>
+                      Where do you work?{" "}
+                      <span className="normal-case tracking-normal text-[#57534E] font-normal">
+                        (optional — select any that apply)
+                      </span>
+                    </legend>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(LAUNCH_REGION_LABELS).map(([token, label]) => {
+                        const selected = draft.launch_regions.includes(token);
+                        return (
+                          <button
+                            key={token}
+                            type="button"
+                            data-region-chip={token}
+                            aria-pressed={selected}
+                            onClick={() => toggleRegion(token)}
+                            className={
+                              selected
+                                ? "max-w-full whitespace-normal rounded-2xl bg-[#2D6350] px-3.5 py-2 text-left text-xs font-semibold leading-snug text-white shadow-[0_6px_14px_-6px_rgba(23,58,49,0.4)] transition-colors"
+                                : "max-w-full whitespace-normal rounded-2xl border border-[#1C1917]/15 bg-white px-3.5 py-2 text-left text-xs font-medium leading-snug text-[#374151] transition-colors hover:border-[#2D6350]/40 hover:text-[#1C1917]"
+                            }
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
                   <div>
                     <label htmlFor="wl_region_city" className={wlLabelClass}>Region / City</label>
                     <input id="wl_region_city" type="text" value={draft.region_city}

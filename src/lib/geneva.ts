@@ -26,6 +26,7 @@ export interface GenevaContact {
   source_detail: string | null;
   email_consent_status: string;
   notes: string | null;
+  launch_regions: string[] | null; // tokens from LAUNCH_REGION_LABELS (waitlist multi-select)
   created_by: string | null; // null = created by the public landing-page intake
   mailchimp_status: string | null; // 'synced' | 'error' | null = never pushed
   mailchimp_synced_at: string | null;
@@ -108,6 +109,19 @@ export const SOURCE_LABELS: Record<string, string> = {
   partner: "Partner",
   manual_import: "Manual Import",
   other: "Other",
+};
+
+/** Launch-region controlled vocabulary (waitlist Stage 1 capture).
+ *  Tokens must stay in lockstep with the geneva_contacts.launch_regions
+ *  CHECK constraint and the geneva-lead-intake whitelist. */
+export const LAUNCH_REGION_LABELS: Record<string, string> = {
+  greater_sydney: "Greater Sydney (incl. Blue Mountains, Central Coast & Wollongong)",
+  greater_melbourne: "Greater Melbourne",
+  seq: "South East Queensland (Gold Coast, Brisbane & Sunshine Coast)",
+  greater_perth: "Greater Perth",
+  uk: "United Kingdom",
+  us: "United States",
+  other: "Other / somewhere else",
 };
 
 export const CONSENT_LABELS: Record<string, string> = {

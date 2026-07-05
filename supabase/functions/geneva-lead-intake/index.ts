@@ -49,6 +49,24 @@ const KNOWN_SOURCES = new Set([
   'podcast', 'event', 'partner',
 ]);
 
+// Launch-region controlled vocabulary (waitlist Stage 1). Must stay in
+// lockstep with the geneva_contacts.launch_regions CHECK constraint and
+// LAUNCH_REGION_LABELS in src/lib/geneva.ts.
+const LAUNCH_REGIONS = new Set([
+  'greater_sydney', 'greater_melbourne', 'seq', 'greater_perth',
+  'uk', 'us', 'other',
+]);
+
+/** Strictly whitelist + dedupe + cap the optional launch_regions array.
+ *  Anything not in the vocabulary is silently dropped; empty → null. */
+function cleanLaunchRegions(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const cleaned = [...new Set(
+    value.filter((v): v is string => typeof v === 'string' && LAUNCH_REGIONS.has(v))
+  )].slice(0, 7);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 8_192;
 
@@ -140,6 +158,8 @@ serve(async (req: Request) => {
       300
     );
 
+    const launchRegions = cleanLaunchRegions(body.launch_regions);
+
     const contact = {
       first_name: firstName,
       last_name: clean(body.last_name, 80),
@@ -148,6 +168,7 @@ serve(async (req: Request) => {
       company: clean(body.company, 120),
       professional_type: professionalType,
       region_city: clean(body.region_city, 120),
+      launch_regions: launchRegions,
       source_detail: sourceDetail,
       original_source: originalSource,
       email_consent_status: consent,
@@ -162,6 +183,7 @@ serve(async (req: Request) => {
       professional_type: professionalType,
       original_source: originalSource,
       source: 'landing_page',
+      ...(launchRegions ? { launch_regions: launchRegions } : {}),
       ...(Object.keys(utm).length > 0 ? { utm } : {}),
     };
 

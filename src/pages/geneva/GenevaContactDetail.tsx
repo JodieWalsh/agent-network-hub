@@ -25,6 +25,7 @@ import {
   UserRound,
   Mail,
   Phone,
+  MapPin,
   CalendarClock,
   Hourglass,
   X,
@@ -43,6 +44,7 @@ import {
   INACTIVE_REASON_LABELS,
   SOURCE_LABELS,
   CONSENT_LABELS,
+  LAUNCH_REGION_LABELS,
   restHeaders,
   writeGenevaActivity,
   pushToMailchimp,
@@ -584,6 +586,21 @@ export default function GenevaContactDetail() {
                   </span>
                 )}
               </div>
+
+              {/* Launch regions (waitlist capture) — where they work */}
+              {contact.launch_regions && contact.launch_regions.length > 0 && (
+                <div data-launch-regions className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <MapPin size={11} strokeWidth={2} className="shrink-0 text-[#8F4E58]" />
+                  {contact.launch_regions.map((token) => (
+                    <span
+                      key={token}
+                      className="rounded-full border border-[#2D6350]/20 bg-[#2D6350]/[0.05] px-2.5 py-0.5 font-sans text-[11px] font-medium text-[#2D6350]"
+                    >
+                      {LAUNCH_REGION_LABELS[token] || token}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Contact methods */}
               <div className="mt-4 flex flex-wrap gap-2">
