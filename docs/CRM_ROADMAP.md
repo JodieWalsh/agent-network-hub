@@ -1,7 +1,7 @@
 # CRM Roadmap — Buyers Agent Hub
 
 **Created:** July 3, 2026
-**Status (updated July 4, 2026, later that day):** Phases 1, 2, and 3 (core) are **COMPLETE and live**; **Phase 4 is UNDERWAY** — saved views (`9935478`) and stage-age stalling alerts (`af93074`) are done. Remaining: the **Phase 4 automations/smart defaults**, the **later phases** (email/calendar/AI), and the **user-facing documentation + training**.
+**Status (updated July 5, 2026):** Phases 1–4 are **ALL COMPLETE and live** — Phase 4 shipped saved views (`9935478`), stage-age stalling alerts (`af93074`), and smart stage suggestions + close-reason capture (`e0d2791`). This CRM is named **"Monaco"**. Remaining: the **later phases** (email/calendar/AI), the **user-facing documentation + training**, and Dani's subscription-gating decision (#23).
 **Source spec:** `docs/CRM_DESIGN_SPEC.docx` (~6,000 words — full multi-phase vision).
 **Design system:** Quiet Luxury (see `CLAUDE.md` → DESIGN VISION).
 
@@ -48,10 +48,10 @@ A calm, premium *operating system* for a boutique buyers-agent business — **no
 - Link inspection jobs/reports to clients. Note: `inspection_jobs` **already** has a `client_brief_id` FK, so household ↔ inspection can flow via the brief or directly — decide at build time to avoid double-linking.
 - Surface operational status across those modules in the Client record.
 
-### Phase 4 — Workflow refinement *(underway — 2 of 3 done, July 4 2026)*
+### Phase 4 — Workflow refinement *(COMPLETE — all 3 pieces done, July 5 2026)*
 - ✅ **DONE** — Saved views (commit `9935478`): built-in filter chips on the Clients page — All / Needs attention / Prospects / Active clients / Closing/closed / Settling (+ Stalling, added with the alerts below) — live counts, filter both list and board, per-view empty states. Preset filters only (no user-created views/table — kept simple by design).
 - ✅ **DONE** — Stage-age alerts (commit `af93074`): gentle champagne "stalling" nudges on list rows, board cards, and the client record when a household sits past its stage threshold; thresholds in one constant (`src/lib/stage-age.ts`); engaged households measured by buying-stage age so active movers aren't flagged; "needs attention" flags already existed (Phase 1). Read-only, no schema changes.
-- ⏳ **TO DO** — Lightweight automations & smart defaults (e.g. brief complete → suggest "Brief confirmed"; offer logged → suggest "Offer submitted"; settlement → suggest "Closed won"; require reason on pause/lost).
+- ✅ **DONE** — Lightweight automations & smart defaults (commit `e0d2791`): smart stage suggestions on the client record — property → offered suggests "Offer Submitted"; property → purchased suggests "Closed Won" (+ "Under Contract" when below it). One gentle, dismissible suggestion at a time; a stage NEVER changes without the agent clicking accept; dismissals are session-only. Plus close-reason capture: Closed Lost reveals an optional reason field → `lost_reason` + timeline context. (Known follow-up: no "pause" UI control yet, so `paused_reason` has no trigger point.)
 
 ### Later phases — Communications & AI *(long-horizon vision from spec)*
 - **Email integration** (Google Workspace / Microsoft 365): *selective* logging only — never sync-everything; match to members by verified email, roll up to household, strict privacy/exclusion rules.
