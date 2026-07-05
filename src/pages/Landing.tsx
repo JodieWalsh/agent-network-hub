@@ -38,6 +38,279 @@ function StarRow({ count = 5 }: { count?: number }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Early-access waitlist capture (Landing-Page Lead Capture, Piece 2)
+//
+// POSTs to the PUBLIC geneva-lead-intake edge function — never to a table.
+// The function forces all sensitive defaults server-side and always returns
+// only { ok: true }, so the success state renders even for duplicate emails
+// (deliberate: no email enumeration). Honeypot field "website" must stay
+// invisible to real users and match the edge function's field name.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PROFESSIONAL_TYPE_OPTIONS: [string, string][] = [
+  ["buyers_agent", "Buyers Agent"],
+  ["real_estate_agent", "Real Estate Agent"],
+  ["conveyancer", "Conveyancer"],
+  ["mortgage_broker", "Mortgage Broker"],
+  ["building_and_pest_inspector", "Building and Pest Inspector"],
+  ["stylist", "Stylist"],
+];
+
+const WL_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const wlInputClass =
+  "w-full rounded-xl border border-[#1C1917]/15 bg-white px-4 py-3 text-sm text-[#1C1917] placeholder:text-[#8A8580] outline-none transition-colors focus:border-[#2D6350] focus:ring-2 focus:ring-[#2D6350]/15";
+const wlLabelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-[#57534E]";
+
+const WL_EMPTY = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  professional_type: "buyers_agent",
+  region_city: "",
+  company: "",
+  consent: false,
+  website: "", // honeypot — humans never see or fill this
+};
+
+function WaitlistSection() {
+  const [draft, setDraft] = useState({ ...WL_EMPTY });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const set = (field: keyof typeof WL_EMPTY, value: string | boolean) =>
+    setDraft((d) => ({ ...d, [field]: value }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!draft.first_name.trim()) {
+      setError("Please tell us your first name.");
+      return;
+    }
+    const email = draft.email.trim();
+    if (!email || !WL_EMAIL_RE.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Pass through UTM params from the landing URL so attribution flows
+      // into Geneva (utm_source → original_source server-side).
+      const params = new URLSearchParams(window.location.search);
+      const utm: Record<string, string> = {};
+      for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+        const v = params.get(k);
+        if (v) utm[k] = v;
+      }
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/geneva-lead-intake`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            first_name: draft.first_name.trim(),
+            last_name: draft.last_name.trim() || undefined,
+            email,
+            professional_type: draft.professional_type,
+            region_city: draft.region_city.trim() || undefined,
+            company: draft.company.trim() || undefined,
+            consent_opt_in: draft.consent === true,
+            website: draft.website,
+            ...utm,
+          }),
+        }
+      );
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
+        setSuccess(true);
+        setDraft({ ...WL_EMPTY });
+      } else {
+        setError("Something didn't go through — please try again in a moment.");
+      }
+    } catch {
+      setError("Something didn't go through — please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section id="early-access" className="bg-[#F6F1EA] py-24 lg:py-32 px-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+          {/* Left: invitation copy */}
+          <div className="space-y-6">
+            <p className="text-[#8F4E58] text-xs tracking-[0.25em] font-semibold uppercase">
+              Founding Cohort
+            </p>
+            <h2
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+                fontWeight: 600,
+                color: "#0A0A0A",
+                letterSpacing: "-0.02em",
+                lineHeight: 1.15,
+              }}
+            >
+              Be First
+              <br />
+              Through the Door
+            </h2>
+            <p className="text-[#57534E] leading-relaxed">
+              We're opening Buyers Agent Hub to a founding cohort of property
+              professionals — the agents, inspectors, and advisers who'll shape
+              how the platform grows. Leave your details and we'll reach out
+              personally as early access opens.
+            </p>
+            <ul className="space-y-3">
+              {[
+                "Early access before public launch",
+                "Founding-member pricing, locked in",
+                "A direct line to the founders",
+                "Your say in what we build next",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle size={16} className="text-[#2D6350] mt-0.5 flex-shrink-0" />
+                  <span className="text-[#374151] text-sm">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Right: the capture card */}
+          <div
+            className="rounded-[20px] bg-white p-7 lg:p-9 shadow-[0_2px_4px_rgba(94,70,55,0.08),0_24px_56px_-8px_rgba(183,110,121,0.28)]"
+            style={{ borderTop: "1px solid rgba(183,110,121,0.35)" }}
+          >
+            {success ? (
+              <div data-waitlist-success className="py-10 text-center space-y-4">
+                <p aria-hidden="true" className="text-[#B76E79]" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem" }}>
+                  ✦
+                </p>
+                <h3
+                  style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.8rem", fontWeight: 600, color: "#0A0A0A" }}
+                >
+                  You're on the list
+                </h3>
+                <p className="text-[#57534E] text-sm leading-relaxed max-w-xs mx-auto">
+                  Thank you — we'll be in touch as early access opens. It means a
+                  great deal to have you with us this early.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={submit} noValidate>
+                <h3
+                  className="mb-1"
+                  style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#0A0A0A" }}
+                >
+                  Join the Waitlist
+                </h3>
+                <p className="text-[#57534E] text-sm mb-6">
+                  Thirty seconds now — a head start later.
+                </p>
+
+                {/* Honeypot — invisible to humans, irresistible to bots.
+                    Off-screen, not tabbable, hidden from assistive tech. */}
+                <div aria-hidden="true" className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden">
+                  <label htmlFor="wl_website">Website</label>
+                  <input
+                    id="wl_website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={draft.website}
+                    onChange={(e) => set("website", e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="wl_first_name" className={wlLabelClass}>First Name *</label>
+                    <input id="wl_first_name" type="text" value={draft.first_name}
+                      onChange={(e) => set("first_name", e.target.value)}
+                      autoComplete="given-name" className={wlInputClass} />
+                  </div>
+                  <div>
+                    <label htmlFor="wl_last_name" className={wlLabelClass}>Last Name</label>
+                    <input id="wl_last_name" type="text" value={draft.last_name}
+                      onChange={(e) => set("last_name", e.target.value)}
+                      autoComplete="family-name" className={wlInputClass} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="wl_email" className={wlLabelClass}>Email *</label>
+                    <input id="wl_email" type="email" value={draft.email}
+                      onChange={(e) => set("email", e.target.value)}
+                      placeholder="you@youragency.com.au" autoComplete="email" className={wlInputClass} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="wl_professional_type" className={wlLabelClass}>I am a…</label>
+                    <select id="wl_professional_type" value={draft.professional_type}
+                      onChange={(e) => set("professional_type", e.target.value)} className={wlInputClass}>
+                      {PROFESSIONAL_TYPE_OPTIONS.map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="wl_region_city" className={wlLabelClass}>Region / City</label>
+                    <input id="wl_region_city" type="text" value={draft.region_city}
+                      onChange={(e) => set("region_city", e.target.value)}
+                      placeholder="e.g. Brisbane" className={wlInputClass} />
+                  </div>
+                  <div>
+                    <label htmlFor="wl_company" className={wlLabelClass}>Company</label>
+                    <input id="wl_company" type="text" value={draft.company}
+                      onChange={(e) => set("company", e.target.value)} className={wlInputClass} />
+                  </div>
+                </div>
+
+                <label className="mt-5 flex items-start gap-3 cursor-pointer">
+                  <input
+                    id="wl_consent"
+                    type="checkbox"
+                    checked={draft.consent}
+                    onChange={(e) => set("consent", e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[#2D6350]"
+                  />
+                  <span className="text-sm text-[#374151] leading-snug">
+                    Yes, email me updates about Buyers Agent Hub.
+                    <span className="block text-xs text-[#57534E] mt-0.5">
+                      Only the good stuff, never spam — unsubscribe any time.
+                    </span>
+                  </span>
+                </label>
+
+                {error && (
+                  <p data-waitlist-error role="alert" className="mt-4 text-sm text-[#8F4E58]">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  id="wl_submit"
+                  type="submit"
+                  disabled={submitting}
+                  className="mt-6 w-full text-xs tracking-[0.18em] font-semibold bg-[#2D6350] text-white rounded-full py-4 hover:bg-[#24513F] transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {submitting ? "JOINING…" : "REQUEST EARLY ACCESS"}
+                </button>
+                <p className="mt-3 text-center text-xs text-[#57534E]">
+                  No obligation · your details stay with us
+                </p>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -603,6 +876,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ── 9b. EARLY ACCESS / WAITLIST CAPTURE (Geneva lead intake) ────────── */}
+      <WaitlistSection />
 
       {/* ── 10. PRICING ─────────────────────────────────────────────────────── */}
       {/* DANI_APPROVAL_REQUIRED: Pricing amounts and plan names below need stakeholder sign-off before going live */}
