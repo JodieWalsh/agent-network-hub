@@ -2,6 +2,25 @@
 
 ---
 
+# Session: July 5/6, 2026 — Geneva Phase 3: Mailchimp push
+**Session Focus:** Geneva Phase 3 COMPLETE (`c69406d`) — the one-way Mailchimp push. **The full growth pipeline now works end-to-end: landing waitlist form → Geneva contact → explicit admin button → Mailchimp audience → nurture sequence.**
+
+## 🎯 Session Summary
+Subscribed-only contacts can now be pushed to Mailchimp audience `606099323d` by an **explicit admin button** on the Geneva contact record — never automatically. The firm rule is enforced server-side twice: the `geneva-mailchimp-push` edge function (deployed WITH JWT verification) re-checks that the caller is an admin (`profiles.role`) AND that the contact is `email_consent_status='subscribed'` before any Mailchimp call; pending/unsubscribed/bounced/complained are politely refused (409). Verified end-to-end — **Jodie confirmed the test contact arrived in Mailchimp with all merge fields + tags, then deleted it.**
+
+## ✅ Accomplished (commit `c69406d`)
+- **Migration `20260706010000`**: `mailchimp_status` ('synced'/'error'/null) + `mailchimp_synced_at` on `geneva_contacts` (applied via Management API).
+- **`geneva-mailchimp-push` edge function**: upsert by `md5(lower(email))` (idempotent — double-push proven safe); merge fields `FNAME/LNAME/PTYPE/REGION/SOURCE` + tags **"Geneva CRM"** and the professional-type label; `status_if_new` only (never force-resubscribes someone who unsubscribed in Mailchimp); records sync status + writes a `pushed_to_mailchimp` timeline entry; API key only ever read from the `MAILCHIMP_API_KEY` secret, never logged/returned. Admin-only error responses include Mailchimp's error title for debuggability.
+- **UI**: "Push to Mailchimp" button on the contact record (disabled + quiet note unless subscribed), discreet "In Mailchimp · date" chip near the consent dot, `pushToMailchimp()` helper in `src/lib/geneva.ts`.
+- **Verification**: no-auth 401, non-admin 403, pending 409 (contact untouched), subscribed push via real UI ✓ (status+timestamp+activity+chip), idempotent second push ✓, zero contrast issues, geneva tables left at 0 rows.
+- **⚠️ Ops lesson worth remembering**: the first push failed with Mailchimp "API key linked to a different datacenter" — root cause was a **trailing newline pasted into the Supabase secret**. Fix (permanent): the function **derives the datacenter from the API key's own `-usXX` suffix** and **trims all secret values**. If a future secret misbehaves, check for whitespace first.
+
+## ⏭️ Remaining
+- **Geneva Phase 4** (last v1 piece): saved views/segments + the command-centre dashboard.
+- Backlog (docs/IDEAS_BACKLOG.md): **brand kit (marked next)**, questionnaire, Resend welcome email (needs buyersagenthub.com domain verification), waitlist regions, property overlays, Dani #24 landing messaging.
+
+---
+
 # Session: July 5, 2026 (Geneva + landing capture session — part 2)
 **Session Focus:** The public lead pipeline went LIVE end-to-end — secure intake → landing waitlist form → Geneva — plus a consumer-law honesty pass on the landing page.
 
