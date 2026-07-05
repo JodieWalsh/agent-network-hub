@@ -28,6 +28,7 @@ import {
   CalendarClock,
   Hourglass,
   X,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,6 +45,7 @@ import {
   CONSENT_LABELS,
   restHeaders,
   writeGenevaActivity,
+  pushToMailchimp,
 } from "@/lib/geneva";
 
 /* ------------------------------------------------------------- constants */
@@ -374,6 +376,26 @@ export default function GenevaContactDetail() {
     } finally { setBusy(false); }
   };
 
+  /** Explicit-button-only Mailchimp push (Phase 3). The edge function
+   *  re-verifies admin + 'subscribed' server-side — this is just the relay. */
+  const handleMailchimpPush = async () => {
+    if (!contact) return;
+    setBusy(true);
+    try {
+      const res = await pushToMailchimp(contact.id);
+      if (res.ok) {
+        toast.success("Pushed to Mailchimp — nurture sequence can begin");
+        await loadAll();
+      } else if (res.reason === "not_subscribed") {
+        toast.error("Only subscribed contacts can be pushed to Mailchimp.");
+      } else {
+        toast.error("Mailchimp push didn't go through — try again shortly.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const openStageDialog = () => {
     if (!contact) return;
     setStageChoice(contact.lifecycle_stage);
@@ -552,6 +574,15 @@ export default function GenevaContactDetail() {
                 <TypeBadge type={contact.professional_type} />
                 <StageBadge stage={contact.lifecycle_stage} onChange={openStageDialog} />
                 <ConsentDot status={contact.email_consent_status} />
+                {contact.mailchimp_status === "synced" && contact.mailchimp_synced_at && (
+                  <span
+                    data-mailchimp-status
+                    className="inline-flex items-center gap-1.5 font-sans text-[11px] text-[#57534E]"
+                  >
+                    <Send size={10} strokeWidth={2} className="text-[#2D6350]" />
+                    In Mailchimp · <span className="tabular-nums">{formatDate(contact.mailchimp_synced_at)}</span>
+                  </span>
+                )}
               </div>
 
               {/* Contact methods */}
@@ -606,7 +637,27 @@ export default function GenevaContactDetail() {
             >
               <Pencil size={13} /> Edit
             </button>
+            <button
+              id="qa-push-mailchimp"
+              onClick={handleMailchimpPush}
+              disabled={busy || contact.email_consent_status !== "subscribed"}
+              title={
+                contact.email_consent_status === "subscribed"
+                  ? "Add this contact to the Mailchimp audience"
+                  : "Only subscribed contacts are ever pushed to Mailchimp"
+              }
+              className={`${subtleBtn} disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <Send size={13} /> Push to Mailchimp
+            </button>
           </div>
+          {contact.email_consent_status !== "subscribed" && (
+            <p data-mailchimp-note className="mt-2 font-sans text-[11px] text-[#57534E]">
+              Mailchimp push is available once this contact's email consent is{" "}
+              <span className="font-medium text-[#1C1917]">Subscribed</span> — only
+              opted-in contacts are ever pushed.
+            </p>
+          )}
         </div>
 
         {/* --------------------------------------------------- Tab bar */}

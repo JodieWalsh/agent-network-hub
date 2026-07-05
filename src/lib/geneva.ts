@@ -26,7 +26,9 @@ export interface GenevaContact {
   source_detail: string | null;
   email_consent_status: string;
   notes: string | null;
-  created_by: string;
+  created_by: string | null; // null = created by the public landing-page intake
+  mailchimp_status: string | null; // 'synced' | 'error' | null = never pushed
+  mailchimp_synced_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -144,6 +146,34 @@ export function restHeaders(json = false) {
     h["Prefer"] = "return=representation";
   }
   return h;
+}
+
+/**
+ * Push a contact to Mailchimp via the geneva-mailchimp-push edge function
+ * (Geneva Phase 3). Explicit-button-only — never call automatically.
+ * The function re-verifies admin + 'subscribed' consent server-side; this
+ * helper just relays its { ok, reason?, synced_at? } response.
+ */
+export async function pushToMailchimp(
+  contactId: string
+): Promise<{ ok: boolean; reason?: string; synced_at?: string }> {
+  try {
+    const { supabaseUrl, supabaseKey, accessToken } = getAuthHeaders();
+    const res = await fetch(`${supabaseUrl}/functions/v1/geneva-mailchimp-push`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        apikey: supabaseKey,
+      },
+      body: JSON.stringify({ contactId }),
+    });
+    const data = await res.json().catch(() => null);
+    return data && typeof data.ok === "boolean" ? data : { ok: false };
+  } catch (e) {
+    console.error("Mailchimp push failed:", e);
+    return { ok: false };
+  }
 }
 
 /** Write a geneva_activities timeline entry (append-only; fire-and-forget). */
