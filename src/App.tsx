@@ -21,6 +21,7 @@ import AddProperty from "./pages/AddProperty";
 import Clients from "./pages/Clients";
 import ClientForm from "./pages/ClientForm";
 import ClientDetail from "./pages/ClientDetail";
+import GenevaDashboard from "./pages/geneva/GenevaDashboard";
 import GenevaContacts from "./pages/geneva/GenevaContacts";
 import GenevaContactForm from "./pages/geneva/GenevaContactForm";
 import GenevaContactDetail from "./pages/geneva/GenevaContactDetail";
@@ -128,6 +129,14 @@ const App = () => (
                 ADMIN-ONLY by design (shared team view; RLS also enforces
                 is_admin). NOT gated by CAN_MANAGE_CLIENT_BRIEFS — that's
                 Monaco's gate, and regular users must never reach Geneva. */}
+            <Route
+              path="/geneva"
+              element={
+                <ProtectedRoute requiredRole="admin" showForbidden>
+                  <GenevaDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/geneva/contacts"
               element={

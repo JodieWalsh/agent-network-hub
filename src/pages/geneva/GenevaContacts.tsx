@@ -11,18 +11,76 @@
  * Design: quiet luxury (CLAUDE.md). Data: raw fetch only.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Landmark, ChevronRight } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Plus, Landmark, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   GenevaContact,
+  GenevaTask,
   PROFESSIONAL_TYPE_LABELS,
   GENEVA_STAGE_LABELS,
   SOURCE_LABELS,
   CONSENT_LABELS,
   restHeaders,
 } from "@/lib/geneva";
+
+/* --------------------------------------------------- saved views (Phase 4)
+   Preset chips only — Monaco-style, component state (deep-linkable via
+   ?view= so the dashboard cards land on the right filter). */
+
+type ViewCtx = { followUpIds: Set<string>; weekAgo: Date };
+
+interface SavedView {
+  key: string;
+  label: string;
+  matches: (c: GenevaContact, ctx: ViewCtx) => boolean;
+  emptyCopy: string;
+}
+
+const SAVED_VIEWS: SavedView[] = [
+  { key: "all", label: "All", matches: () => true, emptyCopy: "" },
+  {
+    key: "new_week", label: "New this week",
+    matches: (c, ctx) => new Date(c.created_at) >= ctx.weekAgo,
+    emptyCopy: "No new contacts this week — share the waitlist link around.",
+  },
+  {
+    key: "needs_followup", label: "Needs follow-up",
+    matches: (c, ctx) => ctx.followUpIds.has(c.id),
+    emptyCopy: "Nothing overdue or due today — the book is tended. ✦",
+  },
+  {
+    key: "subscribed", label: "Subscribed",
+    matches: (c) => c.email_consent_status === "subscribed",
+    emptyCopy: "No subscribed contacts yet — consent comes from the waitlist checkbox or the contact form.",
+  },
+  {
+    key: "pending", label: "Pending consent",
+    matches: (c) => c.email_consent_status === "pending",
+    emptyCopy: "No one waiting on consent.",
+  },
+  {
+    key: "prospects", label: "Prospects",
+    matches: (c) => ["new", "engaged", "qualified"].includes(c.lifecycle_stage),
+    emptyCopy: "No prospects right now — new arrivals land here.",
+  },
+  {
+    key: "nurturing", label: "Nurturing",
+    matches: (c) => c.lifecycle_stage === "nurturing",
+    emptyCopy: "No one in nurture — move warm contacts here to keep them close.",
+  },
+  {
+    key: "active_customers", label: "Active customers",
+    matches: (c) => c.lifecycle_stage === "active_customer",
+    emptyCopy: "No active customers yet — they'll be worth the wait. ✦",
+  },
+  {
+    key: "inactive", label: "Inactive",
+    matches: (c) => c.lifecycle_stage === "inactive",
+    emptyCopy: "No inactive contacts — nothing resting.",
+  },
+];
 
 /* ------------------------------------------------------- shared visuals */
 
@@ -88,9 +146,15 @@ function formatDate(value: string | null): string {
 export default function GenevaContacts() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [contacts, setContacts] = useState<GenevaContact[]>([]);
+  const [followUpIds, setFollowUpIds] = useState<Set<string>>(new Set());
   const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [savedView, setSavedView] = useState<string>(() => {
+    const v = searchParams.get("view");
+    return v && SAVED_VIEWS.some((s) => s.key === v) ? v : "all";
+  });
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -100,12 +164,19 @@ export default function GenevaContacts() {
       try {
         const headers = restHeaders();
         // Shared team view: ALL contacts, newest first. RLS = admin-only.
-        const res = await fetch(
-          `${supabaseUrl}/rest/v1/geneva_contacts?select=*&order=created_at.desc`,
-          { headers }
-        );
+        const [res, tRes] = await Promise.all([
+          fetch(`${supabaseUrl}/rest/v1/geneva_contacts?select=*&order=created_at.desc`, { headers }),
+          fetch(`${supabaseUrl}/rest/v1/geneva_tasks?status=eq.open&select=contact_id,due_at`, { headers }),
+        ]);
         const rows: GenevaContact[] = res.ok ? await res.json() : [];
         setContacts(rows);
+
+        // "Needs follow-up" = an open task overdue or due today
+        const tasks: Pick<GenevaTask, "contact_id" | "due_at">[] = tRes.ok ? await tRes.json() : [];
+        const eod = new Date(); eod.setHours(23, 59, 59, 999);
+        setFollowUpIds(new Set(
+          tasks.filter((t) => t.due_at && new Date(t.due_at) <= eod).map((t) => t.contact_id)
+        ));
 
         const ownerIds = [...new Set(rows.map((c) => c.owner_id).filter(Boolean))] as string[];
         if (ownerIds.length > 0) {
@@ -125,6 +196,23 @@ export default function GenevaContacts() {
     load();
   }, [user, supabaseUrl]);
 
+  const viewCtx = useMemo<ViewCtx>(() => {
+    const weekAgo = new Date(Date.now() - 7 * 86400000);
+    return { followUpIds, weekAgo };
+  }, [followUpIds]);
+
+  const viewCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const v of SAVED_VIEWS) counts[v.key] = contacts.filter((c) => v.matches(c, viewCtx)).length;
+    return counts;
+  }, [contacts, viewCtx]);
+
+  const activeView = SAVED_VIEWS.find((v) => v.key === savedView) ?? SAVED_VIEWS[0];
+  const filteredContacts = useMemo(
+    () => contacts.filter((c) => activeView.matches(c, viewCtx)),
+    [contacts, activeView, viewCtx]
+  );
+
   const subtitleCounts = useMemo(() => {
     const subscribed = contacts.filter((c) => c.email_consent_status === "subscribed").length;
     return { total: contacts.length, subscribed };
@@ -133,6 +221,13 @@ export default function GenevaContacts() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-6xl">
+        <Link
+          to="/geneva"
+          className="mb-4 inline-flex items-center gap-2 font-sans text-sm font-medium text-[#2D6350] transition-colors hover:text-[#173A31]"
+        >
+          <ArrowLeft size={15} /> Command Centre
+        </Link>
+
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -156,6 +251,39 @@ export default function GenevaContacts() {
             Add Contact
           </button>
         </div>
+
+        {/* Saved views — preset filter chips (Phase 4) */}
+        {contacts.length > 0 && !loading && (
+          <div role="group" aria-label="Saved views" className="mb-6 flex flex-wrap items-center gap-2">
+            {SAVED_VIEWS.map((v) => {
+              const isActive = savedView === v.key;
+              return (
+                <button
+                  key={v.key}
+                  id={`gview-${v.key}`}
+                  onClick={() => setSavedView(v.key)}
+                  aria-pressed={isActive}
+                  className={
+                    isActive
+                      ? "inline-flex items-center gap-2 rounded-full bg-[#2D6350] px-4 py-1.5 font-sans text-xs font-semibold text-white shadow-[0_6px_14px_-4px_rgba(23,58,49,0.45)]"
+                      : "inline-flex items-center gap-2 rounded-full border border-[#1C1917]/12 bg-white/70 px-4 py-1.5 font-sans text-xs font-medium text-[#57534E] backdrop-blur-sm transition-colors duration-150 hover:border-[#2D6350]/35 hover:text-[#1C1917]"
+                  }
+                >
+                  {v.label}
+                  <span
+                    className={
+                      isActive
+                        ? "rounded-full bg-white/[0.18] px-2 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
+                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                    }
+                  >
+                    {viewCounts[v.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-24">
@@ -184,6 +312,20 @@ export default function GenevaContacts() {
               Add Contact
             </button>
           </div>
+        ) : filteredContacts.length === 0 ? (
+          /* Calm per-view empty state — the book has contacts, this view has none */
+          <div className={`${panelClass} px-8 py-16 text-center`} style={panelStyle}>
+            <p aria-hidden="true" className="font-serif text-2xl text-[#B76E79]">✦</p>
+            <p className="mt-3 font-serif text-xl font-semibold text-[#1C1917]">
+              {activeView.emptyCopy || "Nothing in this view."}
+            </p>
+            <button
+              onClick={() => setSavedView("all")}
+              className="mt-6 rounded-full border border-[#2D6350]/30 bg-white/70 px-5 py-2 font-sans text-xs font-semibold text-[#2D6350] transition-colors duration-150 hover:border-[#2D6350]/50 hover:bg-[#2D6350]/[0.06]"
+            >
+              View all contacts
+            </button>
+          </div>
         ) : (
           /* -------------------------------------------------------- list */
           <div className={`${panelClass} overflow-hidden`} style={panelStyle}>
@@ -197,7 +339,7 @@ export default function GenevaContacts() {
             </div>
 
             <ul className="divide-y divide-[#1C1917]/[0.06]">
-              {contacts.map((c) => {
+              {filteredContacts.map((c) => {
                 const name = `${c.first_name}${c.last_name ? ` ${c.last_name}` : ""}`;
                 const meta = [c.email, c.company, c.region_city].filter(Boolean).join(" · ");
                 return (

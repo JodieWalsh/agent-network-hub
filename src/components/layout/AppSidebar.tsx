@@ -171,7 +171,7 @@ export function AppSidebar() {
     ...(profile?.role === 'admin' ? [
       { label: "Admin Dashboard", icon: Shield, path: "/admin" },
       { label: "Forum Moderation", icon: Shield, path: "/forums/admin" },
-      { label: "Geneva", icon: Landmark, path: "/geneva/contacts" },
+      { label: "Geneva", icon: Landmark, path: "/geneva" },
     ] : []),
     { label: "Agent Directory", icon: Users, path: "/directory" },
     { label: "Property Marketplace", icon: Building2, path: "/marketplace" },

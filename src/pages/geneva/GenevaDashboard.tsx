@@ -1,0 +1,523 @@
+/**
+ * GenevaDashboard.tsx — Geneva Phase 4: the growth command centre.
+ *
+ * The founder's five questions, answered at a glance:
+ *   How's my funnel? Where do leads get stuck? Which channels bring the
+ *   best leads? Who must I follow up TODAY? Are we growing?
+ *
+ * ADMIN-ONLY shared team view (route gated requiredRole="admin"; RLS
+ * enforces is_admin). Raw fetch via src/lib/geneva.ts — no owner filters.
+ * Design: quiet luxury per docs/BRAND_KIT.md — calm, tabular numbers,
+ * gentle highlights, ✦ empty state when the book is empty.
+ *
+ * Dev note: append ?empty=1 to preview the zero-data state without
+ * touching real rows (design verification only — data is never modified).
+ */
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Plus,
+  Users,
+  Mail,
+  Sparkle,
+  CalendarClock,
+  Hourglass,
+  ArrowRight,
+  Landmark,
+  TrendingUp,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import {
+  GenevaContact,
+  GenevaTask,
+  PROFESSIONAL_TYPE_LABELS,
+  GENEVA_STAGE_LABELS,
+  SOURCE_LABELS,
+  restHeaders,
+} from "@/lib/geneva";
+
+/* ------------------------------------------------------- shared visuals */
+
+const panelStyle = {
+  background:
+    "linear-gradient(150deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.8) 55%, rgba(246,241,234,0.72) 100%)",
+  borderTop: "1px solid rgba(183,110,121,0.3)",
+};
+const panelClass =
+  "rounded-[20px] border border-white/60 backdrop-blur-md shadow-[0_2px_4px_rgba(94,70,55,0.08),0_24px_56px_-8px_rgba(183,110,121,0.3),0_14px_36px_rgba(140,95,70,0.16)]";
+const primaryBtn =
+  "inline-flex items-center gap-2 rounded-xl bg-[#2D6350] px-5 py-3 font-sans text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(23,58,49,0.5)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#173A31]";
+const subtleBtn =
+  "inline-flex items-center gap-1.5 rounded-lg border border-[#2D6350]/25 bg-white/70 px-3 py-1.5 font-sans text-xs font-semibold text-[#2D6350] transition-colors hover:bg-[#2D6350]/[0.06]";
+const sectionTitle =
+  "font-sans text-xs font-semibold uppercase tracking-[0.18em] text-[#2D6350]";
+
+/** Funnel stage order — inactive sits OUTSIDE the flow, shown separately. */
+const FUNNEL_STAGES = [
+  "new", "engaged", "qualified", "nurturing", "trial_early_access", "active_customer",
+] as const;
+
+const QUALITY_STAGES = new Set(["qualified", "nurturing", "trial_early_access", "active_customer"]);
+
+/* --------------------------------------------------------------- utils */
+
+const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const endOfToday = () => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; };
+const daysAgo = (n: number) => new Date(Date.now() - n * 86400000);
+const pct = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 100) : 0);
+
+/* ------------------------------------------------------------ component */
+
+export default function GenevaDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const previewEmpty = searchParams.get("empty") === "1"; // design preview only
+
+  const [contacts, setContacts] = useState<GenevaContact[]>([]);
+  const [openTasks, setOpenTasks] = useState<GenevaTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user) return;
+      try {
+        const headers = restHeaders();
+        const [cRes, tRes] = await Promise.all([
+          fetch(`${supabaseUrl}/rest/v1/geneva_contacts?select=*&order=created_at.desc`, { headers }),
+          fetch(`${supabaseUrl}/rest/v1/geneva_tasks?status=eq.open&select=*&order=due_at.asc.nullslast`, { headers }),
+        ]);
+        setContacts(cRes.ok ? await cRes.json() : []);
+        setOpenTasks(tRes.ok ? await tRes.json() : []);
+      } catch (e) {
+        console.error("Error loading Geneva dashboard:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user, supabaseUrl]);
+
+  const data = previewEmpty ? [] : contacts;
+  const tasks = previewEmpty ? [] : openTasks;
+
+  /* ------------------------------------------------------ derivations */
+
+  const active = useMemo(() => data.filter((c) => c.lifecycle_stage !== "inactive"), [data]);
+  const inactive = useMemo(() => data.filter((c) => c.lifecycle_stage === "inactive"), [data]);
+
+  // Funnel: cumulative "reached at least this stage" gives a true taper on
+  // snapshot data; per-stage counts show who is there NOW.
+  const funnel = useMemo(() => {
+    const stageIdx = (s: string) => FUNNEL_STAGES.indexOf(s as (typeof FUNNEL_STAGES)[number]);
+    const rows = FUNNEL_STAGES.map((stage, i) => {
+      const here = active.filter((c) => c.lifecycle_stage === stage).length;
+      const reached = active.filter((c) => stageIdx(c.lifecycle_stage) >= i).length;
+      return { stage, here, reached };
+    });
+    const total = rows[0]?.reached ?? 0;
+    const withPct = rows.map((r, i) => ({
+      ...r,
+      reachPct: pct(r.reached, total),
+      advancePct: i < rows.length - 1 ? pct(rows[i + 1].reached, r.reached) : null,
+    }));
+    // Biggest drop-off = the transition with the LOWEST advance %
+    let dropIdx = -1, worst = 101;
+    withPct.forEach((r, i) => {
+      if (r.advancePct !== null && r.reached > 0 && r.advancePct < worst) { worst = r.advancePct; dropIdx = i; }
+    });
+    return { rows: withPct, total, dropIdx };
+  }, [active]);
+
+  const overdueOrToday = useMemo(() => {
+    const eod = endOfToday().getTime();
+    return tasks.filter((t) => t.due_at && new Date(t.due_at).getTime() <= eod);
+  }, [tasks]);
+
+  const metrics = useMemo(() => {
+    const weekAgo = daysAgo(7);
+    return {
+      total: data.length,
+      subscribed: data.filter((c) => c.email_consent_status === "subscribed").length,
+      newThisWeek: data.filter((c) => new Date(c.created_at) >= weekAgo).length,
+      needsFollowUp: new Set(overdueOrToday.map((t) => t.contact_id)).size,
+      activeCustomers: data.filter((c) => c.lifecycle_stage === "active_customer").length,
+    };
+  }, [data, overdueOrToday]);
+
+  // Growth: new contacts per week over the last 4 weeks (oldest → newest)
+  const growth = useMemo(() => {
+    const weeks = [3, 2, 1, 0].map((w) => {
+      const from = daysAgo((w + 1) * 7);
+      const to = daysAgo(w * 7);
+      const count = data.filter((c) => {
+        const d = new Date(c.created_at);
+        return d >= from && d < to;
+      }).length;
+      return { label: w === 0 ? "This wk" : `${w} wk${w > 1 ? "s" : ""} ago`, count };
+    });
+    const max = Math.max(1, ...weeks.map((x) => x.count));
+    return { weeks, max, thisWeek: weeks[3].count, lastWeek: weeks[2].count };
+  }, [data]);
+
+  // Channels: volume + how many reached qualified-or-beyond (quality signal)
+  const channels = useMemo(() => {
+    const map = new Map<string, { total: number; quality: number }>();
+    for (const c of data) {
+      const key = c.original_source || "unknown";
+      const e = map.get(key) ?? { total: 0, quality: 0 };
+      e.total++;
+      if (QUALITY_STAGES.has(c.lifecycle_stage)) e.quality++;
+      map.set(key, e);
+    }
+    const rows = [...map.entries()]
+      .map(([source, v]) => ({ source, ...v }))
+      .sort((a, b) => b.quality - a.quality || b.total - a.total);
+    const max = Math.max(1, ...rows.map((r) => r.total));
+    return { rows: rows.slice(0, 8), max };
+  }, [data]);
+
+  const types = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of data) map.set(c.professional_type, (map.get(c.professional_type) ?? 0) + 1);
+    const rows = [...map.entries()].map(([t, n]) => ({ t, n })).sort((a, b) => b.n - a.n);
+    const max = Math.max(1, ...rows.map((r) => r.n));
+    return { rows, max };
+  }, [data]);
+
+  // Needs attention: contacts with the most-overdue open tasks first
+  const attention = useMemo(() => {
+    const byContact = new Map<string, GenevaTask>();
+    for (const t of overdueOrToday) {
+      const prev = byContact.get(t.contact_id);
+      if (!prev || new Date(t.due_at!) < new Date(prev.due_at!)) byContact.set(t.contact_id, t);
+    }
+    const sod = startOfToday().getTime();
+    return [...byContact.entries()]
+      .map(([contactId, task]) => {
+        const contact = data.find((c) => c.id === contactId);
+        if (!contact) return null;
+        const due = new Date(task.due_at!).getTime();
+        const overdueDays = due < sod ? Math.ceil((sod - due) / 86400000) : 0;
+        return { contact, task, overdueDays };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.overdueDays - a!.overdueDays)
+      .slice(0, 5) as { contact: GenevaContact; task: GenevaTask; overdueDays: number }[];
+  }, [overdueOrToday, data]);
+
+  /* --------------------------------------------------------------- UI */
+
+  const metricCards: { label: string; value: number; icon: React.ElementType; view: string | null }[] = [
+    { label: "Total Contacts", value: metrics.total, icon: Users, view: "all" },
+    { label: "Subscribed", value: metrics.subscribed, icon: Mail, view: "subscribed" },
+    { label: "New This Week", value: metrics.newThisWeek, icon: Sparkle, view: "new_week" },
+    { label: "Needs Follow-Up", value: metrics.needsFollowUp, icon: CalendarClock, view: "needs_followup" },
+    { label: "Active Customers", value: metrics.activeCustomers, icon: Landmark, view: "active_customers" },
+  ];
+
+  return (
+    <DashboardLayout>
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
+              Internal · Geneva
+            </p>
+            <h1 className="mt-1 font-serif text-3xl font-semibold text-[#1C1917] lg:text-4xl">
+              Command Centre
+            </h1>
+            <p className="mt-2 font-sans text-sm text-[#57534E]">
+              The funnel, the channels, and who needs you today
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button id="gd-add-contact" onClick={() => navigate("/geneva/contacts/new")} className={primaryBtn}>
+              <Plus size={16} /> Add Contact
+            </button>
+            <Link
+              id="gd-view-contacts"
+              to="/geneva/contacts"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#2D6350]/30 bg-white/70 px-5 py-3 font-sans text-sm font-semibold text-[#2D6350] transition-colors hover:bg-[#2D6350]/[0.06]"
+            >
+              View All Contacts <ArrowRight size={15} />
+            </Link>
+          </div>
+        </div>
+
+        {loading ? (
+          /* ---------------------------------------------- skeletons */
+          <div className="space-y-6 pb-16">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className={`${panelClass} h-28 animate-pulse`} style={panelStyle} />
+              ))}
+            </div>
+            <div className={`${panelClass} h-96 animate-pulse`} style={panelStyle} />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className={`${panelClass} h-64 animate-pulse`} style={panelStyle} />
+              <div className={`${panelClass} h-64 animate-pulse`} style={panelStyle} />
+            </div>
+          </div>
+        ) : data.length === 0 ? (
+          /* -------------------------------------- ✦ zero-data state */
+          <div className={`${panelClass} px-8 py-24 text-center`} style={panelStyle}>
+            <p aria-hidden="true" className="font-serif text-3xl text-[#B76E79]">✦</p>
+            <h2 className="mt-4 font-serif text-2xl font-semibold text-[#1C1917]">
+              Your command centre awaits
+            </h2>
+            <p className="mx-auto mt-3 max-w-md font-sans text-sm leading-relaxed text-[#57534E]">
+              As contacts arrive — from the landing-page waitlist or added by
+              hand — the funnel, channels, and follow-ups take shape here.
+              Add the first contact and watch it come alive.
+            </p>
+            <button onClick={() => navigate("/geneva/contacts/new")} className={`${primaryBtn} mt-8 px-6`}>
+              <Plus size={16} /> Add Contact
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6 pb-16">
+            {/* --------------------------------------- 1. Metric cards */}
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+              {metricCards.map((m) => (
+                <button
+                  key={m.label}
+                  data-metric={m.label}
+                  onClick={() => m.view && navigate(`/geneva/contacts?view=${m.view}`)}
+                  className={`${panelClass} group p-5 text-left transition-all duration-200 hover:-translate-y-0.5`}
+                  style={panelStyle}
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#B76E79]/12">
+                    <m.icon size={15} className="text-[#8F4E58]" strokeWidth={2} />
+                  </div>
+                  <p className="mt-3 font-sans text-3xl font-semibold tabular-nums text-[#1C1917]">
+                    {m.value}
+                  </p>
+                  <p className="mt-0.5 font-sans text-[11px] font-medium uppercase tracking-[0.14em] text-[#57534E]">
+                    {m.label}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* ------------------------------------------ 2. The funnel */}
+            <div className={`${panelClass} p-6 lg:p-8`} style={panelStyle}>
+              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className={sectionTitle}>The Funnel</h2>
+                <p className="font-sans text-xs text-[#57534E]">
+                  Bars show how far contacts travel · counts show who's there now
+                </p>
+              </div>
+              <div className="mt-5 space-y-1">
+                {funnel.rows.map((r, i) => (
+                  <div key={r.stage} data-funnel-stage={r.stage}>
+                    <div className="flex items-center gap-3 lg:gap-4">
+                      <p className="w-28 shrink-0 font-sans text-xs font-medium text-[#1C1917] lg:w-36 lg:text-sm">
+                        {GENEVA_STAGE_LABELS[r.stage]}
+                      </p>
+                      <div className="relative h-9 flex-1 overflow-hidden rounded-r-xl bg-[#2D6350]/[0.05]">
+                        <div
+                          className="h-full rounded-r-xl"
+                          style={{
+                            width: `${Math.max(r.reachPct, r.reached > 0 ? 4 : 0)}%`,
+                            background: `linear-gradient(90deg, #2D6350 0%, ${i >= 4 ? "#3E8066" : "#35705B"} 100%)`,
+                          }}
+                        />
+                      </div>
+                      <p className="w-28 shrink-0 text-right font-sans text-xs text-[#57534E] lg:w-36">
+                        <span className="text-base font-semibold tabular-nums text-[#1C1917]">{r.here}</span> here
+                        <span className="ml-1.5 tabular-nums">· {r.reachPct}% reach</span>
+                      </p>
+                    </div>
+                    {r.advancePct !== null && (
+                      <div className="flex items-center gap-2 py-1 pl-28 lg:pl-36">
+                        {funnel.dropIdx === i ? (
+                          <span
+                            data-dropoff
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]"
+                          >
+                            <Hourglass size={9} strokeWidth={2.25} />
+                            Biggest drop-off · <span className="tabular-nums">{r.advancePct}%</span> advance
+                          </span>
+                        ) : (
+                          <span className="font-sans text-[11px] tabular-nums text-[#57534E]/80">
+                            ↓ {r.advancePct}% advance
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Inactive — outside the flow, deliberately */}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-[#1C1917]/[0.06] pt-4">
+                <p className="font-sans text-xs text-[#57534E]">
+                  <span className="font-semibold tabular-nums text-[#1C1917]">{inactive.length}</span> inactive
+                  {inactive.length > 0 && " — resting outside the funnel, each with a recorded reason"}
+                </p>
+                {inactive.length > 0 && (
+                  <Link
+                    to="/geneva/contacts?view=inactive"
+                    className="font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
+                  >
+                    View inactive →
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* --------------------------- 3+4. Growth signal & channels */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+              {/* Growth */}
+              <div className={`${panelClass} p-6 lg:col-span-2`} style={panelStyle}>
+                <h2 className={sectionTitle}>Growth Signal</h2>
+                <p className="mt-1 font-sans text-xs text-[#57534E]">New contacts per week</p>
+                <div className="mt-6 flex h-36 items-end gap-3">
+                  {growth.weeks.map((w) => (
+                    <div key={w.label} className="flex flex-1 flex-col items-center gap-1.5">
+                      <p className="font-sans text-sm font-semibold tabular-nums text-[#1C1917]">{w.count}</p>
+                      <div
+                        className="w-full rounded-t-lg"
+                        style={{
+                          height: `${Math.max(6, (w.count / growth.max) * 100)}px`,
+                          background: "linear-gradient(180deg, #B76E79 0%, #8F4E58 100%)",
+                          opacity: 0.25 + 0.75 * (w.count / growth.max),
+                        }}
+                      />
+                      <p className="font-sans text-[10px] uppercase tracking-wider text-[#57534E]">{w.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 flex items-center gap-1.5 font-sans text-xs text-[#57534E]">
+                  <TrendingUp size={12} className="text-[#2D6350]" />
+                  {growth.thisWeek >= growth.lastWeek
+                    ? <>Up <span className="font-semibold tabular-nums text-[#1C1917]">{growth.thisWeek}</span> vs <span className="tabular-nums">{growth.lastWeek}</span> last week</>
+                    : <><span className="font-semibold tabular-nums text-[#1C1917]">{growth.thisWeek}</span> so far this week, <span className="tabular-nums">{growth.lastWeek}</span> last week</>}
+                </p>
+              </div>
+
+              {/* Channels */}
+              <div className={`${panelClass} p-6 lg:col-span-3`} style={panelStyle}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className={sectionTitle}>Channel Performance</h2>
+                  <p className="font-sans text-xs text-[#57534E]">
+                    <span className="mr-1 inline-block h-2 w-2 rounded-sm bg-[#2D6350] align-middle" /> qualified+
+                    <span className="ml-3 mr-1 inline-block h-2 w-2 rounded-sm bg-[#D8C3B8] align-middle" /> earlier
+                  </p>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {channels.rows.map((ch) => (
+                    <div key={ch.source} data-channel={ch.source} className="flex items-center gap-3">
+                      <p className="w-24 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] lg:w-28">
+                        {SOURCE_LABELS[ch.source] || ch.source}
+                      </p>
+                      <div className="flex h-6 flex-1 overflow-hidden rounded-lg bg-[#2D6350]/[0.04]">
+                        <div
+                          className="h-full bg-[#2D6350]"
+                          style={{ width: `${(ch.quality / channels.max) * 100}%` }}
+                        />
+                        <div
+                          className="h-full bg-[#D8C3B8]"
+                          style={{ width: `${((ch.total - ch.quality) / channels.max) * 100}%` }}
+                        />
+                      </div>
+                      <p className="w-24 shrink-0 text-right font-sans text-xs tabular-nums text-[#57534E]">
+                        <span className="font-semibold text-[#1C1917]">{ch.total}</span>
+                        {ch.quality > 0 && <span className="text-[#2D6350]"> · {ch.quality} qual+</span>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ------------------- 5+6. Types & Needs attention today */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+              {/* Types */}
+              <div className={`${panelClass} p-6 lg:col-span-2`} style={panelStyle}>
+                <h2 className={sectionTitle}>By Professional Type</h2>
+                <div className="mt-5 space-y-3">
+                  {types.rows.map((r) => (
+                    <div key={r.t} className="flex items-center gap-3">
+                      <p className="w-32 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] lg:w-40">
+                        {PROFESSIONAL_TYPE_LABELS[r.t] || r.t}
+                      </p>
+                      <div className="h-5 flex-1 overflow-hidden rounded-lg bg-[#2D6350]/[0.04]">
+                        <div
+                          className="h-full rounded-lg bg-gradient-to-r from-[#B76E79]/70 to-[#B76E79]/40"
+                          style={{ width: `${(r.n / types.max) * 100}%` }}
+                        />
+                      </div>
+                      <p className="w-8 shrink-0 text-right font-sans text-sm font-semibold tabular-nums text-[#1C1917]">
+                        {r.n}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Needs attention */}
+              <div className={`${panelClass} p-6 lg:col-span-3`} style={panelStyle}>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className={sectionTitle}>Needs Attention Today</h2>
+                  {attention.length > 0 && (
+                    <Link
+                      to="/geneva/contacts?view=needs_followup"
+                      className="font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
+                    >
+                      View all →
+                    </Link>
+                  )}
+                </div>
+                {attention.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p aria-hidden="true" className="font-serif text-xl text-[#B76E79]">✦</p>
+                    <p className="mt-2 font-sans text-sm text-[#57534E]">
+                      Nothing overdue and nothing due today — the book is tended.
+                    </p>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-[#1C1917]/[0.06]">
+                    {attention.map(({ contact, task, overdueDays }) => (
+                      <li key={contact.id}>
+                        <button
+                          data-attention={contact.email}
+                          onClick={() => navigate(`/geneva/contacts/${contact.id}`)}
+                          className="group flex w-full items-center justify-between gap-3 py-3 text-left"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-sans text-sm font-semibold text-[#1C1917] group-hover:text-[#2D6350]">
+                              {contact.first_name}{contact.last_name ? ` ${contact.last_name}` : ""}
+                              <span className="ml-2 font-normal text-[#57534E]">
+                                {PROFESSIONAL_TYPE_LABELS[contact.professional_type]}
+                              </span>
+                            </p>
+                            <p className="truncate font-sans text-xs text-[#57534E]">"{task.title}"</p>
+                          </div>
+                          <span
+                            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider ${
+                              overdueDays > 0
+                                ? "border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] text-[#8F4E58]"
+                                : "border-[#2D6350]/25 bg-[#2D6350]/[0.06] text-[#2D6350]"
+                            }`}
+                          >
+                            <Hourglass size={9} strokeWidth={2.25} />
+                            {overdueDays > 0 ? `${overdueDays}d overdue` : "due today"}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
