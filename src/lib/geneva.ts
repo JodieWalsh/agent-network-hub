@@ -124,6 +124,18 @@ export const LAUNCH_REGION_LABELS: Record<string, string> = {
   other: "Other / somewhere else",
 };
 
+/** Short region names for chips/bars/tags (the long waitlist labels don't
+ *  fit filter UI). Same tokens; same order as LAUNCH_REGION_LABELS. */
+export const LAUNCH_REGION_SHORT_LABELS: Record<string, string> = {
+  greater_sydney: "Greater Sydney",
+  greater_melbourne: "Greater Melbourne",
+  seq: "South East Queensland",
+  greater_perth: "Greater Perth",
+  uk: "United Kingdom",
+  us: "United States",
+  other: "Other",
+};
+
 export const CONSENT_LABELS: Record<string, string> = {
   pending: "Pending",
   subscribed: "Subscribed",

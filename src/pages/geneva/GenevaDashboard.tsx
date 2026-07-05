@@ -25,6 +25,7 @@ import {
   ArrowRight,
   Landmark,
   TrendingUp,
+  MapPin,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -34,6 +35,7 @@ import {
   PROFESSIONAL_TYPE_LABELS,
   GENEVA_STAGE_LABELS,
   SOURCE_LABELS,
+  LAUNCH_REGION_SHORT_LABELS,
   restHeaders,
 } from "@/lib/geneva";
 
@@ -178,6 +180,22 @@ export default function GenevaDashboard() {
       .sort((a, b) => b.quality - a.quality || b.total - a.total);
     const max = Math.max(1, ...rows.map((r) => r.total));
     return { rows: rows.slice(0, 8), max };
+  }, [data]);
+
+  // Demand by region: how many contacts work in each launch region.
+  // One contact can work in several, so totals can exceed the contact count
+  // — the widget subtitle says so explicitly.
+  const regionDemand = useMemo(() => {
+    const rows = Object.keys(LAUNCH_REGION_SHORT_LABELS)
+      .map((token) => ({
+        token,
+        n: data.filter((c) => (c.launch_regions ?? []).includes(token)).length,
+      }))
+      .filter((r) => r.n > 0)
+      .sort((a, b) => b.n - a.n);
+    const noRegion = data.filter((c) => !c.launch_regions || c.launch_regions.length === 0).length;
+    const max = Math.max(1, ...rows.map((r) => r.n));
+    return { rows, noRegion, max };
   }, [data]);
 
   const types = useMemo(() => {
@@ -435,8 +453,61 @@ export default function GenevaDashboard() {
               </div>
             </div>
 
-            {/* ------------------- 5+6. Types & Needs attention today */}
+            {/* --------------- 5. Demand by region & professional type */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+              {/* Demand by region — where interest is concentrated */}
+              <div className={`${panelClass} p-6 lg:col-span-3`} style={panelStyle}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className={sectionTitle}>Demand by Region</h2>
+                  <p className="font-sans text-xs text-[#57534E]">
+                    Contacts working in each region — one contact can count in several
+                  </p>
+                </div>
+                {regionDemand.rows.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p aria-hidden="true" className="font-serif text-xl text-[#B76E79]">✦</p>
+                    <p className="mt-2 font-sans text-sm text-[#57534E]">
+                      No regions captured yet — the waitlist asks every new lead where they work.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-5 space-y-3">
+                      {regionDemand.rows.map((r) => (
+                        <button
+                          key={r.token}
+                          data-region-demand={r.token}
+                          onClick={() => navigate(`/geneva/contacts?region=${r.token}`)}
+                          className="group flex w-full items-center gap-3 text-left"
+                          aria-label={`View contacts in ${LAUNCH_REGION_SHORT_LABELS[r.token]}`}
+                        >
+                          <p className="w-36 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] group-hover:text-[#2D6350] lg:w-44">
+                            {LAUNCH_REGION_SHORT_LABELS[r.token]}
+                          </p>
+                          <div className="h-6 flex-1 overflow-hidden rounded-lg bg-[#2D6350]/[0.04]">
+                            <div
+                              className="h-full rounded-lg transition-all group-hover:opacity-90"
+                              style={{
+                                width: `${(r.n / regionDemand.max) * 100}%`,
+                                background: "linear-gradient(90deg, #2D6350 0%, #35705B 100%)",
+                              }}
+                            />
+                          </div>
+                          <p className="w-8 shrink-0 text-right font-sans text-sm font-semibold tabular-nums text-[#1C1917]">
+                            {r.n}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-4 flex items-center gap-1.5 border-t border-[#1C1917]/[0.06] pt-3 font-sans text-xs text-[#57534E]">
+                      <MapPin size={11} strokeWidth={2} className="text-[#8F4E58]" />
+                      No region set: <span className="font-semibold tabular-nums text-[#1C1917]">{regionDemand.noRegion}</span>
+                      <span className="ml-1">· click a bar to see who's there</span>
+                    </p>
+                  </>
+                )}
+              </div>
+
               {/* Types */}
               <div className={`${panelClass} p-6 lg:col-span-2`} style={panelStyle}>
                 <h2 className={sectionTitle}>By Professional Type</h2>
@@ -460,8 +531,12 @@ export default function GenevaDashboard() {
                 </div>
               </div>
 
+            </div>
+
+            {/* --------------------------- 6. Needs attention today */}
+            <div className="grid grid-cols-1">
               {/* Needs attention */}
-              <div className={`${panelClass} p-6 lg:col-span-3`} style={panelStyle}>
+              <div className={`${panelClass} p-6`} style={panelStyle}>
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className={sectionTitle}>Needs Attention Today</h2>
                   {attention.length > 0 && (

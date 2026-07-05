@@ -84,6 +84,22 @@ const CONTACTS = [
   { f: 'Nate', l: 'Silverman', t: 'stylist', stage: 'trial_early_access', src: 'referral', consent: 'pending', city: 'San Diego', days: 18 },
 ];
 
+/* Launch regions per contact (city-consistent; a few multi-region, a few
+   deliberately region-less so the dashboard's "No region set" line shows). */
+const REGION_PLAN = {
+  'ava.pemberton': ['greater_sydney'], 'marcus.whitfield': ['uk'],
+  'priya.chandran': ['greater_melbourne', 'greater_sydney'], 'eleanor.hastings': ['uk'],
+  'jackson.delgado': ['us'], 'sofia.lindqvist': ['greater_perth'],
+  'oliver.beaumont': ['uk'], 'harriet.kowalski': ['seq'],
+  'theo.marchetti': ['other'], 'isla.rutherford': ['seq'],
+  'damon.okafor': ['us'], 'lucia.fernandez': ['us'],
+  'callum.douglas': ['uk'], 'renee.vandermeer': ['us'],
+  'margot.ellery': ['greater_sydney'], 'hugh.braithwaite': ['uk'],
+  'anika.sorensen': ['greater_melbourne'], 'felix.nakamura': ['us'],
+  'georgia.ashworth': ['seq'], 'rohan.mistry': ['uk'],
+  'stanley.okonkwo': ['greater_perth'],
+};
+
 const STAGE_BEFORE = {
   engaged: 'new', qualified: 'engaged', nurturing: 'engaged',
   trial_early_access: 'qualified', active_customer: 'trial_early_access', inactive: 'engaged',
@@ -106,6 +122,7 @@ async function seed() {
     const owner = admins[i % admins.length];
     const createdAt = daysAgo(c.days, -(i % 8)); // spread times of day a little
     const [row] = await svc('POST', 'geneva_contacts', [{
+      launch_regions: REGION_PLAN[`${c.f}.${c.l}`.toLowerCase()] ?? null,
       first_name: c.f, last_name: c.l, email: email(c.f, c.l),
       phone: c.days % 3 === 0 ? `0400 ${String(100 + i).padStart(3, '0')} ${String(200 + i).padStart(3, '0')}` : null,
       company: c.company ?? null,

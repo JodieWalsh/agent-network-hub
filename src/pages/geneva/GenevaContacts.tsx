@@ -22,6 +22,7 @@ import {
   GENEVA_STAGE_LABELS,
   SOURCE_LABELS,
   CONSENT_LABELS,
+  LAUNCH_REGION_SHORT_LABELS,
   restHeaders,
 } from "@/lib/geneva";
 
@@ -155,6 +156,13 @@ export default function GenevaContacts() {
     const v = searchParams.get("view");
     return v && SAVED_VIEWS.some((s) => s.key === v) ? v : "all";
   });
+  // Launch-region filter — combines with the saved view (e.g. Prospects +
+  // Greater Sydney). "all" = no region narrowing. Deep-linkable via ?region=
+  // (the dashboard's Demand-by-Region bars land here).
+  const [regionFilter, setRegionFilter] = useState<string>(() => {
+    const r = searchParams.get("region");
+    return r && LAUNCH_REGION_SHORT_LABELS[r] ? r : "all";
+  });
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -208,10 +216,28 @@ export default function GenevaContacts() {
   }, [contacts, viewCtx]);
 
   const activeView = SAVED_VIEWS.find((v) => v.key === savedView) ?? SAVED_VIEWS[0];
+
+  const matchesRegion = (c: GenevaContact, token: string) =>
+    token === "all" || (c.launch_regions ?? []).includes(token);
+
   const filteredContacts = useMemo(
-    () => contacts.filter((c) => activeView.matches(c, viewCtx)),
-    [contacts, activeView, viewCtx]
+    () =>
+      contacts.filter(
+        (c) => activeView.matches(c, viewCtx) && matchesRegion(c, regionFilter)
+      ),
+    [contacts, activeView, viewCtx, regionFilter]
   );
+
+  // Region-chip counts reflect the ACTIVE saved view, so the two filter rows
+  // always agree with each other and with the list below them.
+  const regionCounts = useMemo(() => {
+    const inView = contacts.filter((c) => activeView.matches(c, viewCtx));
+    const counts: Record<string, number> = { all: inView.length };
+    for (const token of Object.keys(LAUNCH_REGION_SHORT_LABELS)) {
+      counts[token] = inView.filter((c) => matchesRegion(c, token)).length;
+    }
+    return counts;
+  }, [contacts, activeView, viewCtx]);
 
   const subtitleCounts = useMemo(() => {
     const subscribed = contacts.filter((c) => c.email_consent_status === "subscribed").length;
@@ -285,6 +311,43 @@ export default function GenevaContacts() {
           </div>
         )}
 
+        {/* Launch-region filter — deep-rose accent so the two filter layers
+            read distinctly (forest = view, rose = region) */}
+        {contacts.length > 0 && !loading && (
+          <div role="group" aria-label="Filter by launch region" className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+              Region
+            </span>
+            {[["all", "All regions"], ...Object.entries(LAUNCH_REGION_SHORT_LABELS)].map(([token, label]) => {
+              const isActive = regionFilter === token;
+              return (
+                <button
+                  key={token}
+                  id={`gregion-${token}`}
+                  onClick={() => setRegionFilter(token)}
+                  aria-pressed={isActive}
+                  className={
+                    isActive
+                      ? "inline-flex items-center gap-2 rounded-full bg-[#8F4E58] px-3.5 py-1.5 font-sans text-xs font-semibold text-white shadow-[0_6px_14px_-4px_rgba(143,78,88,0.45)]"
+                      : "inline-flex items-center gap-2 rounded-full border border-[#1C1917]/12 bg-white/70 px-3.5 py-1.5 font-sans text-xs font-medium text-[#57534E] backdrop-blur-sm transition-colors duration-150 hover:border-[#8F4E58]/40 hover:text-[#1C1917]"
+                  }
+                >
+                  {label}
+                  <span
+                    className={
+                      isActive
+                        ? "rounded-full bg-white/[0.18] px-1.5 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
+                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                    }
+                  >
+                    {regionCounts[token]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <p className="font-sans text-sm text-[#57534E]">Loading contacts…</p>
@@ -313,17 +376,19 @@ export default function GenevaContacts() {
             </button>
           </div>
         ) : filteredContacts.length === 0 ? (
-          /* Calm per-view empty state — the book has contacts, this view has none */
+          /* Calm empty state — the book has contacts, this view/region combo has none */
           <div className={`${panelClass} px-8 py-16 text-center`} style={panelStyle}>
             <p aria-hidden="true" className="font-serif text-2xl text-[#B76E79]">✦</p>
             <p className="mt-3 font-serif text-xl font-semibold text-[#1C1917]">
-              {activeView.emptyCopy || "Nothing in this view."}
+              {regionFilter !== "all"
+                ? `No one here works in ${LAUNCH_REGION_SHORT_LABELS[regionFilter]} — yet.`
+                : activeView.emptyCopy || "Nothing in this view."}
             </p>
             <button
-              onClick={() => setSavedView("all")}
+              onClick={() => { setSavedView("all"); setRegionFilter("all"); }}
               className="mt-6 rounded-full border border-[#2D6350]/30 bg-white/70 px-5 py-2 font-sans text-xs font-semibold text-[#2D6350] transition-colors duration-150 hover:border-[#2D6350]/50 hover:bg-[#2D6350]/[0.06]"
             >
-              View all contacts
+              Clear filters
             </button>
           </div>
         ) : (
