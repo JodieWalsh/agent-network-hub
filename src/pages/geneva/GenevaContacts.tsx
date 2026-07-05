@@ -12,7 +12,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Landmark, Pencil } from "lucide-react";
+import { Plus, Landmark, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
@@ -204,15 +204,15 @@ export default function GenevaContacts() {
                   <li key={c.id}>
                     <button
                       data-contact-row={c.email}
-                      onClick={() => navigate(`/geneva/contacts/${c.id}/edit`)}
-                      aria-label={`Edit ${name}`}
+                      onClick={() => navigate(`/geneva/contacts/${c.id}`)}
+                      aria-label={`Open ${name}`}
                       className="group grid w-full grid-cols-1 gap-2 px-6 py-4 text-left transition-colors hover:bg-[#2D6350]/[0.03] lg:grid-cols-[2.4fr_1.2fr_1.4fr_1fr_1.2fr] lg:items-center lg:gap-4"
                     >
                       {/* Contact */}
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 font-serif text-lg font-semibold leading-snug text-[#1C1917]">
                           <span className="truncate">{name}</span>
-                          <Pencil size={12} className="shrink-0 text-[#8F4E58] opacity-0 transition-opacity group-hover:opacity-70" />
+                          <ChevronRight size={13} className="shrink-0 text-[#8F4E58] opacity-0 transition-opacity group-hover:opacity-70" />
                         </p>
                         <p className="truncate font-sans text-xs text-[#57534E]">{meta}</p>
                       </div>

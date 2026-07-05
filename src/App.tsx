@@ -23,6 +23,7 @@ import ClientForm from "./pages/ClientForm";
 import ClientDetail from "./pages/ClientDetail";
 import GenevaContacts from "./pages/geneva/GenevaContacts";
 import GenevaContactForm from "./pages/geneva/GenevaContactForm";
+import GenevaContactDetail from "./pages/geneva/GenevaContactDetail";
 import ClientBriefs from "./pages/ClientBriefs";
 import ClientBriefForm from "./pages/ClientBriefForm";
 import ClientBriefDetail from "./pages/ClientBriefDetail";
@@ -140,6 +141,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin" showForbidden>
                   <GenevaContactForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/geneva/contacts/:id"
+              element={
+                <ProtectedRoute requiredRole="admin" showForbidden>
+                  <GenevaContactDetail />
                 </ProtectedRoute>
               }
             />

@@ -31,6 +31,38 @@ export interface GenevaContact {
   updated_at: string;
 }
 
+export interface GenevaNote {
+  id: string;
+  contact_id: string;
+  body: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GenevaTask {
+  id: string;
+  contact_id: string;
+  title: string;
+  description: string | null;
+  owner_id: string | null;
+  due_at: string | null;
+  priority: string;
+  status: string;
+  completed_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface GenevaActivity {
+  id: string;
+  contact_id: string;
+  actor_user_id: string | null;
+  event_type: string;
+  event_context: Record<string, unknown> | null;
+  created_at: string;
+}
+
 /* ----------------------------------------------------------------- labels */
 
 export const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
