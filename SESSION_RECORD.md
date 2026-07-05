@@ -2,6 +2,24 @@
 
 ---
 
+# Session: July 6, 2026 — Launch-region capture + Mailchimp region targeting (complete end-to-end)
+**Session Focus:** the region-targeted launch pipeline — from a waitlist tap to a one-region launch email.
+
+## 🎯 Session Summary
+We can now answer "who works where?" from the moment a lead arrives, and email **exactly one launch region** from Mailchimp. The full workflow, every link verified: **waitlist region pick → Geneva contact (tokens stored + shown on the record) → subscribed-only push → Mailchimp `Region: …` tag → region-targeted launch email.**
+
+## ✅ Accomplished (with commits)
+- **`9ee4fb4` — Stage 1: launch-region capture on the waitlist.** A 7-option **controlled vocabulary** (`greater_sydney`, `greater_melbourne`, `seq`, `greater_perth`, `uk`, `us`, `other` — labels once in `src/lib/geneva.ts` `LAUNCH_REGION_LABELS`) as a warm optional chip multi-select ("Where do you work?"). Enforced in **three layers**: form chips (only valid tokens exist) → `geneva-lead-intake` whitelist/dedupe/cap-at-7 (a 13-item attack array reduced to exactly the 7 valid tokens in testing) → `geneva_contacts.launch_regions` DB CHECK via `<@` (unknown token rejected even at service level; migration `20260706020000`). **Accessible:** chips wrap cleanly at 375px AND at a large-font simulation (24px root — verified programmatically per-chip, no overflow). Regions display as MapPin chips on the Geneva contact record.
+- **`58b2797` — Piece 2: Mailchimp region tags.** `geneva-mailchimp-push` now also sends one **`Region: <short name>`** tag per captured region (e.g. `Region: Greater Sydney`) alongside "Geneva CRM" + the professional-type tag; the exact tag set is recorded in the `pushed_to_mailchimp` timeline entry. Short prefixed names chosen so region tags group together and segment cleanly in Mailchimp. Contacts without regions push with base tags only; the subscribed-only rule unchanged. **Verified into the real audience by Jodie** (saw the tags, deleted the test members). *Mailchimp recipe: segment where Tag = "Region: Greater Sydney" → launch email to one region.*
+- Honest test note: one verify scenario initially "failed" because **Mailchimp itself rejects `@example.com` addresses as fake** — external validation, not a bug; it usefully proved the error path (status recorded, clean admin diagnostics). Re-run with a deliverable address: clean pass. Demo data untouched throughout (24 contacts before and after every run).
+
+## ⏭️ Queued / parked
+- Small pieces: Geneva contacts-list **"filter by launch region"** chip + **"Demand by region"** command-centre widget.
+- **Stage 2 (waitlist regions → profile service areas)** stays deliberately parked with the **Work Regions** decision (`docs/WORK_REGIONS_SPEC.md`) — build the regions plumbing once.
+- Standing: wipe demo data after Dani reviews; questionnaire; Resend welcome email (domain verification first); Dani #24; mobile/large-font accessibility review.
+
+---
+
 # Session: July 5/6, 2026 — FINAL: 🎉 GENEVA v1 COMPLETE (all 4 phases)
 **Session Focus:** Phase 4 shipped — the growth command centre — closing out Geneva v1 three days after the first line of its roadmap.
 
