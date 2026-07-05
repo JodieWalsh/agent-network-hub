@@ -32,7 +32,7 @@ This session completed the full inspection marketplace workflow from job posting
 | `job_assigned` | Inspector | "The inspection is officially yours!" |
 | `report_submitted` | Job Poster | "Report Ready! Review & release payment." |
 | `report_approved` | Inspector | "Your report has been approved. Great job!" |
-| `payment_released` | Inspector | "Ka-ching! $250 received for 123 Main St" |
+| `payment_released` | Inspector | "Paid and on its way — $250 received for 123 Main St" |
 | `review_received` | Either | "5-Star Review! Marcus says: 'Excellent...'" |
 | `badge_earned` | User | "Achievement Unlocked! You earned 'First Inspection'" |
 | `job_expired` | Job Poster | "Your job has expired. You can repost it." |

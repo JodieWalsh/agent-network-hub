@@ -6,7 +6,7 @@
 ---
 
 ## 1. 🎨 Brand Kit — *build next*
-A single reference doc of the quiet-luxury brand: exact colours, fonts, voice/tone, and personality ("Spotlight/Ka-ching"), written **global-friendly** (US/UK expansion). One source of truth for every page, email, and social asset — CLAUDE.md's DESIGN VISION covers the app UI; this extends it to the whole brand.
+A single reference doc of the quiet-luxury brand: exact colours, fonts, voice/tone, and personality (the "Spotlight"-style signature moments), written **global-friendly** (US/UK expansion). ✅ **Built July 6 — see `docs/BRAND_KIT.md`.** One source of truth for every page, email, and social asset — CLAUDE.md's DESIGN VISION covers the app UI; this extends it to the whole brand.
 
 ## 2. 🗺️ Waitlist Regions
 Capture which regions a buyers agent **represents** (not just where they're based) on the waitlist form. Reuse the app's existing work-regions UI/pattern from user settings. Needs: the `geneva-lead-intake` edge function + `geneva_contacts` extended to store regions.

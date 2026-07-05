@@ -54,7 +54,7 @@ Examples from the live app: a contact record shows the name in Cormorant ("TEST 
 - **Gentle nudges, never alarms:** "This household has been in Discovery for 12 days — consider a next step."
 - **Honest, always:** no fabricated stats, testimonials, or usage claims — ever (this is both brand and consumer law; see the July 5 honesty pass).
 - **Warm success moments:** "You're on the list ✦ we'll be in touch."
-- **Playful signatures — the wink, used sparingly:** the marketplace board is **"Inspection Spotlights"**; the payment-released notification is **"Ka-ching!"**; earning a badge is **"Achievement Unlocked!"**. These moments of delight belong in *celebrations and named features* — never in errors, legal/consent copy, money-in-escrow states, or anything a stressed user reads.
+- **Playful signatures — the wink, used sparingly:** the marketplace board is **"Inspection Spotlights"**; earning a badge is **"Achievement Unlocked!"**. Money moments stay warm but composed — the payment-released notification is **"Paid and on its way"** (a July 6 tone decision: the earlier, cheekier title was retired as too cheap for the brand). Moments of delight belong in *celebrations and named features* — never in errors, legal/consent copy, money-in-escrow states, or anything a stressed user reads.
 - **Global and inclusive:** no country-specific idiom or claims ("Built in Australia") in shared copy; regions/currencies come from the user's context. Plain, welcoming English that reads the same in Sydney, Austin, or London.
 
 ## 5. UI Flavour — the recurring signatures
@@ -72,7 +72,7 @@ Examples from the live app: a contact record shows the name in Cormorant ("TEST 
 - Use `household_name` as the display source of truth wherever a Monaco household is shown.
 - Keep suggestions and automations **advisory** — the user always clicks; nothing changes state on its own.
 - Verify UI changes with puppeteer + a WCAG contrast audit before committing (zero issues is the bar).
-- Write global-friendly copy; celebrate quietly (✦, "Ka-ching!") in the right moments.
+- Write global-friendly copy; celebrate quietly (✦, "Achievement Unlocked!", "Paid and on its way") in the right moments.
 
 **DON'T**
 - Don't use fabricated stats, testimonials, or usage claims — anywhere, ever.

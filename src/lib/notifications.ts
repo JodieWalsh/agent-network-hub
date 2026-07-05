@@ -584,7 +584,7 @@ export async function notifyPaymentReleased(
   return createNotification({
     userId: inspectorId,
     type: 'payment_released',
-    title: 'Ka-ching!',
+    title: 'Paid and on its way',
     message: `$${amount.toLocaleString()} released from escrow for ${propertyAddress}. Great work!`,
     jobId,
   });
