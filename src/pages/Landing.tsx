@@ -27,16 +27,6 @@ function scrollTo(id: string) {
   if (el) el.scrollIntoView({ behavior: "smooth" });
 }
 
-function StarRow({ count = 5 }: { count?: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: count }).map((_, i) => (
-        <Star key={i} size={14} className="fill-[#B76E79] text-[#B76E79]" />
-      ))}
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Early-access waitlist capture (Landing-Page Lead Capture, Piece 2)
 //
@@ -370,6 +360,14 @@ export default function Landing() {
 
             {/* Desktop CTAs */}
             <div className="hidden md:flex items-center gap-3">
+              {/* Waitlist = softer, no-account ask (deep rose, distinct from
+                  the forest-green JOIN FREE sign-up) */}
+              <button
+                onClick={() => scrollTo("early-access")}
+                className="text-xs tracking-[0.15em] font-semibold bg-[#8F4E58] text-white rounded-full px-5 py-2 hover:bg-[#7A404A] transition-colors cursor-pointer"
+              >
+                JOIN WAITLIST
+              </button>
               <button
                 onClick={() => navigate("/auth")}
                 className="text-xs tracking-[0.15em] font-semibold text-[#2D6350] border border-[#2D6350]/30 rounded-full px-5 py-2 hover:border-[#2D6350] transition-colors cursor-pointer"
@@ -410,6 +408,12 @@ export default function Landing() {
                   {label}
                 </button>
               ))}
+              <button
+                onClick={() => { scrollTo("early-access"); setMobileOpen(false); }}
+                className="w-full text-xs tracking-[0.12em] font-semibold bg-[#8F4E58] text-white rounded-full py-2.5 cursor-pointer"
+              >
+                JOIN THE WAITLIST
+              </button>
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => navigate("/auth")}
@@ -479,6 +483,19 @@ export default function Landing() {
               SEE HOW IT WORKS
             </button>
           </div>
+
+          {/* Softer, no-account ask — scrolls to the Founding Cohort form */}
+          <button
+            id="hero-waitlist-link"
+            onClick={() => scrollTo("early-access")}
+            className="group text-sm text-[#D8C3B8] hover:text-white transition-colors cursor-pointer"
+          >
+            Not ready for an account yet?{" "}
+            <span className="font-semibold underline decoration-[#B76E79] underline-offset-4 group-hover:decoration-white">
+              Join the waitlist
+            </span>{" "}
+            — we'll save your place.
+          </button>
         </div>
 
         {/* Scroll cue */}
@@ -491,15 +508,18 @@ export default function Landing() {
         </button>
       </section>
 
-      {/* ── 3. SOCIAL PROOF BAR ─────────────────────────────────────────────── */}
+      {/* ── 3. LAUNCH STATUS BAR ────────────────────────────────────────────────
+           Pre-launch honesty: TRUE value statements only — no usage numbers,
+           no ratings, nothing country-specific. Real stats can return here
+           once real usage exists. */}
       <section id="social-proof" className="bg-[#F0F7F3] py-8 border-y border-[#2D6350]/8">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-wrap justify-center gap-x-12 gap-y-4">
             {[
-              { stat: "500+", label: "Buyers Agents" },
-              { stat: "2,400+", label: "Inspections Coordinated" },
-              { stat: "All States", label: "Across Australia" },
-              { stat: "4.9★", label: "Average Rating" },
+              { stat: "Launching Soon", label: "Founding Cohort Forming" },
+              { stat: "One Place", label: "Inspections · Briefs · Escrow" },
+              { stat: "Vetted", label: "Verified Professionals Only" },
+              { stat: "Protected", label: "Escrow-Secured Payments" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-3 text-center">
                 <div>
@@ -824,9 +844,12 @@ export default function Landing() {
           backgroundColor: "#2D6350",
         }}
       >
+        {/* Pre-launch honesty: no fabricated testimonials. This section returns
+            to real member quotes once real members exist. Until then: the
+            truthful founding-cohort promise, in the same styling. */}
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-3">
-            <p className="text-[#F6F1EA] text-xs tracking-[0.25em] font-semibold uppercase">What Agents Say</p>
+            <p className="text-[#F6F1EA] text-xs tracking-[0.25em] font-semibold uppercase">The Founding Cohort</p>
             <h2
               className="text-white"
               style={{
@@ -836,43 +859,58 @@ export default function Landing() {
                 letterSpacing: "-0.02em",
               }}
             >
-              Trusted by Professionals Across Australia
+              Built Alongside the Professionals Who'll Use It
             </h2>
+            <p className="text-white/60 text-sm max-w-xl mx-auto leading-relaxed">
+              We're opening the doors to a founding cohort before public launch —
+              buyers agents, inspectors, and advisers who want a hand in shaping
+              the platform they'll work in every day.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                quote: "I used to spend hours coordinating building inspectors by email. Now I post a job and get three competitive quotes within the day. It's completely changed how I manage due diligence.",
-                name: "Sarah Mitchell",
-                role: "Buyers Agent · Sydney, NSW",
-                rating: 5,
+                icon: <Shield size={20} className="text-[#B76E79]" />,
+                title: "First Through the Door",
+                desc: "Founding members get early access before public launch — set up your profile, explore the tools, and be established from day one.",
               },
               {
-                quote: "The professional directory alone is worth it. I've built relationships with conveyancers and mortgage brokers I never would have found otherwise. My clients notice the difference.",
-                name: "James Thornton",
-                role: "Buyers Agent · Melbourne, VIC",
-                rating: 5,
+                icon: <Star size={20} className="text-[#B76E79]" />,
+                title: "Founding-Member Pricing",
+                desc: "Join early and lock in founding-member rates when we launch — our thank-you for backing the platform before anyone else.",
               },
               {
-                quote: "Having inspection reports and escrow payments in one platform gives me and my clients complete peace of mind. The transparency is exactly what this industry needed.",
-                name: "Priya Sharma",
-                role: "Buyers Agent · Brisbane, QLD",
-                rating: 5,
+                icon: <Users size={20} className="text-[#B76E79]" />,
+                title: "A Direct Line to the Founders",
+                desc: "Your feedback goes straight to the people building the product. What the founding cohort asks for shapes what we build next.",
               },
-            ].map((t, i) => (
+            ].map((c, i) => (
               <div
                 key={i}
-                className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-8 space-y-5 hover:bg-white/15 transition-colors duration-300"
+                className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-8 space-y-4 hover:bg-white/15 transition-colors duration-300"
               >
-                <StarRow count={t.rating} />
-                <p className="text-white/90 leading-relaxed text-sm italic">"{t.quote}"</p>
-                <div className="pt-2 border-t border-white/15">
-                  <p className="text-white font-semibold text-sm">{t.name}</p>
-                  <p className="text-white/50 text-xs mt-0.5">{t.role}</p>
+                <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center">
+                  {c.icon}
                 </div>
+                <h3
+                  className="text-white"
+                  style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.35rem", fontWeight: 600 }}
+                >
+                  {c.title}
+                </h3>
+                <p className="text-white/80 leading-relaxed text-sm">{c.desc}</p>
               </div>
             ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <button
+              onClick={() => scrollTo("early-access")}
+              className="text-xs tracking-[0.18em] font-semibold text-[#F6F1EA] border border-[#B76E79]/60 rounded-full px-8 py-4 hover:border-[#B76E79] hover:bg-[#B76E79]/10 transition-all duration-200 cursor-pointer"
+            >
+              JOIN THE FOUNDING COHORT
+            </button>
           </div>
         </div>
       </section>
@@ -1000,10 +1038,11 @@ export default function Landing() {
               lineHeight: 1.15,
             }}
           >
-            Join the Network Buyers Agents Are Choosing
+            Join the Network Built for Buyers Agents
           </h2>
           <p className="text-white/70 leading-relaxed max-w-md mx-auto">
-            500+ buyers agents are already protecting their clients and growing their businesses on Buyers Agent Hub.
+            Be among the first through the door — founding access is opening soon,
+            and the professionals who join now will shape what we build.
           </p>
           <button
             onClick={() => navigate("/auth?mode=signup")}
