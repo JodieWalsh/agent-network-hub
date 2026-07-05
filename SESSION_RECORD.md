@@ -2,6 +2,27 @@
 
 ---
 
+# Session: July 5, 2026
+**Session Focus:** CRM Phase 4 COMPLETE — smart stage suggestions + close-reason capture shipped. **All four CRM phases are now done.**
+
+## 🎯 Session Summary
+The final Phase 4 piece landed: gentle, dismissible stage suggestions driven by the property pipeline, plus reason capture when closing a household as lost. Strictly advisory — a stage NEVER changes without the agent clicking accept. **Naming decision recorded this session: the buyers-agent-facing CRM is called "Monaco".** With this commit, Monaco Phases 1–4 are all complete and live.
+
+## ✅ Accomplished (with commits)
+- **`e0d2791` — smart stage suggestions + close-reason capture** (`src/pages/ClientDetail.tsx` + `stage-suggestions-verify.mjs`):
+  - **Suggestions (one at a time, purchased outranks offered):** property → *offered* suggests buying stage **Offer Submitted**; property → *purchased* suggests lifecycle **Closed Won** (and moves buying to **Under Contract** when it's below that). Soft rose banner under the stage badges with "Update stage" / "Dismiss". Only shown when genuinely relevant — never for closed/paused households, never proposing a backwards move. Dismissals are session state only (deliberately NOT localStorage — a fresh visit may suggest again).
+  - **Accepting reuses the real stage-change path**: `saveStage`'s core was extracted into a shared `changeStage()` (PATCH + entered-at reset + timeline entry) used by both the dialog and the banner — no duplicated logic.
+  - **Close-reason capture:** choosing **Closed Lost** in the stage dialog reveals a champagne inset — "Why was this lost? (optional)" with the hint "A reason helps you learn from this — even a few words is enough." Never blocks saving; saves to `lost_reason` and the reason appears in the timeline entry (stored in `event_context.reason`).
+  - Verified end-to-end on real data: suggestion appeared instantly after a UI status change, accept round-trips confirmed in the DB (both stages + timeline rows), dismiss/reload behaviour proven, reason saved + rendered on the timeline. Zero WCAG contrast issues across 11 audits desktop + 375px mobile, no h-scroll, tsc clean (0 errors project-wide — the 93 legacy errors are gone). Cleanup confirmed: all six CRM tables 0 rows, `properties` untouched at 15 rows with max updated_at unchanged.
+
+## ⏭️ Remaining Monaco (CRM) work
+- **Later phases:** email/calendar integration, unified comms timeline, AI summary + next-best-action (docs/CRM_ROADMAP.md).
+- **User-facing documentation + training** (roadmap 📚 section) — a deliverable, not an afterthought.
+- **Dani's subscription-gating decision (#23)** — gate point designed, not enforced.
+- **Known small follow-up:** no "pause" control exists in the UI yet, so `paused_reason` has no trigger point (the closed-lost reason path is live; a pause action on the client record would complete the pair).
+
+---
+
 # Session: July 4, 2026 (later that day — part 4)
 **Session Focus:** CRM Phase 4 begun — Saved Views + gentle stage-age "stalling" alerts shipped.
 

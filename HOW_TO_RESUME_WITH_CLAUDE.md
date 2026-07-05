@@ -8,7 +8,11 @@ This document explains how to start a new Claude session and get up to speed fas
 
 ---
 
-## 📍 WHERE WE ARE (July 4, 2026)
+## 📍 WHERE WE ARE (July 5, 2026)
+
+**Update (July 5, 2026): the CRM — now named "Monaco" — is COMPLETE through all four phases.** The final Phase 4 piece shipped in commit `e0d2791`: **smart stage suggestions** (property → offered suggests "Offer Submitted"; property → purchased suggests "Closed Won" + "Under Contract" — gentle, dismissible, one at a time, and a stage NEVER changes without the agent clicking accept) plus **close-reason capture** (choosing Closed Lost reveals an optional reason field saved to `lost_reason` and shown on the timeline). Remaining Monaco odds-and-ends: the later comms/AI phases (email/calendar/unified timeline/AI summaries per `docs/CRM_ROADMAP.md`), the **user-facing documentation + training** (roadmap 📚 section), **Dani's subscription-gating decision (#23)**, and one small follow-up — there is no "pause" control in the UI yet, so `paused_reason` has no trigger point.
+
+**NEXT MAJOR DIRECTION — "Geneva":** a separate, *internal* CRM for Buyers Agent Hub itself to manage its own buyers-agent customers (the platform's subscribers), which **Stripe will tie into**. Geneva is to be built AFTER Monaco (Monaco's build is now done; Geneva has no spec yet — start by writing one). Don't confuse the two: **Monaco = the CRM feature buyers agents use to manage their client households; Geneva = our internal customer CRM.**
 
 The entire app now uses the **quiet luxury design system** (see CLAUDE.md → DESIGN VISION). Dashboard, Auth, and every other page passed WCAG contrast audits. The legacy inspection routing bug is fixed. A full codebase audit lives at `docs/CODEBASE_AUDIT.md` — read it for the honest state of everything.
 
