@@ -2,6 +2,24 @@
 
 ---
 
+# Session: July 7, 2026 — 🎉 INTERVIEW FUNNEL COMPLETE (pieces 4 & 5)
+**Session Focus:** the final two Interview Funnel pieces — clean dashboard separation of the two populations, and the personalised intro-email drafting helper — closing out the whole funnel.
+
+## 🎯 Session Summary
+**The Interview Funnel (pieces 1–5) is now COMPLETE.** The command centre tells the truth about two populations (waitlist metrics no longer polluted by outreach contacts, plus a dedicated interview-funnel widget), and drafting the personalised intro email — step 1 of the funnel — is now a one-command Claude Code skill fed by Jodie's hand research.
+
+## ✅ Accomplished (with commits)
+- **`53ec90b` — piece 4, dashboard separation + widget**: the dashboard's waitlist funnel metrics are now scoped to **waitlist contacts only** (outreach contacts no longer distort them), and a small **interview-funnel widget** shows outreach contacts per interview stage.
+- **`e8d261a` — piece 5, the skill-first approach**: a **`.claude/skills/draft-intro-email/SKILL.md`** Claude Code skill that drafts on-brand personalised intro emails from research notes about one agent — Brand Kit voice; Jodie polishes and sends herself, one at a time, never bulk. **Decision: we chose the skill over an in-app composer** (no API key, no new UI; the draft happens where the research happens). **Claude-in-Chrome can gather the research per agent** before invoking the skill. An in-app AI composer remains a future option (would need an Anthropic API key setup).
+- 🎉 **The whole Interview Funnel (pieces 1–5) is complete** — label, compliance wall, stage pipeline, dashboard separation + widget, and the intro-email drafting skill.
+
+## ⏭️ Next
+- **TODO**: an "Outreach" Mailchimp tag when a consented outreach contact is pushed.
+- Standing queue: wipe demo data after Dani reviews; questionnaire; Resend welcome email (domain verification first); Dani #24; mobile/large-font accessibility review; full app audit.
+- **Parked (legal/Dani conversation)**: any auto-harvesting of agents' emails/phones — deliberately not built.
+
+---
+
 # Session: July 6/7, 2026 — Region UI + INTERVIEW FUNNEL pieces 1–3
 **Session Focus:** the launch-region UI landed on Geneva's list + dashboard, and the Interview Funnel — Geneva's high-touch outreach machine for treasured buyers agents — went from idea to a working 3-piece pipeline.
 
