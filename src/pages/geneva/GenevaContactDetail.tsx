@@ -775,7 +775,7 @@ export default function GenevaContactDetail() {
                         </p>
                         {detail && <p className="font-sans text-sm text-[#57534E]">{detail}</p>}
                         <p className="mt-0.5 font-sans text-xs tabular-nums text-[#57534E]">
-                          {adminName(a.actor_user_id)} · {formatDateTime(a.created_at)}
+                          {a.actor_user_id ? adminName(a.actor_user_id) : "Landing page"} · {formatDateTime(a.created_at)}
                         </p>
                       </li>
                     );
