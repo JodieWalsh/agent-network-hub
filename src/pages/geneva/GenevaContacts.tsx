@@ -24,6 +24,7 @@ import {
   CONSENT_LABELS,
   CONTACT_TYPE_LABELS,
   LAUNCH_REGION_SHORT_LABELS,
+  ALL_INTERVIEW_STAGE_LABELS,
   restHeaders,
 } from "@/lib/geneva";
 
@@ -489,9 +490,19 @@ export default function GenevaContacts() {
                       <div>
                         <TypeBadge type={c.professional_type} />
                       </div>
-                      {/* Stage + consent */}
+                      {/* Stage + consent — outreach rows show the INTERVIEW
+                          stage (their lifecycle value is dormant) */}
                       <div className="flex flex-wrap items-center gap-2 lg:flex-col lg:items-start lg:gap-1">
-                        <StageBadge stage={c.lifecycle_stage} />
+                        {c.contact_type === "interview_outreach" ? (
+                          <span
+                            data-interview-badge={c.email}
+                            className="inline-flex items-center rounded-md border border-[#B76E79]/30 bg-[#B76E79]/[0.09] px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58]"
+                          >
+                            {ALL_INTERVIEW_STAGE_LABELS[c.interview_stage || "to_contact"] || c.interview_stage}
+                          </span>
+                        ) : (
+                          <StageBadge stage={c.lifecycle_stage} />
+                        )}
                         <ConsentDot status={c.email_consent_status} />
                       </div>
                       {/* Source */}

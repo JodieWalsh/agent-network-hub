@@ -45,6 +45,9 @@ import {
   SOURCE_LABELS,
   CONSENT_LABELS,
   LAUNCH_REGION_LABELS,
+  INTERVIEW_STAGE_LABELS,
+  INTERVIEW_EXIT_LABELS,
+  ALL_INTERVIEW_STAGE_LABELS,
   restHeaders,
   writeGenevaActivity,
   pushToMailchimp,
@@ -56,6 +59,7 @@ const EVENT_LABELS: Record<string, string> = {
   contact_created: "Contact created",
   note_added: "Note added",
   stage_changed: "Stage changed",
+  interview_stage_changed: "Interview stage changed",
   task_created: "Task created",
   task_completed: "Task completed",
   source_captured: "Source captured",
@@ -66,6 +70,29 @@ const EVENT_LABELS: Record<string, string> = {
 };
 
 const TASK_PRIORITIES = ["low", "medium", "high", "urgent"];
+
+/** Interview Funnel: gentle advisory next-task suggestions per stage —
+ *  offered once, dismissible, NEVER automatic (the admin always clicks). */
+const INTERVIEW_TASK_SUGGESTIONS: Record<string, { prompt: string; taskTitle: string }> = {
+  interview_booked: {
+    prompt: "Interview booked ✦ add “Send interview questions + Zoom details” as a task?",
+    taskTitle: "Send interview questions + Zoom details",
+  },
+  questions_sent: {
+    prompt: "Questions sent ✦ add “Send reminder text a few hours before the interview” as a task?",
+    taskTitle: "Send reminder text a few hours before the interview",
+  },
+  interviewed: {
+    prompt: "Interview done ✦ add “Send thank-you email (clips coming soon)” as a task?",
+    taskTitle: "Send thank-you email (clips coming soon)",
+  },
+  thanked: {
+    prompt: "Thanked ✦ add “Send promotional clips for their own channels” as a task?",
+    taskTitle: "Send promotional clips for their own channels",
+  },
+};
+
+const INTERVIEW_STEP_ORDER = Object.keys(INTERVIEW_STAGE_LABELS);
 
 /* ------------------------------------------------------- shared visuals */
 
@@ -216,6 +243,10 @@ export default function GenevaContactDetail() {
   const [stageOpen, setStageOpen] = useState(false);
   const [stageChoice, setStageChoice] = useState("");
   const [stageReason, setStageReason] = useState("");
+  // Interview Funnel (outreach contacts only)
+  const [interviewOpen, setInterviewOpen] = useState(false);
+  const [interviewChoice, setInterviewChoice] = useState("");
+  const [dismissedSuggestion, setDismissedSuggestion] = useState<string | null>(null); // session-only
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -409,6 +440,50 @@ export default function GenevaContactDetail() {
     setStageOpen(true);
   };
 
+  /* ------------------- Interview Funnel stage change (outreach only) */
+
+  const openInterviewDialog = () => {
+    if (!contact) return;
+    setInterviewChoice(contact.interview_stage || "to_contact");
+    setInterviewOpen(true);
+  };
+
+  const saveInterviewStage = async () => {
+    if (!user || !id || !contact) return;
+    const from = contact.interview_stage;
+    const to = interviewChoice;
+    if (to === from) { setInterviewOpen(false); return; }
+    setBusy(true);
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/geneva_contacts?id=eq.${id}`, {
+        method: "PATCH",
+        headers: restHeaders(true),
+        body: JSON.stringify({
+          interview_stage: to,
+          interview_stage_entered_at: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await writeGenevaActivity(id, user.id, "interview_stage_changed", { from, to });
+      toast.success("Interview stage updated");
+      setInterviewOpen(false);
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not update the interview stage.");
+    } finally { setBusy(false); }
+  };
+
+  /** Accepting a suggestion just opens the normal Add Task dialog,
+   *  pre-filled — the admin still clicks Create. Never automatic. */
+  const acceptTaskSuggestion = (taskTitle: string, stageKey: string) => {
+    setTaskDraft({
+      title: taskTitle, description: "", owner_id: user?.id || "",
+      due_at: "", priority: "high", status: "open",
+    });
+    setDismissedSuggestion(stageKey);
+    setTaskOpen(true);
+  };
+
   const saveStage = async () => {
     if (!user || !id || !contact) return;
     const from = contact.lifecycle_stage;
@@ -471,6 +546,20 @@ export default function GenevaContactDetail() {
   const name = `${contact.first_name}${contact.last_name ? ` ${contact.last_name}` : ""}`;
   const lastActivity = activities[0]?.created_at || null;
 
+  /* --------------------- Interview Funnel derivations (outreach only) */
+  const isOutreach = contact.contact_type === "interview_outreach";
+  const interviewStage = contact.interview_stage || "to_contact";
+  const interviewStepIdx = INTERVIEW_STEP_ORDER.indexOf(interviewStage);
+  const interviewDays = (() => {
+    if (!contact.interview_stage_entered_at) return null;
+    return Math.max(0, Math.floor((Date.now() - new Date(contact.interview_stage_entered_at).getTime()) / 86400000));
+  })();
+  const interviewLabel = ALL_INTERVIEW_STAGE_LABELS[interviewStage] || interviewStage;
+  const taskSuggestion =
+    isOutreach && INTERVIEW_TASK_SUGGESTIONS[interviewStage] && dismissedSuggestion !== interviewStage
+      ? { ...INTERVIEW_TASK_SUGGESTIONS[interviewStage], stageKey: interviewStage }
+      : null;
+
   const timelineDetail = (a: GenevaActivity): string => {
     const ctx = a.event_context || {};
     switch (a.event_type) {
@@ -487,6 +576,10 @@ export default function GenevaContactDetail() {
         return `${CONSENT_LABELS[ctx.from as string] || ctx.from || "—"} → ${
           CONSENT_LABELS[ctx.to as string] || ctx.to || "—"
         }${ctx.evidence ? ` · “${ctx.evidence as string}”` : ""}`;
+      case "interview_stage_changed":
+        return `${ALL_INTERVIEW_STAGE_LABELS[ctx.from as string] || ctx.from || "Start"} → ${
+          ALL_INTERVIEW_STAGE_LABELS[ctx.to as string] || ctx.to || "—"
+        }`;
       default:
         return (
           (ctx.title as string) ||
@@ -591,7 +684,29 @@ export default function GenevaContactDetail() {
                     Outreach
                   </span>
                 )}
-                <StageBadge stage={contact.lifecycle_stage} onChange={openStageDialog} />
+                {/* Outreach contacts lead with the INTERVIEW pipeline; the
+                    lifecycle badge is waitlist-only. */}
+                {isOutreach ? (
+                  <button
+                    id="interview-stage-badge"
+                    onClick={openInterviewDialog}
+                    aria-label={`Change interview stage (currently ${interviewLabel})`}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-[#B76E79]/30 bg-[#B76E79]/[0.09] px-2.5 py-1 font-sans text-xs font-medium text-[#8F4E58] transition-colors hover:border-[#B76E79]/55 hover:bg-[#B76E79]/[0.16]"
+                  >
+                    {interviewStepIdx >= 0 && (
+                      <span className="tabular-nums opacity-70">{String(interviewStepIdx + 1).padStart(2, "0")}</span>
+                    )}
+                    {interviewLabel}
+                    <ChevronDown size={12} strokeWidth={2.25} className="opacity-70" />
+                  </button>
+                ) : (
+                  <StageBadge stage={contact.lifecycle_stage} onChange={openStageDialog} />
+                )}
+                {isOutreach && interviewDays !== null && (
+                  <span data-interview-days className="font-sans text-[11px] tabular-nums text-[#57534E]">
+                    in {interviewLabel} · {interviewDays} day{interviewDays === 1 ? "" : "s"}
+                  </span>
+                )}
                 <ConsentDot status={contact.email_consent_status} />
                 {contact.mailchimp_status === "synced" && contact.mailchimp_synced_at && (
                   <span
@@ -603,6 +718,43 @@ export default function GenevaContactDetail() {
                   </span>
                 )}
               </div>
+
+              {/* Gentle advisory next-task suggestion (Interview Funnel) —
+                  one at a time, dismissible, NEVER automatic */}
+              {taskSuggestion && (
+                <div
+                  data-task-suggestion={taskSuggestion.stageKey}
+                  className="mt-3 flex flex-col gap-3 rounded-xl border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.22] px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <p className="font-sans text-xs leading-relaxed text-[#57534E]">
+                    {taskSuggestion.prompt}
+                  </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      id="suggestion_add_task"
+                      onClick={() => acceptTaskSuggestion(taskSuggestion.taskTitle, taskSuggestion.stageKey)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#2D6350] px-3 py-1.5 font-sans text-xs font-semibold text-white transition-colors hover:bg-[#173A31]"
+                    >
+                      <Plus size={12} strokeWidth={2.5} /> Add task
+                    </button>
+                    <button
+                      id="suggestion_dismiss"
+                      onClick={() => setDismissedSuggestion(taskSuggestion.stageKey)}
+                      className="rounded-lg px-2.5 py-1.5 font-sans text-xs font-semibold text-[#57534E] transition-colors hover:bg-[#1C1917]/[0.05] hover:text-[#1C1917]"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Kept-on-list exit: the consent wall still applies */}
+              {isOutreach && contact.interview_stage === "declined_kept_on_list" && (
+                <p data-kept-on-list-note className="mt-3 font-sans text-xs leading-relaxed text-[#8F4E58]">
+                  They're happy to stay on the list — remember consent must still be
+                  recorded before any Mailchimp push.
+                </p>
+              )}
 
               {/* Launch regions (waitlist capture) — where they work */}
               {contact.launch_regions && contact.launch_regions.length > 0 && (
@@ -720,10 +872,12 @@ export default function GenevaContactDetail() {
                 <h2 className="mb-4 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-[#2D6350]">Contact Summary</h2>
                 <dl className="space-y-3">
                   {[
-                    ["Lifecycle stage", GENEVA_STAGE_LABELS[contact.lifecycle_stage] +
-                      (contact.lifecycle_stage === "inactive" && contact.inactive_reason
-                        ? ` · ${INACTIVE_REASON_LABELS[contact.inactive_reason] || contact.inactive_reason}`
-                        : "")],
+                    isOutreach
+                      ? ["Interview stage", `${interviewLabel}${interviewDays !== null ? ` · ${interviewDays} day${interviewDays === 1 ? "" : "s"} in stage` : ""}`]
+                      : ["Lifecycle stage", GENEVA_STAGE_LABELS[contact.lifecycle_stage] +
+                        (contact.lifecycle_stage === "inactive" && contact.inactive_reason
+                          ? ` · ${INACTIVE_REASON_LABELS[contact.inactive_reason] || contact.inactive_reason}`
+                          : "")],
                     ["Professional type", PROFESSIONAL_TYPE_LABELS[contact.professional_type] || contact.professional_type],
                     ["Owner", adminName(contact.owner_id)],
                     ["Source", contact.original_source
@@ -973,6 +1127,92 @@ export default function GenevaContactDetail() {
         <div className="mt-5 flex justify-end gap-3">
           <button onClick={() => setRescheduleTask(null)} className={cancelBtn}>Cancel</button>
           <button id="greschedule_save" onClick={applyReschedule} disabled={busy} className={primaryBtn}>Reschedule</button>
+        </div>
+      </Modal>
+
+      <Modal title="Interview Journey" open={interviewOpen} onClose={() => setInterviewOpen(false)}>
+        <p className="mb-4 font-sans text-sm text-[#57534E]">
+          Where is <span className="font-semibold text-[#1C1917]">{name}</span> on the
+          interview journey?
+        </p>
+        <div className="space-y-2">
+          {INTERVIEW_STEP_ORDER.map((token, i) => {
+            const isCurrent = token === (contact.interview_stage || "to_contact");
+            const isSelected = token === interviewChoice;
+            return (
+              <button
+                key={token}
+                id={`istage-opt-${token}`}
+                onClick={() => setInterviewChoice(token)}
+                className={
+                  isSelected
+                    ? "flex w-full items-center justify-between rounded-xl border border-[#2D6350]/50 bg-[#2D6350]/[0.07] px-4 py-2.5 text-left font-sans text-sm font-semibold text-[#173A31]"
+                    : "flex w-full items-center justify-between rounded-xl border border-[#1C1917]/10 bg-white/70 px-4 py-2.5 text-left font-sans text-sm font-medium text-[#1C1917] transition-colors hover:border-[#2D6350]/30 hover:bg-[#2D6350]/[0.04]"
+                }
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {INTERVIEW_STAGE_LABELS[token]}
+                  {isCurrent && (
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                      Current
+                    </span>
+                  )}
+                </span>
+                {isSelected && <Check size={15} strokeWidth={2.5} className="shrink-0 text-[#2D6350]" />}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mb-2 mt-5 font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+          If they said no
+        </p>
+        <div className="space-y-2">
+          {Object.entries(INTERVIEW_EXIT_LABELS).map(([token, label]) => {
+            const isCurrent = token === contact.interview_stage;
+            const isSelected = token === interviewChoice;
+            return (
+              <button
+                key={token}
+                id={`istage-opt-${token}`}
+                onClick={() => setInterviewChoice(token)}
+                className={
+                  isSelected
+                    ? "flex w-full items-center justify-between rounded-xl border border-[#8F4E58]/50 bg-[#B76E79]/[0.08] px-4 py-2.5 text-left font-sans text-sm font-semibold text-[#8F4E58]"
+                    : "flex w-full items-center justify-between rounded-xl border border-[#1C1917]/10 bg-white/60 px-4 py-2.5 text-left font-sans text-sm font-medium text-[#57534E] transition-colors hover:border-[#8F4E58]/35 hover:bg-[#B76E79]/[0.05]"
+                }
+              >
+                <span className="flex items-center gap-2">
+                  {label}
+                  {isCurrent && (
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                      Current
+                    </span>
+                  )}
+                </span>
+                {isSelected && <Check size={15} strokeWidth={2.5} className="shrink-0 text-[#8F4E58]" />}
+              </button>
+            );
+          })}
+        </div>
+        {interviewChoice === "declined_kept_on_list" && (
+          <p className="mt-3 font-sans text-xs leading-relaxed text-[#8F4E58]">
+            Staying on the list still needs recorded consent before any Mailchimp push
+            — capture it via Edit → consent when they confirm.
+          </p>
+        )}
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={() => setInterviewOpen(false)} className={cancelBtn}>Cancel</button>
+          <button
+            id="istage_save"
+            onClick={saveInterviewStage}
+            disabled={busy || interviewChoice === (contact.interview_stage || "to_contact")}
+            className={primaryBtn}
+          >
+            Update Stage
+          </button>
         </div>
       </Modal>
 

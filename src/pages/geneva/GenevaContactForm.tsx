@@ -193,8 +193,18 @@ export default function GenevaContactForm() {
 
     setBusy(true);
     try {
+      // Outreach contacts start their interview journey at 'to_contact'
+      // (app-level rule; also covers a waitlist→outreach type switch).
+      const startsInterviewJourney =
+        draft.contact_type === "interview_outreach" &&
+        (!original || original.contact_type !== "interview_outreach") &&
+        !original?.interview_stage;
+
       const payload = {
         contact_type: draft.contact_type,
+        ...(startsInterviewJourney
+          ? { interview_stage: "to_contact", interview_stage_entered_at: new Date().toISOString() }
+          : {}),
         first_name: draft.first_name.trim(),
         last_name: draft.last_name.trim() || null,
         email: draft.email.trim(),

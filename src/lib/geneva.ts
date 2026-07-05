@@ -29,6 +29,9 @@ export interface GenevaContact {
   /** 'waitlist' = opted in themselves; 'interview_outreach' = WE reached out —
    *  never Mailchimp-pushed without explicit RECORDED consent (AU Spam Act). */
   contact_type: string;
+  /** Interview Funnel stage — interview_outreach contacts only; NULL for waitlist. */
+  interview_stage: string | null;
+  interview_stage_entered_at: string | null;
   launch_regions: string[] | null; // tokens from LAUNCH_REGION_LABELS (waitlist multi-select)
   created_by: string | null; // null = created by the public landing-page intake
   mailchimp_status: string | null; // 'synced' | 'error' | null = never pushed
@@ -142,6 +145,31 @@ export const LAUNCH_REGION_SHORT_LABELS: Record<string, string> = {
 export const CONTACT_TYPE_LABELS: Record<string, string> = {
   waitlist: "Waitlist",
   interview_outreach: "Interview outreach",
+};
+
+/** Interview Funnel — the 7-step journey (9 stage tokens) in travel order.
+ *  Side exits live in INTERVIEW_EXIT_LABELS. Outreach contacts only. */
+export const INTERVIEW_STAGE_LABELS: Record<string, string> = {
+  to_contact: "To Contact",
+  intro_email_sent: "Intro Email Sent",
+  call_made: "Call Made",
+  interview_booked: "Interview Booked",
+  questions_sent: "Questions Sent",
+  reminder_sent: "Reminder Sent",
+  interviewed: "Interviewed",
+  thanked: "Thanked",
+  clips_sent: "Clips Sent",
+};
+
+export const INTERVIEW_EXIT_LABELS: Record<string, string> = {
+  declined: "Declined",
+  declined_kept_on_list: "Declined — keep on list",
+};
+
+/** Every interview-stage token → label (steps + exits), for badges/timeline. */
+export const ALL_INTERVIEW_STAGE_LABELS: Record<string, string> = {
+  ...INTERVIEW_STAGE_LABELS,
+  ...INTERVIEW_EXIT_LABELS,
 };
 
 export const CONSENT_LABELS: Record<string, string> = {
