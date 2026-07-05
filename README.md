@@ -8,6 +8,7 @@ Before making changes, please read the documentation:
 
 | Document | Description |
 |----------|-------------|
+| [Brand Kit](docs/BRAND_KIT.md) | The quiet-luxury brand reference — colours, type, voice, UI signatures |
 | [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md) | Architecture, features, database, key files reference |
 | [Key Features](docs/KEY_FEATURES.md) | Platform features and how they work |
 | [Dani's Approval Checklist](docs/DANI_APPROVAL_CHECKLIST.md) | Business decisions needing review |
