@@ -90,6 +90,17 @@ Geneva is **Buyers Agent Hub's OWN internal growth command-centre** — for Jodi
 
 ---
 
+## Interview Funnel (post-v1 — pieces 1–3 ✅ DONE, July 6/7 2026)
+
+The high-touch, relationship-based outreach process for treasured buyers agents (each worth $1,000+/yr): personalised intro email → call to book → questions + Zoom confirmation → reminder text → recorded interview (YouTube/socials content) → thank-you → promo clips. Two populations, different compliance rules — **waitlist** (opted in; Mailchimp-eligible once subscribed) vs **interview_outreach** (we reached out; NEVER pushed without explicit RECORDED consent — AU Spam Act).
+
+- ✅ **Piece 1 (`3a2ea21`)** — `contact_type` label ('waitlist' | 'interview_outreach', default waitlist, CHECK; existing rows + public intake safe by default).
+- ✅ **Piece 2 (`024cb6b`)** — Outreach chip (record + list), form type picker with not-opted-in note, Type filter, and the **consent-evidence compliance wall**: outreach → subscribed requires a "how was consent obtained" note written as a `consent_changed` activity on the append-only timeline; `geneva-mailchimp-push` refuses outreach contacts without that entry. A bare dropdown flip cannot push.
+- ✅ **Piece 3 (`42582c6`)** — the `interview_stage` pipeline (11 tokens: to_contact → intro_email_sent → call_made → interview_booked → questions_sent → reminder_sent → interviewed → thanked → clips_sent, + declined / declined_kept_on_list): numbered stage picker replaces the lifecycle badge on outreach records only, timeline-logged moves, days-in-stage, dismissible advisory task suggestions (never automatic). Waitlist contacts completely unaffected.
+- ⏳ **Piece 4** — keep outreach OUT of the dashboard's waitlist funnel metrics + a small interview-funnel widget (contacts per interview stage).
+- ⏳ **Piece 5** — personalised-email drafting helper (Jodie's research in → on-brand draft out, Brand Kit voice); templates for steps 1/3/6/7. TODO alongside: an "Outreach" Mailchimp tag on consented pushes.
+- 🔴 **PARKED (legal/Dani conversation)** — any auto-harvesting/web-scraping of agents' personal emails/phones. Deliberately NOT built; hand-research fits the treasured-individual ethos anyway.
+
 ## Landing-Page Lead Capture (future phase — Jodie is keen; early post-v1 candidate)
 
 Four pieces that work together as **ONE cohesive feature**: interested professionals land on the public site, tell us who they are, arrive in Geneva already attributed to their source, and get a warm hello — no manual entry, no one slipping through.

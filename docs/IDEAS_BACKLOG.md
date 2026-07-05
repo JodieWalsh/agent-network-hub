@@ -11,7 +11,7 @@ A single reference doc of the quiet-luxury brand: exact colours, fonts, voice/to
 ## 2. 🗺️ Waitlist Regions
 Capture which regions a buyers agent **represents** (not just where they're based) on the waitlist form. ✅ **Stage 1 built July 6** — controlled 7-token launch-region multi-select on the waitlist (`geneva_contacts.launch_regions`, migration `20260706020000`), displayed on the Geneva contact record. **Still to come:**
 - ✅ **Region-based launch targeting is LIVE end-to-end (July 6)**: the Mailchimp push now tags every contact with `Region: Greater Sydney` / `Region: United Kingdom` etc. (plus Geneva CRM + professional type). **In Mailchimp: create a segment where Tag = "Region: Greater Sydney" to send a launch email to exactly one region.** Verified into the real audience by Jodie.
-- **Geneva contacts-list "filter by launch region"** (answer "who are the Buyers Agents in Greater Sydney?") + a **"Demand by region" dashboard widget** on the command centre — still to build, small and clean now that tokens are controlled.
+- ✅ **Region filter + "Demand by region" widget built (July 6/7, commit `a285a0b`)** — deep-rose region chips on the contacts list (combine with saved views, deep-linkable) and the command-centre widget with bars that click through to the filtered list.
 - **Stage 2 — flow-through to profile service areas** at signup (suggest-and-confirm in onboarding, matched by email): deliberately deferred to the **Work Regions** decision (`docs/WORK_REGIONS_SPEC.md`) so the regions plumbing is built once, not twice.
 
 ## 3. 💌 Welcome Email

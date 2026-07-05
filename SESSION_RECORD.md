@@ -2,6 +2,26 @@
 
 ---
 
+# Session: July 6/7, 2026 — Region UI + INTERVIEW FUNNEL pieces 1–3
+**Session Focus:** the launch-region UI landed on Geneva's list + dashboard, and the Interview Funnel — Geneva's high-touch outreach machine for treasured buyers agents — went from idea to a working 3-piece pipeline.
+
+## 🎯 Session Summary
+Geneva now holds **two populations with different compliance rules**, cleanly separated: **waitlist** (opted in themselves — completely unaffected by everything below, verified pixel-identical) and **interview_outreach** (we reached out — walled off from Mailchimp until explicit consent is RECORDED on the tamper-resistant timeline). Outreach contacts travel a 7-step interview journey with gentle, never-automatic task nudges.
+
+## ✅ Accomplished (with commits)
+- **`a285a0b` — launch-region UI**: deep-rose **Region filter chips** on the contacts list (live counts, combines with saved views, `?region=` deep-links, calm empty state + Clear filters) and the **Demand-by-Region widget** on the command centre (bars sorted highest-first, counts DB-verified, "No region set: N" line, bars click through to the filtered list). *Demo-data note:* the 24 demo contacts were enriched with city-consistent `launch_regions` (field-level only, 21 with regions / 3 deliberately without; count stayed 24; seed script updated to match) — approved by Jodie as making Dani's demo better.
+- **`3a2ea21` — Interview Funnel piece 1, the label**: `contact_type` `'waitlist' | 'interview_outreach'` (NOT NULL DEFAULT 'waitlist', CHECK; all existing rows auto-backfilled waitlist; public intake untouched — form signups default waitlist by DB default).
+- **`024cb6b` — piece 2, surfacing + the compliance wall**: champagne **"Outreach" chip** on record + list rows; **Contact Type picker** on the form with a gentle not-opted-in note; **Type filter** (appears only when outreach contacts exist). **The wall:** marking an outreach contact `subscribed` REQUIRES a "how was consent obtained" note → written as a `consent_changed` activity (`evidence`, `explicit: true`) on the **append-only** timeline (no UPDATE/DELETE policies = tamper-resistant Spam-Act paper trail); `geneva-mailchimp-push` refuses `interview_outreach` without that entry (409 `consent_not_recorded`) — a bare dropdown flip cannot push. Waitlist push behaviour unchanged (verified).
+- **`42582c6` — piece 3, the pipeline**: `interview_stage` (11-token CHECK; migration `20260707020000`) — `to_contact → intro_email_sent → call_made → interview_booked → questions_sent → reminder_sent → interviewed → thanked → clips_sent` + exits `declined` / `declined_kept_on_list`. Outreach records **lead with the numbered interview badge** (lifecycle badge hidden for them only), frosted "Interview Journey" picker (numbered steps + "If they said no" section), every move timeline-logged with days-in-stage, and **dismissible advisory task suggestions** at the four natural moments (booked→questions, questions→reminder, interviewed→thank-you, thanked→clips) — "Add task" pre-fills the normal dialog, the admin always clicks Create. `declined_kept_on_list` shows the consent-wall reminder. List Stage column shows the interview badge for outreach rows; the form starts outreach contacts at `to_contact`.
+- All verified end-to-end against live data with zero WCAG contrast issues, non-admins blocked, and **every geneva_* count restored exactly after each run** (24/6/7/55).
+
+## ⏭️ Next
+- **Interview Funnel piece 4**: keep outreach OUT of the dashboard's waitlist funnel metrics + a small interview-funnel widget. **Piece 5**: personalised-email drafting helper. **TODO**: an "Outreach" Mailchimp tag when a consented outreach contact is pushed.
+- **Parked (legal/Dani conversation)**: any auto-harvesting of agents' emails/phones — deliberately not built.
+- Standing queue: wipe demo data after Dani reviews; questionnaire; Resend welcome email (domain verification first); Dani #24; mobile/large-font accessibility review; full app audit.
+
+---
+
 # Session: July 6, 2026 — Launch-region capture + Mailchimp region targeting (complete end-to-end)
 **Session Focus:** the region-targeted launch pipeline — from a waitlist tap to a one-region launch email.
 
