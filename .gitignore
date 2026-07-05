@@ -34,3 +34,13 @@ verify-*.mjs
 fix-*.sql
 # Environment variables - never commit these!
 .env
+
+# Python bytecode (skill scripts) - never version these
+__pycache__/
+*.pyc
+
+# Local audit/verify output (puppeteer screenshots)
+screenshots/
+
+# Claude Code local-only settings (per-machine, not shared)
+.claude/settings.local.json
