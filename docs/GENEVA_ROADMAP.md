@@ -77,16 +77,25 @@ Geneva is **Buyers Agent Hub's OWN internal growth command-centre** — for Jodi
 
 - Two-way Mailchimp sync (opens, clicks, unsubscribes back into the timeline)
 - Full field-level audit log
-- UTM / first-touch / latest-touch attribution fields
+- UTM / first-touch / latest-touch attribution fields *(UTM capture becomes relevant in the Landing-Page Lead Capture phase below)*
 - Bulk actions
 - CSV export
 - Questionnaire automation
 - Duplicate merge tools
 - Roles beyond admin/editor
 - **Stripe/payments tie-in** — buyers agents paying BAH will eventually flow into Geneva (the subscription webhook → `profiles` pipeline documented in `docs/STRIPE_STATUS.md` §6 is exactly the data Geneva will sit on top of) — but NOT in this v1.
-- **Landing-page lead capture** — a public waitlist/contact form on the app's landing page that creates a `geneva_contacts` row directly (with source auto-captured), so interested professionals flow straight into Geneva. **Jodie is keen on this — strong candidate for an early post-v1 phase.** (Build note: a public form can't use the admin-only RLS path — it will need a SECURITY DEFINER RPC or edge function, plus consent capture at the form.)
+- **Landing-page lead capture** — see the dedicated future-phase section below (form + questionnaire + UTM + welcome email as ONE cohesive feature).
 
 ---
+
+## Landing-Page Lead Capture (future phase — Jodie is keen; early post-v1 candidate)
+
+Four pieces that work together as **ONE cohesive feature**: interested professionals land on the public site, tell us who they are, arrive in Geneva already attributed to their source, and get a warm hello — no manual entry, no one slipping through.
+
+1. **Public email/contact capture form** on the app's landing page — a public waitlist form that creates a `geneva_contacts` row directly. *Build constraint (already flagged):* public writes can't go through Geneva's admin-only RLS, so this needs a **SECURITY DEFINER RPC or an edge function**, with **consent captured at the form** (only explicit opt-in becomes `subscribed` — the firm Mailchimp rule applies from the moment of capture).
+2. **Short questionnaire** — after (or as part of) the capture form, a few friendly OPTIONAL questions to qualify/segment the lead: professional_type, region/market, team size, current tools, biggest pain point, interest in early access/founding cohort, willingness to speak with Dani. Answers land on the contact (and/or a linked questionnaire record) and appear in the Geneva activity timeline. *(Matches the "questionnaire support" section of the original Geneva spec.)*
+3. **Source / UTM tracking** — the capture form records where the lead came from, so links shared on LinkedIn, Instagram, etc. are attributable. Capture `original_source` + `source_detail`, and support UTM params (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`) from the landing URL, mapped into the contact's source fields. *(This is the fuller attribution from the spec that was deferred from v1 — it becomes relevant here.)*
+4. **Welcome email** — on signup, send a quick friendly welcome/confirmation email via **Resend** (the app's existing email tool, from `hello@buyersagenthub.com`), respecting consent. Log a `welcome_email_sent` event to the contact's timeline. *(Note: `buyersagenthub.com` is not yet verified in Resend — emails currently send from `onboarding@resend.dev`; domain verification is a prerequisite for the branded from-address.)*
 
 ## Open decisions — status (updated July 5, 2026)
 
