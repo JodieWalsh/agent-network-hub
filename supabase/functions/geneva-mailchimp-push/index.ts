@@ -124,7 +124,7 @@ serve(async (req: Request) => {
 
     const cRes = await svc(
       'GET',
-      `geneva_contacts?id=eq.${encodeURIComponent(contactId)}&select=id,email,first_name,last_name,professional_type,region_city,original_source,email_consent_status,launch_regions`
+      `geneva_contacts?id=eq.${encodeURIComponent(contactId)}&select=id,email,first_name,last_name,professional_type,region_city,original_source,email_consent_status,launch_regions,contact_type`
     );
     const [contact] = cRes.ok ? await cRes.json() : [];
     if (!contact) return respond(404, { ok: false });
@@ -132,6 +132,22 @@ serve(async (req: Request) => {
     if (contact.email_consent_status !== 'subscribed') {
       // Polite refusal — the firm rule. No Mailchimp call is ever made.
       return respond(409, { ok: false, reason: 'not_subscribed' });
+    }
+
+    // INTERVIEW-OUTREACH COMPLIANCE WALL (AU Spam Act): we contacted them,
+    // so 'subscribed' alone is NOT enough — there must be a RECORDED
+    // consent_changed entry on the append-only timeline (written by the
+    // edit form's required "how was consent obtained" evidence). A bare
+    // dropdown flip leaves no such entry and therefore cannot push.
+    if (contact.contact_type === 'interview_outreach') {
+      const evRes = await svc(
+        'GET',
+        `geneva_activities?contact_id=eq.${contact.id}&event_type=eq.consent_changed&event_context->>to=eq.subscribed&select=id&limit=1`
+      );
+      const evidence = evRes.ok ? await evRes.json() : [];
+      if (evidence.length === 0) {
+        return respond(409, { ok: false, reason: 'consent_not_recorded' });
+      }
     }
 
     // --- 3. Upsert into the audience ---

@@ -26,6 +26,9 @@ export interface GenevaContact {
   source_detail: string | null;
   email_consent_status: string;
   notes: string | null;
+  /** 'waitlist' = opted in themselves; 'interview_outreach' = WE reached out —
+   *  never Mailchimp-pushed without explicit RECORDED consent (AU Spam Act). */
+  contact_type: string;
   launch_regions: string[] | null; // tokens from LAUNCH_REGION_LABELS (waitlist multi-select)
   created_by: string | null; // null = created by the public landing-page intake
   mailchimp_status: string | null; // 'synced' | 'error' | null = never pushed
@@ -134,6 +137,11 @@ export const LAUNCH_REGION_SHORT_LABELS: Record<string, string> = {
   uk: "United Kingdom",
   us: "United States",
   other: "Other",
+};
+
+export const CONTACT_TYPE_LABELS: Record<string, string> = {
+  waitlist: "Waitlist",
+  interview_outreach: "Interview outreach",
 };
 
 export const CONSENT_LABELS: Record<string, string> = {

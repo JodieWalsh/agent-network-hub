@@ -27,6 +27,7 @@ import {
   INACTIVE_REASON_LABELS,
   SOURCE_LABELS,
   CONSENT_LABELS,
+  CONTACT_TYPE_LABELS,
   restHeaders,
   writeGenevaActivity,
 } from "@/lib/geneva";
@@ -63,6 +64,8 @@ interface Draft {
   original_source: string;
   source_detail: string;
   email_consent_status: string;
+  contact_type: string;
+  consent_evidence: string; // outreach → subscribed only; written to the timeline
   notes: string;
 }
 
@@ -80,6 +83,8 @@ const emptyDraft = (ownerId: string): Draft => ({
   original_source: "",
   source_detail: "",
   email_consent_status: "pending",
+  contact_type: "waitlist",
+  consent_evidence: "",
   notes: "",
 });
 
@@ -134,6 +139,8 @@ export default function GenevaContactForm() {
               original_source: row.original_source || "",
               source_detail: row.source_detail || "",
               email_consent_status: row.email_consent_status,
+              contact_type: row.contact_type || "waitlist",
+              consent_evidence: "",
               notes: row.notes || "",
             });
           }
@@ -158,6 +165,13 @@ export default function GenevaContactForm() {
     });
   };
 
+  /** Outreach contacts becoming 'subscribed' need consent evidence — the
+   *  transition writes the timeline paper trail the Mailchimp push demands. */
+  const needsConsentEvidence = (d: Draft) =>
+    d.contact_type === "interview_outreach" &&
+    d.email_consent_status === "subscribed" &&
+    (!original || original.email_consent_status !== "subscribed");
+
   const validate = (d: Draft): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (!d.first_name.trim()) errs.first_name = "A first name is required.";
@@ -165,6 +179,9 @@ export default function GenevaContactForm() {
     else if (!EMAIL_RE.test(d.email.trim())) errs.email = "That doesn't look like an email address.";
     if (d.lifecycle_stage === "inactive" && !d.inactive_reason)
       errs.inactive_reason = "Choose why this contact is inactive — it keeps the book honest.";
+    if (needsConsentEvidence(d) && !d.consent_evidence.trim())
+      errs.consent_evidence =
+        "Outreach contacts need recorded consent — note how it was obtained (e.g. \"confirmed by email reply, 7 Jul\").";
     return errs;
   };
 
@@ -177,6 +194,7 @@ export default function GenevaContactForm() {
     setBusy(true);
     try {
       const payload = {
+        contact_type: draft.contact_type,
         first_name: draft.first_name.trim(),
         last_name: draft.last_name.trim() || null,
         email: draft.email.trim(),
@@ -191,6 +209,19 @@ export default function GenevaContactForm() {
         source_detail: draft.source_detail.trim() || null,
         email_consent_status: draft.email_consent_status,
         notes: draft.notes.trim() || null,
+      };
+
+      // The Spam-Act paper trail: outreach → subscribed writes an explicit
+      // consent_changed entry (append-only timeline) that the Mailchimp
+      // push REQUIRES before an outreach contact can ever be pushed.
+      const writeConsentEvidence = async (contactId: string) => {
+        if (!needsConsentEvidence(draft)) return;
+        await writeGenevaActivity(contactId, user.id, "consent_changed", {
+          from: original?.email_consent_status ?? "pending",
+          to: "subscribed",
+          evidence: draft.consent_evidence.trim(),
+          explicit: true,
+        });
       };
 
       if (isEdit && original) {
@@ -211,6 +242,7 @@ export default function GenevaContactForm() {
             ...(payload.inactive_reason ? { reason: payload.inactive_reason } : {}),
           });
         }
+        await writeConsentEvidence(original.id);
         toast.success("Contact updated");
       } else {
         const res = await fetch(`${supabaseUrl}/rest/v1/geneva_contacts`, {
@@ -227,7 +259,9 @@ export default function GenevaContactForm() {
         await writeGenevaActivity(row.id, user.id, "contact_created", {
           professional_type: payload.professional_type,
           original_source: payload.original_source,
+          ...(payload.contact_type === "interview_outreach" ? { contact_type: "interview_outreach" } : {}),
         });
+        await writeConsentEvidence(row.id);
         toast.success("Contact added");
       }
       navigate("/geneva/contacts");
@@ -316,6 +350,21 @@ export default function GenevaContactForm() {
                 onChange={(e) => set("region_city", e.target.value)}
                 placeholder="e.g. Brisbane" className={inputClass} />
             </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="gc_contact_type" className={labelClass}>Contact Type</label>
+              <select id="gc_contact_type" value={draft.contact_type}
+                onChange={(e) => set("contact_type", e.target.value)} className={inputClass}>
+                {Object.entries(CONTACT_TYPE_LABELS).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+              {draft.contact_type === "interview_outreach" && (
+                <p data-outreach-note className="mt-1.5 font-sans text-xs leading-relaxed text-[#8F4E58]">
+                  Outreach contacts haven't opted in — they won't be emailed or pushed
+                  to Mailchimp until consent is explicitly recorded here.
+                </p>
+              )}
+            </div>
             <div>
               <label htmlFor="gc_professional_type" className={labelClass}>Professional Type</label>
               <select id="gc_professional_type" value={draft.professional_type}
@@ -356,6 +405,26 @@ export default function GenevaContactForm() {
                 Only subscribed contacts are ever pushed to Mailchimp.
               </p>
             </div>
+            {needsConsentEvidence(draft) && (
+              <div className="sm:col-span-2 rounded-xl border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.18] p-4">
+                <label htmlFor="gc_consent_evidence" className={labelClass}>
+                  How was consent obtained? *
+                </label>
+                <input
+                  id="gc_consent_evidence"
+                  type="text"
+                  value={draft.consent_evidence}
+                  onChange={(e) => set("consent_evidence", e.target.value)}
+                  placeholder='e.g. "Replied yes to our intro email, 7 Jul" or "Asked to stay on the list during our call"'
+                  className={inputClass}
+                />
+                {fieldError("consent_evidence")}
+                <p className="mt-1.5 font-sans text-xs text-[#8F4E58]">
+                  This is written to the contact's timeline as the consent record —
+                  the Mailchimp push requires it for outreach contacts.
+                </p>
+              </div>
+            )}
             {draft.lifecycle_stage === "inactive" && (
               <div className="sm:col-span-2">
                 <label htmlFor="gc_inactive_reason" className={labelClass}>Inactive Reason *</label>

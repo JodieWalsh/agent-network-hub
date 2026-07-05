@@ -390,6 +390,10 @@ export default function GenevaContactDetail() {
         await loadAll();
       } else if (res.reason === "not_subscribed") {
         toast.error("Only subscribed contacts can be pushed to Mailchimp.");
+      } else if (res.reason === "consent_not_recorded") {
+        toast.error(
+          "This outreach contact's consent isn't recorded yet — edit the contact and note how consent was obtained first."
+        );
       } else {
         toast.error("Mailchimp push didn't go through — try again shortly.");
       }
@@ -479,6 +483,10 @@ export default function GenevaContactDetail() {
         return `From ${GENEVA_STAGE_LABELS[ctx.from as string] || ctx.from || "—"} to ${
           GENEVA_STAGE_LABELS[ctx.to as string] || ctx.to || "—"
         }${ctx.reason ? ` · ${INACTIVE_REASON_LABELS[ctx.reason as string] || ctx.reason}` : ""}`;
+      case "consent_changed":
+        return `${CONSENT_LABELS[ctx.from as string] || ctx.from || "—"} → ${
+          CONSENT_LABELS[ctx.to as string] || ctx.to || "—"
+        }${ctx.evidence ? ` · “${ctx.evidence as string}”` : ""}`;
       default:
         return (
           (ctx.title as string) ||
@@ -574,6 +582,15 @@ export default function GenevaContactDetail() {
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <TypeBadge type={contact.professional_type} />
+                {contact.contact_type === "interview_outreach" && (
+                  <span
+                    data-outreach-chip
+                    title="We reached out to this contact — never emailed without recorded consent"
+                    className="inline-flex items-center rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-wider text-[#8F4E58]"
+                  >
+                    Outreach
+                  </span>
+                )}
                 <StageBadge stage={contact.lifecycle_stage} onChange={openStageDialog} />
                 <ConsentDot status={contact.email_consent_status} />
                 {contact.mailchimp_status === "synced" && contact.mailchimp_synced_at && (

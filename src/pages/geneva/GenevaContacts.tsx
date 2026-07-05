@@ -22,6 +22,7 @@ import {
   GENEVA_STAGE_LABELS,
   SOURCE_LABELS,
   CONSENT_LABELS,
+  CONTACT_TYPE_LABELS,
   LAUNCH_REGION_SHORT_LABELS,
   restHeaders,
 } from "@/lib/geneva";
@@ -163,6 +164,11 @@ export default function GenevaContacts() {
     const r = searchParams.get("region");
     return r && LAUNCH_REGION_SHORT_LABELS[r] ? r : "all";
   });
+  // Waitlist vs interview-outreach — the two populations viewed separately.
+  const [typeFilter, setTypeFilter] = useState<string>(() => {
+    const t = searchParams.get("type");
+    return t && CONTACT_TYPE_LABELS[t] ? t : "all";
+  });
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -220,13 +226,27 @@ export default function GenevaContacts() {
   const matchesRegion = (c: GenevaContact, token: string) =>
     token === "all" || (c.launch_regions ?? []).includes(token);
 
+  const matchesType = (c: GenevaContact, t: string) =>
+    t === "all" || (c.contact_type || "waitlist") === t;
+
   const filteredContacts = useMemo(
     () =>
       contacts.filter(
-        (c) => activeView.matches(c, viewCtx) && matchesRegion(c, regionFilter)
+        (c) =>
+          activeView.matches(c, viewCtx) &&
+          matchesRegion(c, regionFilter) &&
+          matchesType(c, typeFilter)
       ),
-    [contacts, activeView, viewCtx, regionFilter]
+    [contacts, activeView, viewCtx, regionFilter, typeFilter]
   );
+
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: contacts.length };
+    for (const t of Object.keys(CONTACT_TYPE_LABELS)) {
+      counts[t] = contacts.filter((c) => matchesType(c, t)).length;
+    }
+    return counts;
+  }, [contacts]);
 
   // Region-chip counts reflect the ACTIVE saved view, so the two filter rows
   // always agree with each other and with the list below them.
@@ -304,6 +324,43 @@ export default function GenevaContacts() {
                     }
                   >
                     {viewCounts[v.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Contact-type filter — waitlist vs interview-outreach, champagne
+            accent (the compliance dimension gets its own quiet layer) */}
+        {contacts.length > 0 && !loading && typeCounts.interview_outreach > 0 && (
+          <div role="group" aria-label="Filter by contact type" className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+              Type
+            </span>
+            {[["all", "All types"], ...Object.entries(CONTACT_TYPE_LABELS)].map(([token, label]) => {
+              const isActive = typeFilter === token;
+              return (
+                <button
+                  key={token}
+                  id={`gtype-${token}`}
+                  onClick={() => setTypeFilter(token)}
+                  aria-pressed={isActive}
+                  className={
+                    isActive
+                      ? "inline-flex items-center gap-2 rounded-full bg-[#57534E] px-3.5 py-1.5 font-sans text-xs font-semibold text-white shadow-[0_6px_14px_-4px_rgba(87,83,78,0.4)]"
+                      : "inline-flex items-center gap-2 rounded-full border border-[#1C1917]/12 bg-white/70 px-3.5 py-1.5 font-sans text-xs font-medium text-[#57534E] backdrop-blur-sm transition-colors duration-150 hover:border-[#57534E]/40 hover:text-[#1C1917]"
+                  }
+                >
+                  {label}
+                  <span
+                    className={
+                      isActive
+                        ? "rounded-full bg-white/[0.18] px-1.5 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
+                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                    }
+                  >
+                    {typeCounts[token]}
                   </span>
                 </button>
               );
@@ -419,6 +476,11 @@ export default function GenevaContacts() {
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 font-serif text-lg font-semibold leading-snug text-[#1C1917]">
                           <span className="truncate">{name}</span>
+                          {c.contact_type === "interview_outreach" && (
+                            <span className="shrink-0 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]">
+                              Outreach
+                            </span>
+                          )}
                           <ChevronRight size={13} className="shrink-0 text-[#8F4E58] opacity-0 transition-opacity group-hover:opacity-70" />
                         </p>
                         <p className="truncate font-sans text-xs text-[#57534E]">{meta}</p>
