@@ -15,7 +15,7 @@ Capture which regions a buyers agent **represents** (not just where they're base
 - **Stage 2 — flow-through to profile service areas** at signup (suggest-and-confirm in onboarding, matched by email): deliberately deferred to the **Work Regions** decision (`docs/WORK_REGIONS_SPEC.md`) so the regions plumbing is built once, not twice.
 
 ## 3. 💌 Welcome Email
-Instant on-brand confirmation via **Resend** when someone joins the waitlist (lead-capture piece 4); ongoing nurture stays with Mailchimp. **Prerequisite:** `buyersagenthub.com` domain verification in Resend for the `hello@` from-address (emails currently send from `onboarding@resend.dev`).
+Instant on-brand confirmation via **Resend** when someone joins the waitlist (lead-capture piece 4); ongoing nurture stays with Mailchimp. **✅ Prerequisite CLEARED (confirmed in the Resend dashboard, July 7 2026):** `buyersagenthub.com` is verified in Resend and the app sends from `hello@buyersagenthub.com` — **this item is unblocked and ready to build**.
 
 ## 4. 📮 Mailchimp Push — Geneva Phase 3
 One-way push of **`subscribed`-only** contacts (firm rule — see `docs/GENEVA_ROADMAP.md`). **Account details now gathered (July 5):** server prefix `us19`, audience id `606099323d`; the API key is held by Jodie and **must live in an edge-function secret (`supabase secrets set`), NEVER in frontend code or this repo**. Still to confirm at build: the explicit **"Push to Mailchimp" button** (Jodie's lean) vs automatic-on-create.

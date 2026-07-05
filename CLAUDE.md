@@ -1019,7 +1019,7 @@ APP_URL=https://agent-network-hub-1ynd.vercel.app
 
 ### Setup Instructions
 1. Sign up at https://resend.com and get an API key
-2. Add and verify the domain `buyersagenthub.com` in Resend dashboard
+2. Add and verify the domain `buyersagenthub.com` in Resend dashboard — **✅ done: domain verified (confirmed in the Resend dashboard, July 7 2026); the app sends from `hello@buyersagenthub.com`**
 3. Set the secrets: `supabase secrets set RESEND_API_KEY=re_xxx APP_URL=https://agent-network-hub-1ynd.vercel.app`
 4. Deploy the new edge function: `supabase functions deploy send-email`
 5. Re-deploy updated functions: `supabase functions deploy stripe-webhook send-forum-digest`

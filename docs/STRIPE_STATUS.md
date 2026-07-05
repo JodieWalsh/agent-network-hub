@@ -48,7 +48,7 @@ Not "in the queue" — it is **done**: 4 edge functions (`stripe-connect-onboard
 6. 🔴 **RESEARCH RISK:** Stripe **cross-border transfers from an AU platform** to overseas Connect accounts have real restrictions — the current separate-charge-plus-transfer pattern may not work for every country pairing. **Validate the 33-country payout story against Stripe's docs before launch.**
 
 **Adjacent polish (not blocking payments):**
-7. Resend still sends from `onboarding@resend.dev` pending `buyersagenthub.com` domain verification — affects payment email polish, not payment processing.
+7. ✅ **Resolved (July 7 2026):** `buyersagenthub.com` is verified in Resend and the app sends from `hello@buyersagenthub.com` — no email-polish blocker remains (end-to-end send testing still to do, pre-launch).
 
 ## 6. Geneva note
 

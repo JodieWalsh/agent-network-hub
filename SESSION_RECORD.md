@@ -15,7 +15,7 @@
 
 ## ⏭️ Next
 - **TODO**: an "Outreach" Mailchimp tag when a consented outreach contact is pushed.
-- Standing queue: wipe demo data after Dani reviews; questionnaire; Resend welcome email (domain verification first); Dani #24; mobile/large-font accessibility review; full app audit.
+- Standing queue: wipe demo data after Dani reviews; questionnaire; Resend welcome email (**✅ unblocked** — `buyersagenthub.com` confirmed verified in the Resend dashboard; the app sends from `hello@buyersagenthub.com`; older "domain verification first" notes below are stale); Dani #24; mobile/large-font accessibility review; full app audit.
 - **Parked (legal/Dani conversation)**: any auto-harvesting of agents' emails/phones — deliberately not built.
 
 ---
