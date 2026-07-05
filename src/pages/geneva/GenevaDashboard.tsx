@@ -36,6 +36,8 @@ import {
   GENEVA_STAGE_LABELS,
   SOURCE_LABELS,
   LAUNCH_REGION_SHORT_LABELS,
+  INTERVIEW_STAGE_LABELS,
+  INTERVIEW_EXIT_LABELS,
   restHeaders,
 } from "@/lib/geneva";
 
@@ -106,10 +108,25 @@ export default function GenevaDashboard() {
   const data = previewEmpty ? [] : contacts;
   const tasks = previewEmpty ? [] : openTasks;
 
-  /* ------------------------------------------------------ derivations */
+  /* ------------------------------------------------------ derivations
+     TWO POPULATIONS (Interview Funnel piece 4): lifecycle-based metrics —
+     the funnel, growth signal, channel quality, active customers, new this
+     week — count WAITLIST contacts only, so conversion numbers stay about
+     people who came to US. Population-agnostic stats (totals, subscribed,
+     follow-ups, types, regions) stay whole and say so. Outreach contacts
+     get their own Interview Funnel widget below. */
 
-  const active = useMemo(() => data.filter((c) => c.lifecycle_stage !== "inactive"), [data]);
-  const inactive = useMemo(() => data.filter((c) => c.lifecycle_stage === "inactive"), [data]);
+  const waitlist = useMemo(
+    () => data.filter((c) => (c.contact_type || "waitlist") === "waitlist"),
+    [data]
+  );
+  const outreach = useMemo(
+    () => data.filter((c) => c.contact_type === "interview_outreach"),
+    [data]
+  );
+
+  const active = useMemo(() => waitlist.filter((c) => c.lifecycle_stage !== "inactive"), [waitlist]);
+  const inactive = useMemo(() => waitlist.filter((c) => c.lifecycle_stage === "inactive"), [waitlist]);
 
   // Funnel: cumulative "reached at least this stage" gives a true taper on
   // snapshot data; per-stage counts show who is there NOW.
@@ -142,20 +159,21 @@ export default function GenevaDashboard() {
   const metrics = useMemo(() => {
     const weekAgo = daysAgo(7);
     return {
-      total: data.length,
-      subscribed: data.filter((c) => c.email_consent_status === "subscribed").length,
-      newThisWeek: data.filter((c) => new Date(c.created_at) >= weekAgo).length,
-      needsFollowUp: new Set(overdueOrToday.map((t) => t.contact_id)).size,
-      activeCustomers: data.filter((c) => c.lifecycle_stage === "active_customer").length,
+      total: data.length, // whole book — labelled
+      subscribed: data.filter((c) => c.email_consent_status === "subscribed").length, // consent is population-agnostic
+      newThisWeek: waitlist.filter((c) => new Date(c.created_at) >= weekAgo).length, // inbound demand = waitlist
+      needsFollowUp: new Set(overdueOrToday.map((t) => t.contact_id)).size, // action metric — whole book
+      activeCustomers: waitlist.filter((c) => c.lifecycle_stage === "active_customer").length, // lifecycle = waitlist
     };
-  }, [data, overdueOrToday]);
+  }, [data, waitlist, overdueOrToday]);
 
-  // Growth: new contacts per week over the last 4 weeks (oldest → newest)
+  // Growth: new WAITLIST contacts per week (inbound demand — adding outreach
+  // contacts by hand isn't growth)
   const growth = useMemo(() => {
     const weeks = [3, 2, 1, 0].map((w) => {
       const from = daysAgo((w + 1) * 7);
       const to = daysAgo(w * 7);
-      const count = data.filter((c) => {
+      const count = waitlist.filter((c) => {
         const d = new Date(c.created_at);
         return d >= from && d < to;
       }).length;
@@ -163,12 +181,22 @@ export default function GenevaDashboard() {
     });
     const max = Math.max(1, ...weeks.map((x) => x.count));
     return { weeks, max, thisWeek: weeks[3].count, lastWeek: weeks[2].count };
-  }, [data]);
+  }, [waitlist]);
 
-  // Channels: volume + how many reached qualified-or-beyond (quality signal)
+  // Interview Funnel widget: outreach contacts per stage, journey order
+  const interviewFunnel = useMemo(() => {
+    const stageCount = (token: string) =>
+      outreach.filter((c) => (c.interview_stage || "to_contact") === token).length;
+    const steps = Object.keys(INTERVIEW_STAGE_LABELS).map((token) => ({ token, n: stageCount(token) }));
+    const exits = Object.keys(INTERVIEW_EXIT_LABELS).map((token) => ({ token, n: stageCount(token) }));
+    return { steps, exits, total: outreach.length };
+  }, [outreach]);
+
+  // Channels: WAITLIST volume + how many reached qualified-or-beyond
+  // (lifecycle quality is a waitlist concept)
   const channels = useMemo(() => {
     const map = new Map<string, { total: number; quality: number }>();
-    for (const c of data) {
+    for (const c of waitlist) {
       const key = c.original_source || "unknown";
       const e = map.get(key) ?? { total: 0, quality: 0 };
       e.total++;
@@ -180,7 +208,7 @@ export default function GenevaDashboard() {
       .sort((a, b) => b.quality - a.quality || b.total - a.total);
     const max = Math.max(1, ...rows.map((r) => r.total));
     return { rows: rows.slice(0, 8), max };
-  }, [data]);
+  }, [waitlist]);
 
   // Demand by region: how many contacts work in each launch region.
   // One contact can work in several, so totals can exceed the contact count
@@ -325,9 +353,9 @@ export default function GenevaDashboard() {
             {/* ------------------------------------------ 2. The funnel */}
             <div className={`${panelClass} p-6 lg:p-8`} style={panelStyle}>
               <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className={sectionTitle}>The Funnel</h2>
+                <h2 className={sectionTitle}>The Waitlist Funnel</h2>
                 <p className="font-sans text-xs text-[#57534E]">
-                  Bars show how far contacts travel · counts show who's there now
+                  People who came to us · outreach lives in its own funnel below
                 </p>
               </div>
               <div className="mt-5 space-y-1">
@@ -388,12 +416,87 @@ export default function GenevaDashboard() {
               </div>
             </div>
 
+            {/* -------------------------- 2b. The INTERVIEW funnel widget
+                The other population: agents WE reach out to. Deliberately
+                its own panel so the waitlist funnel above stays honest. */}
+            <div className={`${panelClass} p-6 lg:p-8`} style={panelStyle}>
+              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className={sectionTitle}>The Interview Funnel</h2>
+                <p className="font-sans text-xs text-[#57534E]">
+                  Agents we're reaching out to — white glove, one at a time
+                </p>
+              </div>
+              {interviewFunnel.total === 0 ? (
+                <div className="py-8 text-center">
+                  <p aria-hidden="true" className="font-serif text-xl text-[#B76E79]">✦</p>
+                  <p className="mt-2 font-sans text-sm text-[#57534E]">
+                    No interview outreach yet — add your first treasured agent.
+                  </p>
+                  <button
+                    onClick={() => navigate("/geneva/contacts/new")}
+                    className="mt-4 rounded-full border border-[#2D6350]/30 bg-white/70 px-5 py-2 font-sans text-xs font-semibold text-[#2D6350] transition-colors duration-150 hover:border-[#2D6350]/50 hover:bg-[#2D6350]/[0.06]"
+                  >
+                    Add outreach contact
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="mt-2 font-sans text-sm text-[#57534E]">
+                    <span data-interview-total className="font-serif text-2xl font-semibold tabular-nums text-[#1C1917]">
+                      {interviewFunnel.total}
+                    </span>{" "}
+                    agent{interviewFunnel.total === 1 ? "" : "s"} in the interview funnel
+                  </p>
+                  <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {interviewFunnel.steps.map(({ token, n }, i) => (
+                      <button
+                        key={token}
+                        data-ifunnel-stage={token}
+                        onClick={() => n > 0 && navigate("/geneva/contacts?type=interview_outreach")}
+                        disabled={n === 0}
+                        className={`flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left transition-colors ${
+                          n > 0 ? "hover:bg-[#B76E79]/[0.06] cursor-pointer" : "cursor-default"
+                        }`}
+                      >
+                        <span className={`flex items-center gap-2 font-sans text-xs ${n > 0 ? "font-medium text-[#1C1917]" : "text-[#57534E]/70"}`}>
+                          <span className="font-sans text-[10px] font-semibold tabular-nums text-[#8F4E58]">
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          {INTERVIEW_STAGE_LABELS[token]}
+                        </span>
+                        <span className={`font-sans text-sm font-semibold tabular-nums ${n > 0 ? "text-[#8F4E58]" : "text-[#57534E]/50"}`}>
+                          {n}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-[#1C1917]/[0.06] pt-3">
+                    <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+                      If they said no
+                    </span>
+                    {interviewFunnel.exits.map(({ token, n }) => (
+                      <span key={token} data-ifunnel-exit={token} className="font-sans text-xs text-[#57534E]">
+                        {INTERVIEW_EXIT_LABELS[token]}:{" "}
+                        <span className="font-semibold tabular-nums text-[#1C1917]">{n}</span>
+                      </span>
+                    ))}
+                    <Link
+                      to="/geneva/contacts?type=interview_outreach"
+                      className="ml-auto font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
+                    >
+                      View outreach contacts →
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* --------------------------- 3+4. Growth signal & channels */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
               {/* Growth */}
               <div className={`${panelClass} p-6 lg:col-span-2`} style={panelStyle}>
                 <h2 className={sectionTitle}>Growth Signal</h2>
-                <p className="mt-1 font-sans text-xs text-[#57534E]">New contacts per week</p>
+                <p className="mt-1 font-sans text-xs text-[#57534E]">New waitlist contacts per week</p>
                 <div className="mt-6 flex h-36 items-end gap-3">
                   {growth.weeks.map((w) => (
                     <div key={w.label} className="flex flex-1 flex-col items-center gap-1.5">
@@ -423,7 +526,8 @@ export default function GenevaDashboard() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className={sectionTitle}>Channel Performance</h2>
                   <p className="font-sans text-xs text-[#57534E]">
-                    <span className="mr-1 inline-block h-2 w-2 rounded-sm bg-[#2D6350] align-middle" /> qualified+
+                    Waitlist ·
+                    <span className="ml-2 mr-1 inline-block h-2 w-2 rounded-sm bg-[#2D6350] align-middle" /> qualified+
                     <span className="ml-3 mr-1 inline-block h-2 w-2 rounded-sm bg-[#D8C3B8] align-middle" /> earlier
                   </p>
                 </div>
@@ -460,7 +564,7 @@ export default function GenevaDashboard() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className={sectionTitle}>Demand by Region</h2>
                   <p className="font-sans text-xs text-[#57534E]">
-                    Contacts working in each region — one contact can count in several
+                    All contacts, by region worked — one contact can count in several
                   </p>
                 </div>
                 {regionDemand.rows.length === 0 ? (
@@ -511,6 +615,7 @@ export default function GenevaDashboard() {
               {/* Types */}
               <div className={`${panelClass} p-6 lg:col-span-2`} style={panelStyle}>
                 <h2 className={sectionTitle}>By Professional Type</h2>
+                <p className="mt-1 font-sans text-xs text-[#57534E]">All contacts</p>
                 <div className="mt-5 space-y-3">
                   {types.rows.map((r) => (
                     <div key={r.t} className="flex items-center gap-3">
