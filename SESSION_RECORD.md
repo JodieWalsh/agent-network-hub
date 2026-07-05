@@ -2,6 +2,26 @@
 
 ---
 
+# Session: July 5, 2026 (Geneva session)
+**Session Focus:** GENEVA begun and moving fast — plan + Phase 1 + Phase 2 of BAH's internal admin-only CRM all shipped in one day.
+
+## 🎯 Session Summary
+**Geneva** is Buyers Agent Hub's OWN internal CRM — Jodie & Dani's growth command-centre for capturing and nurturing buyers agents (and other pros) as BAH's customers, especially pre-launch. It is **separate from Monaco** (the buyers-agent-facing CRM, 100% complete): own fresh `geneva_*` tables, and the OPPOSITE access model — **admin-only with a SHARED team view** (RLS via `public.is_admin()`; any admin sees/edits everything; regular users get nothing — proven with a real non-admin test user, twice).
+
+## ✅ Accomplished (with commits)
+- **Geneva plan** — `docs/GENEVA_ROADMAP.md` (commits `228a642`, `6da7399`): v1 scope + locked decisions. Key rules: **six professional types** (buyers_agent default, real_estate_agent, conveyancer, mortgage_broker, building_and_pest_inspector, stylist); **one-way Mailchimp only, and ONLY `subscribed` contacts are ever pushed** (AU Spam Act — firm rule, enforced in code at Phase 3); email = dedup key (case-insensitive unique index); timeline instead of a heavy audit log; "inactive requires a reason". Also recorded the expanded **landing-page lead-capture future phase** (public capture form via SECURITY DEFINER RPC/edge function + short qualifying questionnaire + UTM/source attribution + Resend welcome email — one cohesive feature, early post-v1 candidate).
+- **`8e8b891` — Phase 1 tables** (migration `20260705010000`, applied via Management API + verified): `geneva_contacts` / `geneva_notes` / `geneva_tasks` / `geneva_activities` with admin-only RLS on every table, activities **append-only** (no UPDATE/DELETE policies), 7 CHECK constraints, case-insensitive unique email index (proven blocking at insert), updated_at triggers. Monaco tables untouched.
+- **`f718c4a` — Phase 1 UI**: Geneva contacts list at `/geneva/contacts` + add/edit form (`src/pages/geneva/`, shared `src/lib/geneva.ts`), admin-only routes (`requiredRole="admin"` — NOT Monaco's brief permission), "Geneva" sidebar item in the admin-only block. Duplicate email → friendly inline message (409 caught). `contact_created` timeline entry on create.
+- **`9cabd76` — Phase 2 contact record** at `/geneva/contacts/:id`: top summary panel (click-to-email/call, owner/source/dates meta card) + **Overview / Notes / Tasks / Timeline** tabs. Notes with edit/delete-own (frosted confirm). Tasks with owner/due/priority, complete + reschedule, **gentle champagne overdue chips**. Stage changes from the record — **Inactive requires a reason in the same dialog** (save disabled until chosen; reason → `inactive_reason` + timeline context). Timeline renders friendly prose. List rows now open the record (Edit lives on the record).
+- **`3059d87` — Dani-approved rename**: profession type → **"Building and Pest Inspector"** (`building_and_pest_inspector`) — token renamed via migration `20260705020000` while the table was empty; old token proven rejected, new accepted; label map drives form/badges everywhere.
+- All verified end-to-end with real data (`geneva-verify.mjs`, `geneva-record-verify.mjs`): zero WCAG contrast issues across 21 audits, desktop + 375px mobile, tsc clean, and **all four geneva_* tables left at 0 rows** after every run.
+
+## ⏭️ Remaining Geneva v1
+- **Phase 3 — one-way Mailchimp push**: needs the Mailchimp **API key** (edge-function secret) + **audience ID**, and confirm the push style (Jodie leans explicit **"Push to Mailchimp" button**, not automatic). Only `subscribed` contacts, ever.
+- **Phase 4 — saved views/segments + the command-centre dashboard** (contacts by stage/source, tasks due).
+
+---
+
 # Session: July 5, 2026
 **Session Focus:** CRM Phase 4 COMPLETE — smart stage suggestions + close-reason capture shipped. **All four CRM phases are now done.**
 
