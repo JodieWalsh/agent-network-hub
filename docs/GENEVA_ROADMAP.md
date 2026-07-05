@@ -84,6 +84,7 @@ Geneva is **Buyers Agent Hub's OWN internal growth command-centre** — for Jodi
 - Duplicate merge tools
 - Roles beyond admin/editor
 - **Stripe/payments tie-in** — buyers agents paying BAH will eventually flow into Geneva (the subscription webhook → `profiles` pipeline documented in `docs/STRIPE_STATUS.md` §6 is exactly the data Geneva will sit on top of) — but NOT in this v1.
+- **Landing-page lead capture** — a public waitlist/contact form on the app's landing page that creates a `geneva_contacts` row directly (with source auto-captured), so interested professionals flow straight into Geneva. **Jodie is keen on this — strong candidate for an early post-v1 phase.** (Build note: a public form can't use the admin-only RLS path — it will need a SECURITY DEFINER RPC or edge function, plus consent capture at the form.)
 
 ---
 
