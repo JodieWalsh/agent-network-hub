@@ -21,6 +21,8 @@ import AddProperty from "./pages/AddProperty";
 import Clients from "./pages/Clients";
 import ClientForm from "./pages/ClientForm";
 import ClientDetail from "./pages/ClientDetail";
+import GenevaContacts from "./pages/geneva/GenevaContacts";
+import GenevaContactForm from "./pages/geneva/GenevaContactForm";
 import ClientBriefs from "./pages/ClientBriefs";
 import ClientBriefForm from "./pages/ClientBriefForm";
 import ClientBriefDetail from "./pages/ClientBriefDetail";
@@ -118,6 +120,34 @@ const App = () => (
               element={
                 <ProtectedRoute requiredPermission="CAN_SUBMIT_PROPERTY" showForbidden>
                   <AddProperty />
+                </ProtectedRoute>
+              }
+            />
+            {/* GENEVA — BAH's INTERNAL customer CRM (docs/GENEVA_ROADMAP.md).
+                ADMIN-ONLY by design (shared team view; RLS also enforces
+                is_admin). NOT gated by CAN_MANAGE_CLIENT_BRIEFS — that's
+                Monaco's gate, and regular users must never reach Geneva. */}
+            <Route
+              path="/geneva/contacts"
+              element={
+                <ProtectedRoute requiredRole="admin" showForbidden>
+                  <GenevaContacts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/geneva/contacts/new"
+              element={
+                <ProtectedRoute requiredRole="admin" showForbidden>
+                  <GenevaContactForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/geneva/contacts/:id/edit"
+              element={
+                <ProtectedRoute requiredRole="admin" showForbidden>
+                  <GenevaContactForm />
                 </ProtectedRoute>
               }
             />

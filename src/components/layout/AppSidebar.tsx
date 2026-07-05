@@ -25,6 +25,7 @@ import {
   Sparkles,
   Crown,
   Contact,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -165,10 +166,12 @@ export function AppSidebar() {
   // Build dynamic nav items based on user role
   const dynamicNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-    // Admin-only navigation
+    // Admin-only navigation (Geneva = BAH's internal customer CRM —
+    // deliberately here, well apart from the Clients/Monaco items below)
     ...(profile?.role === 'admin' ? [
       { label: "Admin Dashboard", icon: Shield, path: "/admin" },
       { label: "Forum Moderation", icon: Shield, path: "/forums/admin" },
+      { label: "Geneva", icon: Landmark, path: "/geneva/contacts" },
     ] : []),
     { label: "Agent Directory", icon: Users, path: "/directory" },
     { label: "Property Marketplace", icon: Building2, path: "/marketplace" },
