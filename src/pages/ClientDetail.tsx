@@ -9,6 +9,11 @@
  * Data access: raw fetch only; never import the supabase client.
  * Ownership: every query filters agent_id = logged-in user.
  * Dialogs: custom frosted modals — never window.confirm().
+ *
+ * Phase 4 smart suggestions: property pipeline events (offered / purchased)
+ * surface ONE gentle, dismissible stage suggestion at a time. Suggestions are
+ * strictly opt-in — a stage NEVER changes without the agent clicking accept.
+ * Dismissals live in session state only (a fresh visit may suggest again).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -33,6 +38,7 @@ import {
   ExternalLink,
   X,
   Hourglass,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -225,6 +231,23 @@ const BUYING_LABELS: Record<string, string> = {
   under_contract: "Under Contract",
   settlement_support: "Settlement Support",
 };
+
+/** Buying stages in pipeline order — used for "already at/past" checks so a
+ *  suggestion never proposes moving a household backwards. */
+const BUYING_ORDER = Object.keys(BUYING_LABELS);
+
+/**
+ * A Phase 4 smart suggestion: an observed pipeline event implies a likely
+ * stage change. Purely advisory — accepting runs the normal stage-change
+ * logic; dismissing hides it for this session only.
+ */
+interface StageSuggestion {
+  key: string; // dismissal key, unique per (kind, linked property)
+  kind: "offered" | "purchased";
+  address: string;
+  buyingTo: string | null;
+  lifecycleTo: string | null;
+}
 
 const ROLE_LABELS: Record<string, string> = {
   spouse: "Spouse",
@@ -605,6 +628,10 @@ export default function ClientDetail() {
   const [statusDialogFor, setStatusDialogFor] = useState<LinkedProperty | null>(null);
   const [cpStatusChoice, setCpStatusChoice] = useState("");
   const [unlinkPropFor, setUnlinkPropFor] = useState<LinkedProperty | null>(null);
+  // Reason capture for closing stages (saved to lost_reason; encouraged, never forced)
+  const [stageReason, setStageReason] = useState("");
+  // Phase 4 suggestions dismissed this session (never persisted — deliberate)
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -689,6 +716,41 @@ export default function ClientDetail() {
     return new Date(client.next_action_date + "T00:00:00") < today;
   }, [client]);
 
+  /* Phase 4: derive at most ONE gentle stage suggestion from the property
+     pipeline. Only when genuinely relevant — the household isn't closed and
+     isn't already at/past the suggested stage. Purchased outranks offered. */
+  const suggestion = useMemo<StageSuggestion | null>(() => {
+    if (!client) return null;
+    const closed =
+      client.lifecycle_stage === "closed_won" ||
+      client.lifecycle_stage === "closed_lost" ||
+      client.client_status !== "active";
+    if (closed) return null;
+    const buyingIdx = client.buying_stage ? BUYING_ORDER.indexOf(client.buying_stage) : -1;
+    const candidates: StageSuggestion[] = [];
+    const purchased = linkedProps.find((lp) => lp.status === "purchased");
+    if (purchased) {
+      candidates.push({
+        key: `purchased:${purchased.id}`,
+        kind: "purchased",
+        address: propAddress(purchased.property),
+        buyingTo: buyingIdx < BUYING_ORDER.indexOf("under_contract") ? "under_contract" : null,
+        lifecycleTo: "closed_won",
+      });
+    }
+    const offered = linkedProps.find((lp) => lp.status === "offered");
+    if (offered && buyingIdx < BUYING_ORDER.indexOf("offer_submitted")) {
+      candidates.push({
+        key: `offered:${offered.id}`,
+        kind: "offered",
+        address: propAddress(offered.property),
+        buyingTo: "offer_submitted",
+        lifecycleTo: null,
+      });
+    }
+    return candidates.find((c) => !dismissedSuggestions.has(c.key)) || null;
+  }, [client, linkedProps, dismissedSuggestions]);
+
   /* --------------------------------------------------------- mutations */
 
   const writeActivity = async (event_type: string, event_context: Record<string, unknown>) => {
@@ -703,7 +765,37 @@ export default function ClientDetail() {
   const openStageDialog = (which: "lifecycle" | "buying") => {
     if (!client) return;
     setStageChoice(which === "lifecycle" ? client.lifecycle_stage : client.buying_stage || "");
+    setStageReason("");
     setStageDialog(which);
+  };
+
+  /**
+   * Core stage-change logic, shared by the stage dialog AND the Phase 4
+   * suggestion banner: PATCH the client, reset the matching entered-at
+   * timestamp so "days in stage" stays accurate, write the timeline entry.
+   * A reason (closing lifecycle changes) lands in lost_reason and in the
+   * timeline entry's context. Throws on failure; callers own busy/toast.
+   */
+  const changeStage = async (which: "lifecycle" | "buying", to: string | null, reason?: string) => {
+    if (!user || !id || !client) return;
+    const isLifecycle = which === "lifecycle";
+    const from = isLifecycle ? client.lifecycle_stage : client.buying_stage;
+    if (to === from) return;
+    const now = new Date().toISOString();
+    const patch: Record<string, unknown> = isLifecycle
+      ? { lifecycle_stage: to, stage_entered_at: now }
+      : { buying_stage: to, buying_stage_entered_at: to ? now : null };
+    const trimmedReason = reason?.trim() || "";
+    if (isLifecycle && to === "closed_lost" && trimmedReason) patch.lost_reason = trimmedReason;
+    const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${id}&agent_id=eq.${user.id}`, {
+      method: "PATCH",
+      headers: restHeaders(true),
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const ctx: Record<string, unknown> = { from, to };
+    if (isLifecycle && to === "closed_lost" && trimmedReason) ctx.reason = trimmedReason;
+    await writeActivity(isLifecycle ? "lifecycle_stage_changed" : "buying_stage_changed", ctx);
   };
 
   const saveStage = async () => {
@@ -714,20 +806,26 @@ export default function ClientDetail() {
     if (to === from) { setStageDialog(null); return; }
     setBusy(true);
     try {
-      const now = new Date().toISOString();
-      // Reset the matching entered-at timestamp so "days in stage" stays accurate.
-      const patch = isLifecycle
-        ? { lifecycle_stage: to, stage_entered_at: now }
-        : { buying_stage: to, buying_stage_entered_at: to ? now : null };
-      const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${id}&agent_id=eq.${user.id}`, {
-        method: "PATCH",
-        headers: restHeaders(true),
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      await writeActivity(isLifecycle ? "lifecycle_stage_changed" : "buying_stage_changed", { from, to });
+      await changeStage(stageDialog, to, stageReason);
       toast.success(isLifecycle ? "Lifecycle stage updated" : "Buying stage updated");
       setStageDialog(null);
+      setStageReason("");
+      await loadAll();
+    } catch (e) {
+      console.error(e); toast.error("Could not update the stage.");
+    } finally { setBusy(false); }
+  };
+
+  /** Accept a Phase 4 suggestion — runs the SAME changeStage logic as the
+   *  dialog (never a parallel code path). The agent clicked; nothing here
+   *  is automatic. */
+  const acceptSuggestion = async (s: StageSuggestion) => {
+    setBusy(true);
+    try {
+      if (s.buyingTo) await changeStage("buying", s.buyingTo);
+      if (s.lifecycleTo) await changeStage("lifecycle", s.lifecycleTo);
+      setDismissedSuggestions((prev) => new Set(prev).add(s.key));
+      toast.success(s.kind === "purchased" ? "Household marked Closed Won" : "Buying stage updated");
       await loadAll();
     } catch (e) {
       console.error(e); toast.error("Could not update the stage.");
@@ -1213,6 +1311,58 @@ export default function ClientDetail() {
                     </span>{" "}
                     — consider a next step.
                   </p>
+                </div>
+              )}
+
+              {/* Gentle stage suggestion (Phase 4 automations) — advisory only,
+                  one at a time, dismissible; a stage never changes untouched */}
+              {suggestion && (
+                <div
+                  data-stage-suggestion={suggestion.key}
+                  className="mt-3 flex flex-col gap-3 rounded-xl border border-[#B76E79]/30 bg-[#B76E79]/[0.07] px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-start gap-2">
+                    <Sparkles size={13} strokeWidth={2} className="mt-0.5 shrink-0 text-[#8F4E58]" />
+                    <p className="font-sans text-xs leading-relaxed text-[#57534E]">
+                      {suggestion.kind === "offered" ? (
+                        <>
+                          You've made an offer on{" "}
+                          <span className="font-semibold text-[#1C1917]">{suggestion.address}</span>{" "}
+                          — move this household to{" "}
+                          <span className="font-semibold text-[#1C1917]">Offer Submitted</span>?
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-semibold text-[#1C1917]">{suggestion.address}</span>{" "}
+                          is purchased — mark this household as{" "}
+                          <span className="font-semibold text-[#1C1917]">Closed Won</span>?
+                          {suggestion.buyingTo && (
+                            <>
+                              {" "}The buying stage will move to{" "}
+                              <span className="font-semibold text-[#1C1917]">Under Contract</span> too.
+                            </>
+                          )}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2 pl-[21px] sm:pl-0">
+                    <button
+                      id="suggestion_accept"
+                      onClick={() => acceptSuggestion(suggestion)}
+                      disabled={busy}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#2D6350] px-3 py-1.5 font-sans text-xs font-semibold text-white transition-colors hover:bg-[#173A31] disabled:opacity-60"
+                    >
+                      <Check size={12} strokeWidth={2.5} /> Update stage
+                    </button>
+                    <button
+                      id="suggestion_dismiss"
+                      onClick={() => setDismissedSuggestions((prev) => new Set(prev).add(suggestion.key))}
+                      className="rounded-lg px-2.5 py-1.5 font-sans text-xs font-semibold text-[#57534E] transition-colors hover:bg-[#1C1917]/[0.05] hover:text-[#1C1917]"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1766,7 +1916,7 @@ export default function ClientDetail() {
                       : a.event_type === "property_status_changed" ? CP_STATUS_LABELS
                       : null;
                     const detail = stageMap
-                      ? `${ctx.address ? `${ctx.address as string} — from` : "From"} ${stageLabel(stageMap, ctx.from)} to ${stageLabel(stageMap, ctx.to)}`
+                      ? `${ctx.address ? `${ctx.address as string} — from` : "From"} ${stageLabel(stageMap, ctx.from)} to ${stageLabel(stageMap, ctx.to)}${ctx.reason ? ` · “${ctx.reason as string}”` : ""}`
                       : (ctx.title as string) ||
                         (ctx.member as string) ||
                         (ctx.excerpt as string) ||
@@ -1837,6 +1987,25 @@ export default function ClientDetail() {
             );
           })}
         </div>
+
+        {/* Reason capture on closing lost — encouraged, never blocking */}
+        {stageDialog === "lifecycle" && stageChoice === "closed_lost" && (
+          <div className="mt-4 rounded-xl border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.18] p-4">
+            <label htmlFor="stage_reason" className={labelClass}>Why was this lost? (optional)</label>
+            <textarea
+              id="stage_reason"
+              rows={2}
+              value={stageReason}
+              onChange={(e) => setStageReason(e.target.value)}
+              placeholder="e.g. Went with another agency — timing didn't work."
+              className={inputClass}
+            />
+            <p className="mt-1.5 font-sans text-xs text-[#8F4E58]">
+              A reason helps you learn from this — even a few words is enough.
+            </p>
+          </div>
+        )}
+
         <div className="mt-5 flex justify-end gap-3">
           <button onClick={() => setStageDialog(null)} className="rounded-xl border border-[#1C1917]/15 bg-white/80 px-4 py-2.5 font-sans text-sm font-semibold text-[#1C1917] hover:bg-white">Cancel</button>
           <button
