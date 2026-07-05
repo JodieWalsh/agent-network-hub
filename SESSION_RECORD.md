@@ -2,6 +2,24 @@
 
 ---
 
+# Session: July 5, 2026 (Geneva + landing capture session — part 2)
+**Session Focus:** The public lead pipeline went LIVE end-to-end — secure intake → landing waitlist form → Geneva — plus a consumer-law honesty pass on the landing page.
+
+## 🎯 Session Summary
+After the Geneva contact record page (part 1), the Landing-Page Lead Capture phase began and shipped its first two pieces. A public visitor can now join the waitlist on the landing page and arrive in Geneva as a contact — attributed to their source, consent handled lawfully — without Geneva's admin-only walls moving an inch. The landing page also had every fabricated pre-launch claim removed.
+
+## ✅ Accomplished (with commits)
+- **`8feef7a` — secure public lead-intake edge function** (`geneva-lead-intake`, deployed with `--no-verify-jwt`; + migration `20260705030000` making `created_by` nullable — NULL renders as "Landing page" on the timeline): write-only by construction (returns ONLY `{ ok: true }`), honeypot field, origin allow-list, strict validation/length caps, **forced-safe server-side defaults** (stage `new`, no owner; smuggled fields proven blocked), **consent `subscribed` ONLY on explicit opt-in**, UTM → `original_source` mapping, **silent-duplicate handling** (no email enumeration; repeat signups append a `source_captured` activity to the existing contact). **Geneva RLS untouched** — anon verified reading zero rows and blocked from direct inserts. Deferred by decision: per-IP rate limiting + captcha (v1 = honeypot + validation, recorded in the roadmap).
+- **`66af5da` — public waitlist capture form** on the landing page ("Founding Cohort / Be First Through the Door" section, between testimonials-spot and pricing): first/last name, email, all six professional types (Buyers Agent default), region/company, explicit consent checkbox, hidden honeypot, **UTM passthrough from the landing URL**; POSTs only to the edge function; elegant "You're on the list ✦" success state. Verified live end-to-end: consented signup → `subscribed` + `contact_created` (source `landing_page`, UTM captured); no-consent → `pending`; bad email → gentle inline error, nothing sent.
+- **`1903d67` — waitlist CTAs + landing honesty pass**: deep-rose **JOIN WAITLIST** header pill, hero "Not ready for an account yet?" line, mobile-menu CTA — all anchoring to the form. **Honesty pass (consumer-law risk removed):** fabricated stats bar ("500+ / 2,400+ / 4.9★") → truthful launch bar (Launching Soon · One Place · Vetted · Protected); the three invented testimonials → the **Founding Cohort** section (real benefits, no fake names/quotes); "500+ agents already…" final CTA → honest founding-access copy. All NEW copy global-friendly (US/UK expansion) — remaining AU-specific spots flagged, not touched.
+- **Dani checklist:** item **#23** (CRM/Monaco subscription gating — pre-existing, still open) and new item **#24 — pre-launch landing messaging**: the four remaining AU-specific spots (hero eyebrow, marketplace card, overlays copy, footer), the JOIN FREE→waitlist decision, the pricing reframe ("founding-member pricing" vs buy-now + trial claim), and whether app pages stay publicly browsable pre-launch.
+
+## ⏭️ Next
+- Ideas backlog captured in `docs/IDEAS_BACKLOG.md` (brand kit next, waitlist regions, welcome email, Mailchimp push details now gathered, questionnaire, property overlays, the Dani #24 messaging pass).
+- Geneva v1 still to finish: **Phase 3 Mailchimp push** (account details now known — see backlog) and **Phase 4 dashboard/segments**.
+
+---
+
 # Session: July 5, 2026 (Geneva session)
 **Session Focus:** GENEVA begun and moving fast — plan + Phase 1 + Phase 2 of BAH's internal admin-only CRM all shipped in one day.
 

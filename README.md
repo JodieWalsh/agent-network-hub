@@ -14,6 +14,7 @@ Before making changes, please read the documentation:
 | [CRM Roadmap](docs/CRM_ROADMAP.md) | Phased plan, decisions, and risks for Monaco, the buyers-agent-facing CRM |
 | [Geneva Roadmap](docs/GENEVA_ROADMAP.md) | v1 scope and decisions for Geneva, BAH's internal customer CRM |
 | [Stripe Status](docs/STRIPE_STATUS.md) | Payments health-check: what works in test mode + go-live checklist |
+| [Ideas Backlog](docs/IDEAS_BACKLOG.md) | Captured-but-not-yet-built ideas (brand kit, regions, welcome email, Mailchimp, overlays) |
 | [Project To-Do List](docs/PROJECT_TODO.md) | Future development tasks |
 
 ## Tech Stack
