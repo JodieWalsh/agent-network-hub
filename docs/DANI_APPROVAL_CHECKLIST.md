@@ -527,6 +527,26 @@ The CRM (household client-management system) is being built now. The intent is t
 
 ---
 
+### 24. Dani Review — Pre-Launch Landing Page Messaging
+**Added:** July 5, 2026
+**Location:** `src/pages/Landing.tsx` (public marketing page)
+
+**Context:** The July 5 "honesty pass" removed all fabricated pre-launch claims (usage stats, star rating, the three invented testimonials, "500+ agents already…") and added the waitlist CTAs. The remaining items below are truthful but need a co-founder call before/at launch. We are expanding into the US and UK, so new copy must stay global-friendly.
+
+**A. Remaining Australia-specific copy (conflicts with US/UK expansion):**
+- [ ] Hero eyebrow: "BUILT FOR BUYERS AGENTS · AUSTRALIA"
+- [ ] Inspection Marketplace feature card: "…vetted building inspectors across Australia"
+- [ ] Property overlays section: "…over any Australian property address"
+- [ ] Footer: "© 2026 Buyers Agent Hub · Built in Australia 🇦🇺"
+
+**B. Pre-launch CTA strategy (deferred from the honesty pass by design):**
+- [ ] Should the five "JOIN FREE" / "CREATE YOUR FREE ACCOUNT" sign-up CTAs (header, mobile menu, hero, final CTA) become waitlist CTAs until launch? (The waitlist CTAs added July 5 currently sit alongside them.)
+- [ ] Pricing section messaging pre-launch: keep as-is, or reframe as "founding-member pricing, locked in at launch" with waitlist buttons and no "14-day free trial" claim? (Amounts themselves are item #9.)
+- [ ] Related copy if reframing: "Up and Running in Minutes", "Set up in 5 minutes · No credit card required"
+- [ ] Should `/directory`, `/marketplace`, `/forums` stay publicly browsable pre-launch? (Footer links lead straight into the app.)
+
+---
+
 ## 🟡 IN PROGRESS (Partially Reviewed)
 
 *(Nothing yet)*
