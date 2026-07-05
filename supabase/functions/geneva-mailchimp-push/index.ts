@@ -60,6 +60,20 @@ const SOURCE_LABELS: Record<string, string> = {
   manual_import: 'Manual Import', other: 'Other',
 };
 
+// Launch-region tags: SHORT names prefixed "Region: " so they group
+// together in Mailchimp and never collide with type tags — enables
+// one-region launch segments (e.g. tag = "Region: Greater Sydney").
+// Tokens mirror geneva_contacts.launch_regions / LAUNCH_REGION_LABELS.
+const LAUNCH_REGION_TAG_NAMES: Record<string, string> = {
+  greater_sydney: 'Region: Greater Sydney',
+  greater_melbourne: 'Region: Greater Melbourne',
+  seq: 'Region: South East Queensland',
+  greater_perth: 'Region: Greater Perth',
+  uk: 'Region: United Kingdom',
+  us: 'Region: United States',
+  other: 'Region: Other',
+};
+
 const respond = (status: number, body: Record<string, unknown>) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
 
@@ -110,7 +124,7 @@ serve(async (req: Request) => {
 
     const cRes = await svc(
       'GET',
-      `geneva_contacts?id=eq.${encodeURIComponent(contactId)}&select=id,email,first_name,last_name,professional_type,region_city,original_source,email_consent_status`
+      `geneva_contacts?id=eq.${encodeURIComponent(contactId)}&select=id,email,first_name,last_name,professional_type,region_city,original_source,email_consent_status,launch_regions`
     );
     const [contact] = cRes.ok ? await cRes.json() : [];
     if (!contact) return respond(404, { ok: false });
@@ -176,14 +190,17 @@ serve(async (req: Request) => {
     }
 
     // --- 4. Tags (best-effort; a tag failure doesn't fail the push) ---
+    // Base tags + one "Region: …" tag per captured launch region (skipped
+    // gracefully when the contact has none).
+    const regionTags = (Array.isArray(contact.launch_regions) ? contact.launch_regions : [])
+      .map((token: string) => LAUNCH_REGION_TAG_NAMES[token])
+      .filter(Boolean) as string[];
+    const tagNames = ['Geneva CRM', ptypeLabel, ...regionTags];
     await fetch(`${memberUrl}/tags`, {
       method: 'POST',
       headers: { Authorization: mcAuth, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        tags: [
-          { name: 'Geneva CRM', status: 'active' },
-          { name: ptypeLabel, status: 'active' },
-        ],
+        tags: tagNames.map((name) => ({ name, status: 'active' })),
       }),
     }).catch((e) => console.error('Mailchimp tags failed:', e));
 
@@ -200,7 +217,7 @@ serve(async (req: Request) => {
       event_type: 'pushed_to_mailchimp',
       event_context: {
         professional_type: contact.professional_type,
-        tags: ['Geneva CRM', ptypeLabel],
+        tags: tagNames,
       },
     }]).catch((e) => console.error('Timeline write failed:', e));
 
