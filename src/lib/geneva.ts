@@ -70,7 +70,7 @@ export const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   real_estate_agent: "Real Estate Agent",
   conveyancer: "Conveyancer",
   mortgage_broker: "Mortgage Broker",
-  building_inspector: "Building Inspector",
+  building_and_pest_inspector: "Building and Pest Inspector",
   stylist: "Stylist",
 };
 
