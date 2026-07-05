@@ -12,6 +12,7 @@ Before making changes, please read the documentation:
 | [Key Features](docs/KEY_FEATURES.md) | Platform features and how they work |
 | [Dani's Approval Checklist](docs/DANI_APPROVAL_CHECKLIST.md) | Business decisions needing review |
 | [CRM Roadmap](docs/CRM_ROADMAP.md) | Phased plan, decisions, and risks for the CRM (client management) module |
+| [Stripe Status](docs/STRIPE_STATUS.md) | Payments health-check: what works in test mode + go-live checklist |
 | [Project To-Do List](docs/PROJECT_TODO.md) | Future development tasks |
 
 ## Tech Stack
