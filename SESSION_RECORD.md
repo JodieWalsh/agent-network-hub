@@ -2,6 +2,31 @@
 
 ---
 
+# Session: July 5/6, 2026 — FINAL: 🎉 GENEVA v1 COMPLETE (all 4 phases)
+**Session Focus:** Phase 4 shipped — the growth command centre — closing out Geneva v1 three days after the first line of its roadmap.
+
+## 🎯 Session Summary
+Geneva is done: capture (landing waitlist → secure intake), manage (contacts list + record with notes/tasks/timeline), nurture (subscribed-only Mailchimp push), and now **steer** — a command-centre dashboard at `/geneva` that answers the founder's questions at a glance: how's the funnel, where do leads get stuck, which channels bring quality, who needs follow-up today, are we growing.
+
+## ✅ Accomplished (with commits)
+- **`f266e4e` — Phase 4: the command centre** (`GenevaDashboard.tsx` + saved-view chips in `GenevaContacts.tsx`; sidebar/`/geneva` routing):
+  - **The lifecycle funnel** — tapering bars on cumulative "reach", per-stage "here now" counts, stage-to-stage advance %, and a gentle champagne chip auto-marking the **biggest drop-off** transition. Inactive contacts shown separately below the flow.
+  - **Headline metric cards** (Total / Subscribed / New this week / Needs follow-up / Active customers) — each **deep-links** to the pre-filtered contacts list via `?view=`.
+  - **Growth signal** — new-contacts-per-week bars over 4 weeks with an up/down line (pure CSS, no chart lib).
+  - **Channel performance** — two-tone bars per source: forest = reached **qualified+**, champagne = earlier; sorted by quality first, so the best channels (not just loudest) rise.
+  - **By professional type** breakdown; **"Needs attention today"** action list (most-overdue tasks first, rows link to the contact record).
+  - **Saved-view chips** on the contacts list: All / New this week / Needs follow-up / Subscribed / Pending consent / Prospects / Nurturing / Active customers / Inactive — live counts, deep-linkable, calm per-view ✦ empty states.
+  - Loading skeletons + a lovely ✦ zero-data state ("Your command centre awaits") — previewable via `?empty=1` without touching data. Verified against live demo data with all numbers cross-checked to the DB; zero contrast issues; non-admins blocked from `/geneva` and `/geneva/contacts`.
+- **`46db760` — demo seed/wipe script** (`geneva-demo-data.mjs`: seed/status/wipe): ⚠️ **24 demo contacts are CURRENTLY SEEDED for Dani's review** (all emails `@geneva-demo.example`; never push them to Mailchimp). **Wipe after she reviews:** `node geneva-demo-data.mjs wipe` — deletes only the demo domain; real waitlist leads are never touched. Then remove the ⚠️ note from `docs/GENEVA_ROADMAP.md`.
+- **`c3299f4` — brand tone fix:** payment-released notification retitled **"Paid and on its way"** (the earlier, cheekier title was retired as off-brand); all references updated repo-wide.
+- **`a4d402a` — Brand Kit** (`docs/BRAND_KIT.md`): the single brand reference — palette with WCAG-verified contrast rules, Cormorant/DM Sans rules, voice & tone with the playful-signature policy, UI signatures, Do/Don't. Linked from README.
+
+## ⏭️ Next
+- **Wipe demo data after Dani reviews** (command above).
+- Backlog: questionnaire (lead-capture piece 3), Resend welcome email (needs buyersagenthub.com domain verification), Dani #24 landing-messaging decisions, mobile/large-font accessibility review.
+
+---
+
 # Session: July 5/6, 2026 — Geneva Phase 3: Mailchimp push
 **Session Focus:** Geneva Phase 3 COMPLETE (`c69406d`) — the one-way Mailchimp push. **The full growth pipeline now works end-to-end: landing waitlist form → Geneva contact → explicit admin button → Mailchimp audience → nurture sequence.**
 

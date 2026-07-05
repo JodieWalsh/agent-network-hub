@@ -3,7 +3,7 @@
 **Created:** July 5, 2026 (planning only — no code exists yet)
 > ⚠️ **TEMPORARY DEMO DATA (July 2026):** `geneva-demo-data.mjs seed` populates ~24 fake contacts (all emails `@geneva-demo.example`) so Dani can review a lively dashboard. **Must be wiped after her review**: `node geneva-demo-data.mjs wipe` (deletes ONLY the demo domain — real waitlist leads are never touched; never push demo contacts to Mailchimp). Remove this note once wiped.
 
-**Status (updated July 5/6, 2026):** Phases 1–3 are **COMPLETE and live** — tables + list + form (`8e8b891`, `f718c4a`), the contact record (`9cabd76`), and the Mailchimp push (`c69406d`). The landing-page lead capture pieces 1–2 also shipped (`8feef7a`, `66af5da`) — the full pipeline works: waitlist form → Geneva → button → Mailchimp. **Remaining in v1: Phase 4** (saved views/segments + command-centre dashboard).
+**Status (updated July 6, 2026): 🎉 GENEVA v1 COMPLETE — all four phases live.** Tables + list + form (`8e8b891`, `f718c4a`), the contact record (`9cabd76`), the Mailchimp push (`c69406d`), and the **command-centre dashboard + saved views** (`f266e4e`). Landing-page lead capture pieces 1–2 shipped too (`8feef7a`, `66af5da`) — the full pipeline works end-to-end: waitlist form → Geneva → funnel/attention list → explicit push → Mailchimp. What remains is post-v1 backlog (questionnaire, welcome email, two-way sync — see below and `docs/IDEAS_BACKLOG.md`).
 **Source spec:** the full Geneva design spec (shared during planning, deliberately scoped DOWN for an achievable v1). ⚠️ The spec is not yet saved into this repo — add it as `docs/GENEVA_DESIGN_SPEC.docx` (mirroring `docs/CRM_DESIGN_SPEC.docx` for Monaco) so future sessions can read it.
 **Design system:** Quiet Luxury (see `CLAUDE.md` → DESIGN VISION).
 
@@ -69,7 +69,7 @@ Geneva is **Buyers Agent Hub's OWN internal growth command-centre** — for Jodi
 - **Firm consent rule (decision 3 above): only `subscribed` contacts are ever pushed** — pending/unsubscribed/bounced/complained never leave Geneva.
 - **Needed at this phase (deferred from planning, July 5):** the Mailchimp API key (stored as an edge-function secret via `supabase secrets set`, never in frontend), the target audience ID, and the push trigger. **Current lean (to confirm at Phase 3): an explicit "Push to Mailchimp" BUTTON** — the agent stays in control — not automatic-on-create.
 
-### Phase 4 — Working views + dashboard
+### Phase 4 — Working views + dashboard ✅ COMPLETE (July 6 2026, commit `f266e4e`)
 - Saved views/segments (e.g. New this week / Needs follow-up / By source / Nurturing).
 - A small internal dashboard: contacts by stage, by source, tasks due — the "command centre" feel.
 
