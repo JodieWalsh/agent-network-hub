@@ -4,10 +4,13 @@
  * of the sidebar and a stats card.
  */
 import puppeteer from 'puppeteer';
+import { config } from 'dotenv';
+
+config();
 
 const baseUrl = 'http://localhost:8081';
-const EMAIL = 'support@the-empowered-patient.org';
-const PASSWORD = 'AdminPassword123!';
+const EMAIL = process.env.ADMIN_TEST_EMAIL;
+const PASSWORD = process.env.ADMIN_TEST_PASSWORD;
 const suffix = process.argv[2] || 'current';
 
 (async () => {

@@ -18,10 +18,13 @@ import 'dotenv/config';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { config } from 'dotenv';
+
+config();
 
 const baseUrl = 'http://localhost:8081';
-const EMAIL = 'support@the-empowered-patient.org';
-const PASSWORD = 'AdminPassword123!';
+const EMAIL = process.env.ADMIN_TEST_EMAIL;
+const PASSWORD = process.env.ADMIN_TEST_PASSWORD;
 const T_EMAIL = 'test.interview.journey@stage-test.example';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;

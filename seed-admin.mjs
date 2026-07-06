@@ -14,9 +14,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   },
 });
 
-// Admin user details
-const ADMIN_EMAIL = 'support@the-empowered-patient.org';
-const ADMIN_PASSWORD = 'AdminPassword123!'; // Change after first login!
+// Admin user details — set ADMIN_TEST_EMAIL / ADMIN_TEST_PASSWORD in .env (never commit them)
+const ADMIN_EMAIL = process.env.ADMIN_TEST_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_TEST_PASSWORD;
 
 async function createAdminUser() {
   console.log('\n🔐 Creating admin user...\n');
@@ -69,8 +69,7 @@ async function createAdminUser() {
 
     console.log('✅ Admin profile created successfully!\n');
     console.log('📧 Admin Email:', ADMIN_EMAIL);
-    console.log('🔑 Admin Password:', ADMIN_PASSWORD);
-    console.log('\n⚠️  IMPORTANT: Please change the password after first login!\n');
+    console.log('🔑 Password: as set in ADMIN_TEST_PASSWORD (.env)');
     console.log('🎉 Admin user setup complete!\n');
 
   } catch (error) {

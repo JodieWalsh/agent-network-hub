@@ -7,10 +7,13 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { config } from 'dotenv';
+
+config();
 
 const baseUrl = 'http://localhost:8081';
-const EMAIL = 'support@the-empowered-patient.org';
-const PASSWORD = 'AdminPassword123!';
+const EMAIL = process.env.ADMIN_TEST_EMAIL;
+const PASSWORD = process.env.ADMIN_TEST_PASSWORD;
 
 const screenshotDir = './screenshots/crm-client-detail';
 fs.mkdirSync(screenshotDir, { recursive: true });
