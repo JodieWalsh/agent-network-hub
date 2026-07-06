@@ -26,6 +26,8 @@
  * (public callers have no Supabase JWT).
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { sendEmailViaResend, FROM_EMAIL } from '../_shared/email.ts';
+import { WAITLIST_WELCOME_SUBJECT, waitlistWelcomeHtml } from '../_shared/waitlist-email.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -197,6 +199,22 @@ serve(async (req: Request) => {
         event_type: 'contact_created',
         event_context: activityContext,
       }]).catch(() => {});
+      // Welcome email (lead-capture piece 4) — new contacts only, never
+      // duplicates. A broken email must never break signup: any failure is
+      // logged and the caller still gets the normal success.
+      try {
+        const sent = await sendEmailViaResend(
+          email,
+          WAITLIST_WELCOME_SUBJECT,
+          waitlistWelcomeHtml(firstName),
+          FROM_EMAIL
+        );
+        if (!sent.success) {
+          console.error('geneva-lead-intake welcome email failed:', sent.error);
+        }
+      } catch (err) {
+        console.error('geneva-lead-intake welcome email failed:', err);
+      }
       return ok(headers);
     }
 
