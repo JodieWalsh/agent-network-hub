@@ -2,6 +2,22 @@
 
 ---
 
+# Session: July 8, 2026 (later that day) — ✉️ WELCOME EMAIL SHIPPED + 🏷️ OUTREACH TAG
+**Session Focus:** two queue items closed in one sitting — the waitlist welcome email (lead-capture piece 4) and the "Outreach" Mailchimp tag for interview-outreach contacts.
+
+## 🎯 Session Summary
+**Lead-capture piece 4 is DONE and the Outreach-tag TODO is closed.** New waitlist signups now receive an on-brand welcome email the moment they join (verified end-to-end with a real inbox delivery), and consented interview-outreach contacts pushed to Mailchimp now carry an **"Outreach"** tag so they can be segmented apart from the waitlist. Both edge functions are deployed and live.
+
+## ✅ Accomplished (with commits)
+- **`b91edb4` — ✉️ welcome email on waitlist signup (lead-capture piece 4).** New `supabase/functions/_shared/waitlist-email.ts` (subject "You're on the list — welcome to Buyers Agent Hub"; quiet-luxury palette — ivory `#F6F1EA`, forest `#2D6350`, champagne `#D8C3B8`, charcoal `#1C1917`; Cormorant Garamond/DM Sans via serif/sans **fallback stacks** since email clients don't reliably load web fonts; `first_name` HTML-escaped; copy is warm, global-friendly, claim-free), wired into `geneva-lead-intake`'s **201 new-contact branch only** (duplicate signups never re-trigger it) and try/caught so **a broken email can never break signup**. Sends via Resend from `hello@buyersagenthub.com` (`FROM_EMAIL`). **Verified end-to-end**: real signup POST through the public endpoint → contact + `contact_created` activity written → email delivered to a real inbox → test contact deleted (geneva counts restored exactly to the 24/55 baseline). **Function live** (deployed `--no-verify-jwt`, v4).
+- **`21be58d` — 🏷️ "Outreach" Mailchimp tag for interview-outreach contacts.** `geneva-mailchimp-push` now adds an `Outreach` tag **only when `contact_type === 'interview_outreach'`** (same spread pattern as the region tags — `['Geneva CRM', ptypeLabel, ...regionTags, ...outreachTag]`); **waitlist pushes are byte-for-byte unchanged** and the consent wall is untouched (outreach contacts still cannot reach the push without recorded consent evidence). The full tag set including `Outreach` lands in the `pushed_to_mailchimp` timeline entry as before. **Function live at v8** (JWT verification kept). *Mailchimp recipe: segment where Tag = "Outreach" to target — or exclude — interview-outreach contacts as a group.*
+
+## ⏭️ Next
+- Standing queue: wipe demo data after Dani reviews; questionnaire; Dani #24; mobile/large-font accessibility review. ~~Resend welcome email~~ ✅ and ~~"Outreach" Mailchimp tag~~ ✅ both shipped this session.
+- **Parked (legal/Dani conversation)**: any auto-harvesting of agents' emails/phones — deliberately not built.
+
+---
+
 # Session: July 8, 2026 — 🔍 FULL APP AUDIT + 🔐 SECURITY FIX (admin password rotated)
 **Session Focus:** the long-queued full app audit (read-only), housekeeping the working tree, and fixing the one real exposure the audit surfaced — a hardcoded admin password in tracked scripts on the public repo.
 
