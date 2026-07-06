@@ -228,7 +228,7 @@ export default function ForumHome() {
           <div className="flex gap-6">
             <div className="flex-1 min-w-0">
               <Tabs defaultValue="categories">
-                <TabsList className="mb-4 rounded-full bg-cream border border-forest/10 shadow-subtle p-1">
+                <TabsList className="mb-4 h-auto max-w-full flex-wrap rounded-full bg-cream border border-forest/10 shadow-subtle p-1">
                   <TabsTrigger value="categories" className="rounded-full px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5">Categories</TabsTrigger>
                   <TabsTrigger value="regional" className="rounded-full px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5">Regional</TabsTrigger>
                   <TabsTrigger value="trending" className="rounded-full px-4 py-2 text-sm font-semibold text-forest hover:bg-forest/5">Trending</TabsTrigger>
