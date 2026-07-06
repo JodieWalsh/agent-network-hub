@@ -581,7 +581,7 @@ export default function ProfileEdit() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-cream rounded-2xl border border-forest/10 shadow-sm">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   {role === 'admin' && <Shield className="h-6 w-6 text-purple-600" />}
                   {role !== 'admin' && approvalStatus === 'approved' && <CheckCircle2 className="h-6 w-6 text-green-600" />}
                   {role !== 'admin' && approvalStatus === 'pending' && <Clock className="h-6 w-6 text-amber-600" />}

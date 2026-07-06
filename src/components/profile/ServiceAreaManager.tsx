@@ -756,7 +756,7 @@ export function ServiceAreaManager({ userId, initialAreas = [], onChange }: Serv
                 key={area.id}
                 className="flex items-center justify-between p-3 rounded-md border border-border bg-muted/30"
               >
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">
