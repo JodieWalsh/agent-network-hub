@@ -98,7 +98,7 @@ const Dashboard = () => {
         <CrmSnapshot />
 
         <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Curated actions */}
             <section className="rounded-[24px] border border-[#2D6350]/12 bg-white/80 p-8 shadow-[0_6px_24px_rgba(94,70,55,0.07)] backdrop-blur-sm">
               <p className="text-xs font-medium uppercase tracking-[0.3em] text-[#8F4E58]">
@@ -169,7 +169,7 @@ const Dashboard = () => {
           </div>
 
           {/* Recent activity feed */}
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <RecentActivity />
           </div>
         </div>
