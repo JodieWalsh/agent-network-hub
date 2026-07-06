@@ -207,11 +207,14 @@ serve(async (req: Request) => {
 
     // --- 4. Tags (best-effort; a tag failure doesn't fail the push) ---
     // Base tags + one "Region: …" tag per captured launch region (skipped
-    // gracefully when the contact has none).
+    // gracefully when the contact has none) + an "Outreach" tag for
+    // interview_outreach contacts only (these can only reach here through
+    // the consent wall above; waitlist contacts never get it).
     const regionTags = (Array.isArray(contact.launch_regions) ? contact.launch_regions : [])
       .map((token: string) => LAUNCH_REGION_TAG_NAMES[token])
       .filter(Boolean) as string[];
-    const tagNames = ['Geneva CRM', ptypeLabel, ...regionTags];
+    const outreachTag = contact.contact_type === 'interview_outreach' ? ['Outreach'] : [];
+    const tagNames = ['Geneva CRM', ptypeLabel, ...regionTags, ...outreachTag];
     await fetch(`${memberUrl}/tags`, {
       method: 'POST',
       headers: { Authorization: mcAuth, 'Content-Type': 'application/json' },
