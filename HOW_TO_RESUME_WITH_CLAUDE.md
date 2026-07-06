@@ -2,13 +2,15 @@
 
 This document explains how to start a new Claude session and get up to speed fast.
 
-**Last Updated:** July 4, 2026
+**Last Updated:** July 8, 2026
 **Project:** Buyers Agent Hub (agent-network-hub)
 **Live URL:** https://agent-network-hub-1ynd.vercel.app
 
 ---
 
-## 📍 WHERE WE ARE (July 5, 2026)
+## 📍 WHERE WE ARE (July 8, 2026)
+
+**Update (July 8, 2026): 🔍 FULL APP AUDIT DONE + 🔐 SECURITY FIX.** The full app audit ran (read-only) — **the app is in good shape**: the two CRMs (Monaco/Geneva) are cleanly separated, security/compliance is intact, and **build + `tsc --noEmit` are both clean** (the old "93 tsc errors" notes below are stale — corrected in place). The audit's one real finding was **fixed the same session (`121434e`)**: the seeded admin's password was hardcoded in 24 tracked scripts on the public repo — it was **rotated via the auth admin API** (old password verified dead; but it lives on in git history, so NEVER reuse it) and all scripts now read **`ADMIN_TEST_EMAIL` / `ADMIN_TEST_PASSWORD` from the gitignored `.env`**. Root cause: a `.gitignore` near-miss (`verify-*.mjs` prefix rule vs our `*-verify.mjs` suffix names) — now explained by a comment in `.gitignore`. Housekeeping also landed (`c942b6e`, `255c4ae`): ignore rules for `__pycache__`/`screenshots`/`settings.local.json`, and the ui-ux-pro-max skill, audit script, spec .docx files, and landing reference image are now tracked. **Resend is verified and the welcome email is unblocked** (see the July 7 update below). Full detail: the July 8 entry in `SESSION_RECORD.md`.
 
 **Update (July 7, 2026): ✅ RESEND DOMAIN VERIFIED — welcome email UNBLOCKED.** Jodie confirmed in the Resend dashboard that **`buyersagenthub.com` IS verified**; the app correctly sends from **`hello@buyersagenthub.com`** (`FROM_EMAIL` in `supabase/functions/_shared/email.ts`, set May 31). Every older "needs domain verification / sends from onboarding@resend.dev" note in these docs was stale — ignore it. The **welcome email (lead-capture piece 4) is now unblocked and ready to build**; the only email work still outstanding is end-to-end send testing (no real sends yet — we're pre-launch).
 
@@ -34,7 +36,7 @@ The entire app now uses the **quiet luxury design system** (see CLAUDE.md → DE
 
 **Update (July 4, 2026, later that day): CRM Phase 4 is UNDERWAY — 2 of 3 pieces done.** **Saved Views** shipped (commit `9935478` — filter chips on the Clients page: All / Needs attention / Prospects / Active clients / Closing/closed / Settling / Stalling, live counts, filtering both list and board, read-only presets, calm empty states). **Stage-age "stalling" alerts** shipped (commit `af93074` — `src/lib/stage-age.ts` holds the thresholds in one constant; gentle champagne hourglass chips on list rows and board cards, an inline nudge on the client record, and the "Stalling" chip; engaged households are measured by buying-stage age so actively-moving clients are never flagged; degrades gracefully on null timestamps). **Remaining Phase 4 piece: lightweight automations & smart defaults** (stage suggestions like offer logged → "Offer submitted", require reason on pause/lost). After that: the later phases (email/calendar/comms/AI) and the **user-facing documentation + training** (roadmap 📚 section).
 
-**Update (June 29, 2026):** Dashboard stats are now wired to real data (done 12 June, commit `92c4d6c` — `StatsGrid` uses real raw-fetch queries, no longer placeholders). A security remediation also happened 29 June: `.env` was untracked from git, and the Supabase secret key + access token were rotated — see the 29 June entry in `SESSION_RECORD.md` for full detail. **Tooling note:** Fable 5 is currently unavailable, so use **Opus 4.8** (high effort) in Claude Code for complex tasks.
+**Update (June 29, 2026):** Dashboard stats are now wired to real data (done 12 June, commit `92c4d6c` — `StatsGrid` uses real raw-fetch queries, no longer placeholders). A security remediation also happened 29 June: `.env` was untracked from git, and the Supabase secret key + access token were rotated — see the 29 June entry in `SESSION_RECORD.md` for full detail. **Tooling note (refreshed July 8, 2026):** Fable 5 is available again and is the preferred model for complex tasks (the earlier "unavailable, use Opus 4.8" note is stale).
 
 **Start every session by reading:** `CLAUDE.md`, then `docs/CODEBASE_AUDIT.md`, then the latest entry in `SESSION_RECORD.md`.
 
@@ -47,9 +49,9 @@ Dev server for these: `npm run dev -- --port 8081`
 **Next up:**
 1. **Work Regions feature** — spec at `docs/WORK_REGIONS_SPEC.md`. Read it first, then implement (Phase 1A database + 1B profile UI; a ready-to-use prompt is embedded in the spec).
 2. Replace mock geocoder in Directory/Marketplace/Inspections filters with Mapbox (`LocationSearchFilter` → real geocoder) — international users currently can't filter by location
-3. Regenerate Supabase types (`npx supabase gen types`) — fixes most of the 93 pre-existing tsc errors
+3. ~~Clear the 93 pre-existing tsc errors~~ — **stale: `tsc --noEmit` is clean (verified July 8, 2026)**; regenerating Supabase types (`npx supabase gen types`) is now just a nice-to-have
 4. Delete dead code: `Inspections.tsx`, `PostInspection.tsx`, `WelcomeHeader.tsx`, `NavLink.tsx`
-5. Resend activation (set `RESEND_API_KEY`, verify domain) + review system completion — see audit items 5–10
+5. Resend welcome email — ✅ domain verified, unblocked (see July 7/8 updates) + review system completion — see audit items 5–10
 
 ---
 
@@ -336,11 +338,11 @@ Check `docs/DANI_APPROVAL_CHECKLIST.md` before making changes to:
 
 1. **Work Regions feature** ← NEXT (spec: docs/WORK_REGIONS_SPEC.md)
 2. Real Mapbox geocoding in Directory/Marketplace/Inspections filters (mock geocoder is AU-only)
-3. Regenerate Supabase types + clear the 93 pre-existing tsc errors
+3. Regenerate Supabase types (nice-to-have — the old "93 tsc errors" claim is stale; tsc is clean as of July 8, 2026)
 4. Review system completion (table exists, no write UI; ratings hardcoded)
 5. Email notification testing (Resend — ✅ buyersagenthub.com domain already verified; sends from hello@buyersagenthub.com)
 6. Dead code cleanup (Inspections.tsx, PostInspection.tsx, WelcomeHeader.tsx, NavLink.tsx)
-7. Migrate remaining ~33 supabase.from() calls to raw fetch (AuthContext, Admin, Marketplace...)
+7. Migrate remaining supabase.from() DB calls to raw fetch — audit (July 8, 2026) counted ~14 calls in just 2 files: `Admin.tsx` (13) + `AuthContext.tsx` (1); the old "~33 calls" claim was stale (other `.from(` hits are `Array.from`/`storage.from`)
 8. CRM system with client management and automated workflows
 9. Expanded user/job types (pest inspectors, property managers)
 

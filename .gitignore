@@ -27,6 +27,11 @@ supabase/.temp/
 *.sw?
 
 # Temporary test files
+# NOTE the naming near-miss: verify-*.mjs (prefix) is ignored, but the tracked
+# puppeteer scripts are named *-verify.mjs (suffix) and are INTENTIONALLY committed.
+# This gap once let hardcoded admin credentials reach the public repo (fixed July 2026
+# by rotating the password and reading ADMIN_TEST_EMAIL/PASSWORD from .env) —
+# so never put secrets in *-verify.mjs scripts; they are tracked.
 nul
 check-*.mjs
 test-*.mjs

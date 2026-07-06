@@ -715,7 +715,7 @@ Inspection jobs can be linked to client briefs via `client_brief_id` FK. Client 
 
 **Patterns for admin/server-side operations:**
 1. **Service-level REST access** — `apikey: $SUPABASE_SECRET_KEY` + `Authorization: Bearer $SUPABASE_SECRET_KEY` headers against `{SUPABASE_URL}/rest/v1/...` (bypasses RLS like the old service_role key).
-2. **User-level operations / SECURITY DEFINER RPCs** — authenticate as the seeded admin via `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` with `apikey: <publishable key>` and the credentials in `seed-admin.mjs`, then call REST/RPC endpoints with that access token. Prefer this when the app's own RPCs already do the job.
+2. **User-level operations / SECURITY DEFINER RPCs** — authenticate as the seeded admin via `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` with `apikey: <publishable key>` and the admin credentials from `.env` (`ADMIN_TEST_EMAIL` / `ADMIN_TEST_PASSWORD` — since the July 2026 rotation they live ONLY there, never hardcoded in any script or doc), then call REST/RPC endpoints with that access token. Prefer this when the app's own RPCs already do the job.
 
 **Note:** For complex SQL with dollar-quoting (`$$`), use a Node.js `.cjs` script file to avoid shell escaping issues (the project has `"type": "module"` in package.json so `.cjs` extension is needed for CommonJS).
 

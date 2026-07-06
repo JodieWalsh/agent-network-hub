@@ -2,6 +2,27 @@
 
 ---
 
+# Session: July 8, 2026 — 🔍 FULL APP AUDIT + 🔐 SECURITY FIX (admin password rotated)
+**Session Focus:** the long-queued full app audit (read-only), housekeeping the working tree, and fixing the one real exposure the audit surfaced — a hardcoded admin password in tracked scripts on the public repo.
+
+## 🎯 Session Summary
+**The app is in good shape.** The full audit (read-only — no behaviour changes) confirmed: the two CRMs (Monaco = agents' client CRM, Geneva = our internal customer CRM) are cleanly separated, security/compliance is intact (Geneva consent wall, append-only timeline, admin-only RLS all holding), and **both the build and `tsc --noEmit` are clean**. The **Resend domain (`buyersagenthub.com`) was confirmed VERIFIED** in the dashboard — the welcome email is unblocked. The one real finding — the seeded admin's password hardcoded in 24 tracked scripts — was **fixed the same session: password rotated, credentials moved to `.env`**.
+
+## ✅ Accomplished (with commits)
+- **Full app audit (read-only)** — overall healthy; the stale doc claims it flagged (93 tsc errors → actually zero; "~33 `supabase.from()` calls" → actually ~14 across 2 files, `Admin.tsx` + `AuthContext.tsx`) are corrected in `HOW_TO_RESUME_WITH_CLAUDE.md` as of this session.
+- **Resend domain confirmed VERIFIED** — `buyersagenthub.com` verified in the Resend dashboard; the app sends from `hello@buyersagenthub.com`. The welcome email (lead-capture piece 4) is unblocked.
+- **`c942b6e` — working-tree housekeeping (ignore rules)**: gitignored `__pycache__/`, `screenshots/`, and `.claude/settings.local.json` (and untracked the latter).
+- **`255c4ae` — working-tree housekeeping (tracking)**: committed the `ui-ux-pro-max` skill, `audit-screenshots.mjs`, the two spec docs (`docs/CRM_DESIGN_SPEC.docx`, `docs/WorkRegions-TechSpec.docx`), and moved the landing reference image to `docs/landing-look-reference.png`.
+- **`121434e` — 🔐 SECURITY FIX: exposed admin password rotated.** The seeded admin's password was hardcoded in 24 tracked scripts (all the `*-verify.mjs` files, `sidebar-probe.mjs`, `seed-admin.mjs`) on the **public** repo. Deleting the user failed (associated data) and the email reset link misroutes, so the password was **rotated directly via the auth admin API** (verified: old password rejected, new one signs in). All 24 scripts now read **`ADMIN_TEST_EMAIL` / `ADMIN_TEST_PASSWORD` from the gitignored `.env`** via dotenv; `git grep AdminPassword123` over tracked files returns nothing; `seed-admin.mjs` no longer echoes the password.
+  - ⚠️ **The old password is dead but still visible in git history — it must NEVER be reused for anything.**
+  - **Root cause worth remembering:** a `.gitignore` near-miss — it ignores `verify-*.mjs` (prefix) but our scripts are named `*-verify.mjs` (suffix), so they were all tracked. A comment now marks this in `.gitignore`; the scripts are safe to track now that they contain no credentials.
+
+## ⏭️ Next
+- Standing queue: wipe demo data after Dani reviews; questionnaire; **Resend welcome email (✅ unblocked — build it)**; the "Outreach" Mailchimp tag TODO; Dani #24; mobile/large-font accessibility review. ~~Full app audit~~ ✅ done this session.
+- **Parked (legal/Dani conversation)**: any auto-harvesting of agents' emails/phones — deliberately not built.
+
+---
+
 # Session: July 7, 2026 — 🎉 INTERVIEW FUNNEL COMPLETE (pieces 4 & 5)
 **Session Focus:** the final two Interview Funnel pieces — clean dashboard separation of the two populations, and the personalised intro-email drafting helper — closing out the whole funnel.
 
