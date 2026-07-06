@@ -313,7 +313,7 @@ export default function GenevaContactForm() {
         </button>
 
         <div className={`${panelClass} p-6 lg:p-8`} style={panelStyle}>
-          <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
+          <p className="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
             Internal · Geneva
           </p>
           <h1 className="mt-1 font-serif text-3xl font-semibold text-[#1C1917]">
@@ -411,7 +411,7 @@ export default function GenevaContactForm() {
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
-              <p className="mt-1.5 font-sans text-[11px] text-[#57534E]">
+              <p className="mt-1.5 font-sans text-xs text-[#57534E]">
                 Only subscribed contacts are ever pushed to Mailchimp.
               </p>
             </div>

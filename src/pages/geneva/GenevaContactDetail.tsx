@@ -162,7 +162,7 @@ function ConsentDot({ status }: { status: string }) {
       ? "bg-[#D8C3B8]"
       : "bg-[#8F4E58]/60";
   return (
-    <span className="inline-flex items-center gap-1.5 font-sans text-[11px] text-[#57534E]">
+    <span className="inline-flex items-center gap-1.5 font-sans text-xs text-[#57534E]">
       <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       {CONSENT_LABELS[status] || status}
     </span>
@@ -603,18 +603,18 @@ export default function GenevaContactDetail() {
       <li key={t.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className={`font-sans text-[15px] font-semibold ${t.status === "open" ? "text-[#1C1917]" : "text-[#57534E] line-through decoration-[#B76E79]/40"}`}>
+            <p className={`font-sans text-[0.9375rem] font-semibold ${t.status === "open" ? "text-[#1C1917]" : "text-[#57534E] line-through decoration-[#B76E79]/40"}`}>
               {t.title}
             </p>
             {t.priority !== "medium" && (
-              <span className="rounded-full border border-[#B76E79]/30 bg-[#B76E79]/[0.08] px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]">
+              <span className="rounded-full border border-[#B76E79]/30 bg-[#B76E79]/[0.08] px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]">
                 {t.priority}
               </span>
             )}
             {overdue && (
               <span
                 data-overdue={t.title}
-                className="inline-flex items-center gap-1 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]"
+                className="inline-flex items-center gap-1 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]"
               >
                 <Hourglass size={9} strokeWidth={2.25} /> Overdue
               </span>
@@ -665,7 +665,7 @@ export default function GenevaContactDetail() {
         <div className={`${panelClass} p-6 lg:p-8`} style={panelStyle}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
+              <p className="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
                 Internal · Geneva
               </p>
               <h1 className="mt-1 font-serif text-3xl font-semibold text-[#1C1917] lg:text-4xl">{name}</h1>
@@ -679,7 +679,7 @@ export default function GenevaContactDetail() {
                   <span
                     data-outreach-chip
                     title="We reached out to this contact — never emailed without recorded consent"
-                    className="inline-flex items-center rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-wider text-[#8F4E58]"
+                    className="inline-flex items-center rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2.5 py-1 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]"
                   >
                     Outreach
                   </span>
@@ -703,7 +703,7 @@ export default function GenevaContactDetail() {
                   <StageBadge stage={contact.lifecycle_stage} onChange={openStageDialog} />
                 )}
                 {isOutreach && interviewDays !== null && (
-                  <span data-interview-days className="font-sans text-[11px] tabular-nums text-[#57534E]">
+                  <span data-interview-days className="font-sans text-xs tabular-nums text-[#57534E]">
                     in {interviewLabel} · {interviewDays} day{interviewDays === 1 ? "" : "s"}
                   </span>
                 )}
@@ -711,7 +711,7 @@ export default function GenevaContactDetail() {
                 {contact.mailchimp_status === "synced" && contact.mailchimp_synced_at && (
                   <span
                     data-mailchimp-status
-                    className="inline-flex items-center gap-1.5 font-sans text-[11px] text-[#57534E]"
+                    className="inline-flex items-center gap-1.5 font-sans text-xs text-[#57534E]"
                   >
                     <Send size={10} strokeWidth={2} className="text-[#2D6350]" />
                     In Mailchimp · <span className="tabular-nums">{formatDate(contact.mailchimp_synced_at)}</span>
@@ -763,7 +763,7 @@ export default function GenevaContactDetail() {
                   {contact.launch_regions.map((token) => (
                     <span
                       key={token}
-                      className="rounded-full border border-[#2D6350]/20 bg-[#2D6350]/[0.05] px-2.5 py-0.5 font-sans text-[11px] font-medium text-[#2D6350]"
+                      className="rounded-full border border-[#2D6350]/20 bg-[#2D6350]/[0.05] px-2.5 py-0.5 font-sans text-xs font-medium text-[#2D6350]"
                     >
                       {LAUNCH_REGION_LABELS[token] || token}
                     </span>
@@ -792,16 +792,16 @@ export default function GenevaContactDetail() {
 
             {/* Meta card */}
             <div className="shrink-0 rounded-2xl border border-[#1C1917]/[0.08] bg-white/70 p-4 lg:w-64">
-              <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">Owner</p>
+              <p className="font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">Owner</p>
               <p className="mt-1 font-sans text-sm font-semibold text-[#1C1917]">{adminName(contact.owner_id)}</p>
-              <p className="mt-3 font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">Source</p>
+              <p className="mt-3 font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">Source</p>
               <p className="font-sans text-sm text-[#1C1917]">
                 {contact.original_source ? SOURCE_LABELS[contact.original_source] || contact.original_source : "Not recorded"}
               </p>
               {contact.source_detail && (
                 <p className="font-sans text-xs text-[#57534E]">{contact.source_detail}</p>
               )}
-              <p className="mt-3 font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">Added · Last Activity</p>
+              <p className="mt-3 font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">Added · Last Activity</p>
               <p className="font-sans text-xs tabular-nums text-[#1C1917]">
                 {formatDate(contact.created_at)} · {formatDate(lastActivity)}
               </p>
@@ -838,7 +838,7 @@ export default function GenevaContactDetail() {
             </button>
           </div>
           {contact.email_consent_status !== "subscribed" && (
-            <p data-mailchimp-note className="mt-2 font-sans text-[11px] text-[#57534E]">
+            <p data-mailchimp-note className="mt-2 font-sans text-xs text-[#57534E]">
               Mailchimp push is available once this contact's email consent is{" "}
               <span className="font-medium text-[#1C1917]">Subscribed</span> — only
               opted-in contacts are ever pushed.
@@ -1151,12 +1151,12 @@ export default function GenevaContactDetail() {
                 }
               >
                 <span className="flex items-center gap-2.5">
-                  <span className="font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]">
+                  <span className="font-sans text-xs font-semibold tabular-nums text-[#8F4E58]">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {INTERVIEW_STAGE_LABELS[token]}
                   {isCurrent && (
-                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#57534E]">
                       Current
                     </span>
                   )}
@@ -1166,7 +1166,7 @@ export default function GenevaContactDetail() {
             );
           })}
         </div>
-        <p className="mb-2 mt-5 font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+        <p className="mb-2 mt-5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-[#57534E]">
           If they said no
         </p>
         <div className="space-y-2">
@@ -1187,7 +1187,7 @@ export default function GenevaContactDetail() {
                 <span className="flex items-center gap-2">
                   {label}
                   {isCurrent && (
-                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#57534E]">
                       Current
                     </span>
                   )}
@@ -1238,7 +1238,7 @@ export default function GenevaContactDetail() {
                 <span className="flex items-center gap-2">
                   {label}
                   {isCurrent && (
-                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#57534E]">
                       Current
                     </span>
                   )}

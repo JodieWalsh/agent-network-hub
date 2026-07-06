@@ -425,7 +425,7 @@ export function AppSidebar() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "w-full justify-center font-sans text-[10px] uppercase tracking-[0.2em] py-1.5 font-normal border backdrop-blur-sm",
+                    "w-full justify-center font-sans text-xs uppercase tracking-[0.2em] py-1.5 font-normal border backdrop-blur-sm",
                     membershipColors[getMembershipTier()]
                   )}
                 >

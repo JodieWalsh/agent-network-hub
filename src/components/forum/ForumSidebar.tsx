@@ -52,19 +52,19 @@ export function ForumSidebar({
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
                 <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.post_count}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Posts</div>
+                <div className="mt-1 text-xs uppercase tracking-[0.15em] text-[#7A655A]">Posts</div>
               </div>
               <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
                 <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.reply_count}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Replies</div>
+                <div className="mt-1 text-xs uppercase tracking-[0.15em] text-[#7A655A]">Replies</div>
               </div>
               <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
                 <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.reputation_points}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Reputation</div>
+                <div className="mt-1 text-xs uppercase tracking-[0.15em] text-[#7A655A]">Reputation</div>
               </div>
               <div className="rounded-xl border border-[#2D6350]/10 bg-white/70 p-3">
                 <div className="font-sans text-3xl font-semibold tabular-nums text-[#2D6350]">{userStats.solutions_count}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.15em] text-[#7A655A]">Solutions</div>
+                <div className="mt-1 text-xs uppercase tracking-[0.15em] text-[#7A655A]">Solutions</div>
               </div>
             </div>
             <div className="flex gap-2 mt-3">

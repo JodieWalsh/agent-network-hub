@@ -132,7 +132,7 @@ function ConsentDot({ status }: { status: string }) {
       ? "bg-[#D8C3B8]"
       : "bg-[#8F4E58]/60"; // unsubscribed / bounced / complained
   return (
-    <span className="inline-flex items-center gap-1.5 font-sans text-[11px] text-[#57534E]">
+    <span className="inline-flex items-center gap-1.5 font-sans text-xs text-[#57534E]">
       <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       {CONSENT_LABELS[status] || status}
     </span>
@@ -278,7 +278,7 @@ export default function GenevaContacts() {
         {/* Header */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
+            <p className="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
               Internal · Geneva
             </p>
             <h1 className="mt-1 font-serif text-3xl font-semibold text-[#1C1917] lg:text-4xl">
@@ -320,8 +320,8 @@ export default function GenevaContacts() {
                   <span
                     className={
                       isActive
-                        ? "rounded-full bg-white/[0.18] px-2 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
-                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                        ? "rounded-full bg-white/[0.18] px-2 py-px font-sans text-xs font-semibold tabular-nums text-white"
+                        : "font-sans text-xs font-semibold tabular-nums text-[#8F4E58]"
                     }
                   >
                     {viewCounts[v.key]}
@@ -336,7 +336,7 @@ export default function GenevaContacts() {
             accent (the compliance dimension gets its own quiet layer) */}
         {contacts.length > 0 && !loading && typeCounts.interview_outreach > 0 && (
           <div role="group" aria-label="Filter by contact type" className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+            <span className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-[#57534E]">
               Type
             </span>
             {[["all", "All types"], ...Object.entries(CONTACT_TYPE_LABELS)].map(([token, label]) => {
@@ -357,8 +357,8 @@ export default function GenevaContacts() {
                   <span
                     className={
                       isActive
-                        ? "rounded-full bg-white/[0.18] px-1.5 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
-                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                        ? "rounded-full bg-white/[0.18] px-1.5 py-px font-sans text-xs font-semibold tabular-nums text-white"
+                        : "font-sans text-xs font-semibold tabular-nums text-[#8F4E58]"
                     }
                   >
                     {typeCounts[token]}
@@ -373,7 +373,7 @@ export default function GenevaContacts() {
             read distinctly (forest = view, rose = region) */}
         {contacts.length > 0 && !loading && (
           <div role="group" aria-label="Filter by launch region" className="mb-6 flex flex-wrap items-center gap-2">
-            <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+            <span className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-[#57534E]">
               Region
             </span>
             {[["all", "All regions"], ...Object.entries(LAUNCH_REGION_SHORT_LABELS)].map(([token, label]) => {
@@ -394,8 +394,8 @@ export default function GenevaContacts() {
                   <span
                     className={
                       isActive
-                        ? "rounded-full bg-white/[0.18] px-1.5 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
-                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                        ? "rounded-full bg-white/[0.18] px-1.5 py-px font-sans text-xs font-semibold tabular-nums text-white"
+                        : "font-sans text-xs font-semibold tabular-nums text-[#8F4E58]"
                     }
                   >
                     {regionCounts[token]}
@@ -455,7 +455,7 @@ export default function GenevaContacts() {
             {/* Column headings (desktop) */}
             <div className="hidden border-b border-[#1C1917]/[0.06] px-6 py-3 lg:grid lg:grid-cols-[2.4fr_1.2fr_1.4fr_1fr_1.2fr] lg:gap-4">
               {["Contact", "Type", "Stage", "Source", "Owner · Added"].map((h) => (
-                <p key={h} className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">
+                <p key={h} className="font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">
                   {h}
                 </p>
               ))}
@@ -478,7 +478,7 @@ export default function GenevaContacts() {
                         <p className="flex items-center gap-2 font-serif text-lg font-semibold leading-snug text-[#1C1917]">
                           <span className="truncate">{name}</span>
                           {c.contact_type === "interview_outreach" && (
-                            <span className="shrink-0 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]">
+                            <span className="shrink-0 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]">
                               Outreach
                             </span>
                           )}

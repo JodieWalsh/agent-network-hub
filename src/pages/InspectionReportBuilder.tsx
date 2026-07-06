@@ -865,7 +865,7 @@ export default function InspectionReportBuilder() {
                   )}>
                     {isCompleted && !isActive ? <Check className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
                   </div>
-                  <p className="text-[9px] font-medium whitespace-nowrap">{section.name}</p>
+                  <p className="text-xs font-medium whitespace-nowrap">{section.name}</p>
                 </button>
               );
             })}

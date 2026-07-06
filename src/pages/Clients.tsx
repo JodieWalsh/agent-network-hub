@@ -217,7 +217,7 @@ function StallingChip({ client }: { client: ClientRow }) {
     <span
       data-stalling={age.days}
       title={`In ${label} for ${age.days} days`}
-      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/30 px-2 py-0.5 font-sans text-[11px] font-medium text-[#8F4E58]"
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/30 px-2 py-0.5 font-sans text-xs font-medium text-[#8F4E58]"
     >
       <Hourglass size={10} strokeWidth={2} />
       <span className="tabular-nums">{age.days} days</span>
@@ -560,8 +560,8 @@ export default function Clients() {
                   <span
                     className={
                       active
-                        ? "rounded-full bg-white/[0.18] px-2 py-px font-sans text-[11px] font-semibold tabular-nums text-white"
-                        : "font-sans text-[11px] font-semibold tabular-nums text-[#8F4E58]"
+                        ? "rounded-full bg-white/[0.18] px-2 py-px font-sans text-xs font-semibold tabular-nums text-white"
+                        : "font-sans text-xs font-semibold tabular-nums text-[#8F4E58]"
                     }
                   >
                     {savedViewCounts[v.key]}
@@ -673,7 +673,7 @@ export default function Clients() {
                     style={{ borderTopColor: isOver ? undefined : "rgba(183,110,121,0.3)" }}
                   >
                     <div className="mb-3 flex items-baseline justify-between px-1">
-                      <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-[#2D6350]">
+                      <p className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-[#2D6350]">
                         {col.label}
                       </p>
                       <p className="font-sans text-xs font-medium tabular-nums text-[#57534E]">
@@ -702,7 +702,7 @@ export default function Clients() {
             {/* Column headings (desktop) */}
             <div className="hidden border-b border-[#1C1917]/[0.06] px-6 py-3 lg:grid lg:grid-cols-[2.2fr_1.6fr_1.4fr_1.1fr] lg:gap-4">
               {["Household", "Stages", "Next Action", "Last Contact"].map((h) => (
-                <p key={h} className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">
+                <p key={h} className="font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">
                   {h}
                 </p>
               ))}
@@ -721,7 +721,7 @@ export default function Clients() {
                       {/* Household + members */}
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-sans text-[15px] font-semibold text-[#1C1917]">
+                          <p className="font-sans text-[0.9375rem] font-semibold text-[#1C1917]">
                             {client.household_name}
                           </p>
                           {attention && (

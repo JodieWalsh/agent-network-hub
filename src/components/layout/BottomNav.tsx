@@ -45,7 +45,7 @@ export function BottomNav() {
                 className={cn(isActive(item.path) && "text-[#B76E79]")}
               />
             </div>
-            <span className="text-[10px] font-medium">{item.label}</span>
+            <span className="text-xs font-medium">{item.label}</span>
           </Link>
         ))}
       </div>

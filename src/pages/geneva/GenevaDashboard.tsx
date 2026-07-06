@@ -271,7 +271,7 @@ export default function GenevaDashboard() {
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
+            <p className="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-[#8F4E58]">
               Internal · Geneva
             </p>
             <h1 className="mt-1 font-serif text-3xl font-semibold text-[#1C1917] lg:text-4xl">
@@ -343,7 +343,7 @@ export default function GenevaDashboard() {
                   <p className="mt-3 font-sans text-3xl font-semibold tabular-nums text-[#1C1917]">
                     {m.value}
                   </p>
-                  <p className="mt-0.5 font-sans text-[11px] font-medium uppercase tracking-[0.14em] text-[#57534E]">
+                  <p className="mt-0.5 font-sans text-xs font-medium uppercase tracking-[0.14em] text-[#57534E]">
                     {m.label}
                   </p>
                 </button>
@@ -384,13 +384,13 @@ export default function GenevaDashboard() {
                         {funnel.dropIdx === i ? (
                           <span
                             data-dropoff
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2.5 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]"
                           >
                             <Hourglass size={9} strokeWidth={2.25} />
                             Biggest drop-off · <span className="tabular-nums">{r.advancePct}%</span> advance
                           </span>
                         ) : (
-                          <span className="font-sans text-[11px] tabular-nums text-[#57534E]/80">
+                          <span className="font-sans text-xs tabular-nums text-[#57534E]/80">
                             ↓ {r.advancePct}% advance
                           </span>
                         )}
@@ -459,7 +459,7 @@ export default function GenevaDashboard() {
                         }`}
                       >
                         <span className={`flex items-center gap-2 font-sans text-xs ${n > 0 ? "font-medium text-[#1C1917]" : "text-[#57534E]/70"}`}>
-                          <span className="font-sans text-[10px] font-semibold tabular-nums text-[#8F4E58]">
+                          <span className="font-sans text-xs font-semibold tabular-nums text-[#8F4E58]">
                             {String(i + 1).padStart(2, "0")}
                           </span>
                           {INTERVIEW_STAGE_LABELS[token]}
@@ -471,7 +471,7 @@ export default function GenevaDashboard() {
                     ))}
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-[#1C1917]/[0.06] pt-3">
-                    <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-[#57534E]">
+                    <span className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-[#57534E]">
                       If they said no
                     </span>
                     {interviewFunnel.exits.map(({ token, n }) => (
@@ -509,7 +509,7 @@ export default function GenevaDashboard() {
                           opacity: 0.25 + 0.75 * (w.count / growth.max),
                         }}
                       />
-                      <p className="font-sans text-[10px] uppercase tracking-wider text-[#57534E]">{w.label}</p>
+                      <p className="font-sans text-xs uppercase tracking-wider text-[#57534E]">{w.label}</p>
                     </div>
                   ))}
                 </div>
@@ -679,7 +679,7 @@ export default function GenevaDashboard() {
                             <p className="truncate font-sans text-xs text-[#57534E]">"{task.title}"</p>
                           </div>
                           <span
-                            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider ${
+                            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider ${
                               overdueDays > 0
                                 ? "border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] text-[#8F4E58]"
                                 : "border-[#2D6350]/25 bg-[#2D6350]/[0.06] text-[#2D6350]"

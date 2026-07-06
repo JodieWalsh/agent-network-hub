@@ -1369,12 +1369,12 @@ export default function ClientDetail() {
 
             {/* Next action + last contact */}
             <div className="shrink-0 rounded-2xl border border-[#1C1917]/[0.08] bg-white/70 p-4 lg:w-64">
-              <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">Next Action</p>
+              <p className="font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">Next Action</p>
               <p className="mt-1 font-sans text-sm font-semibold text-[#1C1917]">
                 {client.next_action_type || "None set"}
               </p>
               <p className="font-sans text-xs tabular-nums text-[#57534E]">{formatDate(client.next_action_date)}</p>
-              <p className="mt-3 font-sans text-[11px] uppercase tracking-[0.18em] text-[#57534E]">Last Contact</p>
+              <p className="mt-3 font-sans text-xs uppercase tracking-[0.18em] text-[#57534E]">Last Contact</p>
               <p className="font-sans text-sm tabular-nums text-[#1C1917]">{formatDate(client.last_contact_at)}</p>
             </div>
           </div>
@@ -1401,7 +1401,7 @@ export default function ClientDetail() {
                 className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-[#1C1917]/10 bg-white/40 px-3 py-1.5 font-sans text-xs font-medium text-[#57534E] opacity-70"
               >
                 {label}
-                <span className="rounded-full bg-[#D8C3B8]/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[#57534E]">Soon</span>
+                <span className="rounded-full bg-[#D8C3B8]/40 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#57534E]">Soon</span>
               </button>
             ))}
           </div>
@@ -1499,14 +1499,14 @@ export default function ClientDetail() {
                   <li key={m.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-sans text-[15px] font-semibold text-[#1C1917]">{m.full_name}</p>
+                        <p className="font-sans text-[0.9375rem] font-semibold text-[#1C1917]">{m.full_name}</p>
                         {m.is_primary_contact && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-[#B76E79]/35 bg-[#B76E79]/[0.10] px-2.5 py-0.5 font-sans text-[11px] font-semibold text-[#8F4E58]">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#B76E79]/35 bg-[#B76E79]/[0.10] px-2.5 py-0.5 font-sans text-xs font-semibold text-[#8F4E58]">
                             <Star size={10} fill="currentColor" /> Primary Contact
                           </span>
                         )}
                         {m.is_decision_maker && (
-                          <span className="rounded-full border border-[#2D6350]/25 bg-[#2D6350]/[0.07] px-2.5 py-0.5 font-sans text-[11px] font-medium text-[#2D6350]">
+                          <span className="rounded-full border border-[#2D6350]/25 bg-[#2D6350]/[0.07] px-2.5 py-0.5 font-sans text-xs font-medium text-[#2D6350]">
                             Decision Maker
                           </span>
                         )}
@@ -1548,12 +1548,12 @@ export default function ClientDetail() {
                       <li key={t.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-sans text-[15px] font-semibold text-[#1C1917]">{t.title}</p>
-                            <span className="rounded-full border border-[#1C1917]/12 bg-white/80 px-2 py-0.5 font-sans text-[10px] font-medium uppercase tracking-wider text-[#57534E]">
+                            <p className="font-sans text-[0.9375rem] font-semibold text-[#1C1917]">{t.title}</p>
+                            <span className="rounded-full border border-[#1C1917]/12 bg-white/80 px-2 py-0.5 font-sans text-xs font-medium uppercase tracking-wider text-[#57534E]">
                               {t.client_member_id ? memberName(t.client_member_id) || "Member" : "Shared"}
                             </span>
                             {t.priority && t.priority !== "medium" && (
-                              <span className="rounded-full border border-[#B76E79]/30 bg-[#B76E79]/[0.08] px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#8F4E58]">
+                              <span className="rounded-full border border-[#B76E79]/30 bg-[#B76E79]/[0.08] px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]">
                                 {t.priority}
                               </span>
                             )}
@@ -1709,7 +1709,7 @@ export default function ClientDetail() {
                   <li key={lp.id} data-cp-row={propAddress(lp.property)} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-sans text-[15px] font-semibold text-[#1C1917]">
+                        <p className="font-sans text-[0.9375rem] font-semibold text-[#1C1917]">
                           {propAddress(lp.property)}
                         </p>
                         <CpStatusBadge
@@ -1783,7 +1783,7 @@ export default function ClientDetail() {
                         if (group.length === 0) return null;
                         return (
                           <div key={s} className="mb-4">
-                            <p className="border-b border-[#1C1917]/[0.06] pb-1.5 font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-[#57534E]">
+                            <p className="border-b border-[#1C1917]/[0.06] pb-1.5 font-sans text-xs font-medium uppercase tracking-[0.18em] text-[#57534E]">
                               {CP_STATUS_LABELS[s]} <span className="tabular-nums">({group.length})</span>
                             </p>
                             <ul className="divide-y divide-[#1C1917]/[0.06]">{group.map(card)}</ul>
@@ -1861,7 +1861,7 @@ export default function ClientDetail() {
                       <li key={j.id} data-job-row={j.title || j.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-sans text-[15px] font-semibold text-[#1C1917]">
+                            <p className="font-sans text-[0.9375rem] font-semibold text-[#1C1917]">
                               {j.title || "Inspection job"}
                             </p>
                             <JobStatusBadge status={j.status} />
@@ -1977,7 +1977,7 @@ export default function ClientDetail() {
                 <span className="flex items-center gap-2">
                   {label}
                   {isCurrent && (
-                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#57534E]">
                       Current
                     </span>
                   )}
@@ -2293,7 +2293,7 @@ export default function ClientDetail() {
                       </span>
                     </span>
                     {already ? (
-                      <span className="shrink-0 rounded-full bg-[#D8C3B8]/40 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                      <span className="shrink-0 rounded-full bg-[#D8C3B8]/40 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#57534E]">
                         Linked
                       </span>
                     ) : (
@@ -2352,7 +2352,7 @@ export default function ClientDetail() {
                 <span className="flex items-center gap-2">
                   {CP_STATUS_LABELS[token]}
                   {isCurrent && (
-                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-[#57534E]">
+                    <span className="rounded-full bg-[#D8C3B8]/50 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#57534E]">
                       Current
                     </span>
                   )}
