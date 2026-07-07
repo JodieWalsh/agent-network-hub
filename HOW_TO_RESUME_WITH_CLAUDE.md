@@ -10,6 +10,18 @@ This document explains how to start a new Claude session and get up to speed fas
 
 ## 📍 WHERE WE ARE (July 8, 2026)
 
+**Update (July 7, 2026, end of session): ♿ ALL CRITICAL ACCESSIBILITY FINDINGS COMPLETE — plus three H-series fixes shipped.**
+
+**Shipped today (all pushed & live):** **C3** dashboard stat-tile label clipping (`ab30fbd`) — that closes out every Critical (C1–C4); **H2** button heights raised to 44px comfortable tap targets in `button.tsx` (`4d70196`); **H4** small rose text swapped to accessible dark rose `#8F4E58` across 9 files, WCAG-verified 4.9–6.2:1 (`917d6ac`); **H3** aria-labels added to 24 icon-only buttons across 13 files (`cab2f23`).
+
+**NEW — verify-accessibility skill works (`85cdd4c`):** the hardened large-font check routine is committed as a project skill and confirmed working — but **ONLY when Claude Code is started from inside the project folder** (`cd` into `agent-network-hub` first, THEN launch), because skills are scanned once at session start.
+
+**Remaining accessibility queue:** **H1** per-target hit areas (e.g. the Geneva region bars); **H5** Geneva row truncation; plus small pre-existing items flagged during the H-work — Directory page ~5px overflow at large fonts, the "Save 17%" pricing badge overflow (22px past its container at 24px root), bottom-nav label crowding at large fonts, and the "Metric/Imperial" sidebar rose text (needs Warm Ivory, NOT dark rose, since it sits on dark green).
+
+**Standing reminders:** wipe the 24 Geneva demo contacts once Dani has reviewed the dashboard (`node geneva-demo-data.mjs wipe`); the NotebookLM document library (9 docs) is ready to use; the email logo is a someday finishing touch.
+
+---
+
 **Update (July 8, 2026, end of day): 🚢 BIG SHIPPING DAY + ♿ ACCESSIBILITY PASS UNDERWAY — read the ⚠️ correction below before trusting the findings doc.**
 
 **Shipped today (all live):** ✉️ **Welcome email** (lead-capture piece 4, `b91edb4`); 🏷️ **Outreach Mailchimp tag** (`21be58d`); 🔍 **design + accessibility review** → `docs/DESIGN_REVIEW_FINDINGS.md`; and four accessibility fixes — **C1** settings/profile horizontal scroll (`fc94457`), **C2 dashboard** horizontal scroll (`843a1ac`), **C4** all 68 fixed-px text sizes → scalable rem (`cf66bd2`), **C2 forums** horizontal scroll (`60cc889`).
