@@ -10,21 +10,21 @@
 
 ---
 
-## ⚠️ Update — July 8, 2026 (after the review): outcomes & methodology correction
+## ⚠️ Update — July 9, 2026: TRUE final outcomes (replaces the July 8 note, which recorded FALSE "artifact" conclusions)
 
-**Methodology correction.** The original probe loaded each page at the default font and then flipped the root font to 24px mid-session. That method **inflates widths**: Chrome's emulated mobile layout viewport latches to the widest transient state during the flip and never shrinks back, so several "overflow" numbers were measurement artifacts. The honest method — and the realistic one, since a low-vision user's font setting exists before any page loads — is applying the 24px root font **from first paint** (`page.evaluateOnNewDocument` injecting `html { font-size: 24px !important; }` before navigation). All C1/C2 verification below used the corrected method.
+**What went wrong, honestly.** Two measurement failures compounded. First, the original review's mid-session font-flip inflated widths (Chrome's emulated layout viewport latches to the widest transient state). Second — and worse — the "corrected" first-paint re-measurements **silently failed to apply the 24px root font** (a `documentElement` race in `evaluateOnNewDocument`), so they measured the default font twice and returned false "artifact, 375/375" verdicts for pages that were genuinely broken. The original review's numbers were right all along. The lesson is now enforced by the **`.claude/skills/verify-accessibility` skill**: PROVE the root font (`rootFont=24px` logged per page), check **container-level** spills (a clean 375 page width does not prove content stays inside its card), and verify every fix **by eye** from a screenshot copied to Downloads.
 
-**Outcomes so far (C1 + C2 complete):**
+**TRUE final C2 scoreboard — every page was REAL, every page is FIXED (✅ C1 + C2 fully DONE):**
 
-| Finding / page | Original claim | Re-measured reality | Outcome |
-|---|---|---|---|
-| **C1** settings/profile | 391px default / 584px large | **REAL** (391 was genuine at default font) | ✅ **Fixed & shipped** `fc94457` — `min-w-0` on the flex rows in `ServiceAreaManager.tsx` + `ProfileEdit.tsx`; now 375/375 |
-| **C2** Dashboard | 452px large font | **REAL** (rigid 398px grid sections confirmed by squeeze test) | ✅ **Fixed & shipped** `843a1ac` — `min-w-0` on the page-grid columns in `Index.tsx`; `min-w-0`/`flex-wrap`/`break-words` on the tiles in `PowerTiles.tsx`; now 375/375 |
-| **C2** Forums | 472px large font | **ARTIFACT** — measures 375/375, zero offenders | No change needed |
-| **C2** Marketplace | 427px large font | **ARTIFACT** — measures 375/375, zero offenders | No change needed |
-| **C2** Geneva dashboard | 439px large font | **ARTIFACT for scroll** — measures 375/375 | No scroll change needed — **but** its 24px-tall region bars remain a REAL touch-target finding (see **H1**) and its ellipsis-heavy attention rows remain a REAL truncation finding (see **H5**). Not lost, just not C2. |
+| Page | Overflow at proven 24px root | Outcome |
+|---|---|---|
+| **C1** settings/profile | 391px default / 584px large — REAL | ✅ **Fixed** `fc94457` — `min-w-0` on flex rows in `ServiceAreaManager.tsx` + `ProfileEdit.tsx` |
+| **C2** Dashboard | 452px — REAL | ✅ **Fixed** `843a1ac` — `min-w-0` grid columns in `Index.tsx`; `min-w-0`/`flex-wrap`/`break-words` tiles in `PowerTiles.tsx` |
+| **C2** Forums | 472px — REAL (rigid TabsList, 442px) | ✅ **Fixed** `60cc889` — `h-auto max-w-full flex-wrap` on the Categories/Regional/Trending `TabsList` in `ForumHome.tsx` |
+| **C2** Marketplace | 427px — REAL (nowrap header button) | ✅ **Fixed** `ff7448d` — `flex-wrap gap-y-3` on the header row in `Marketplace.tsx` |
+| **C2** Geneva dashboard | 515px — REAL, three culprits (funnel `w-28 shrink-0` columns, `pl-28` drop-off chip, channel `w-24` rows) | ✅ **Fixed** `43be108` — `flex-wrap`/`min-w-0`/`max-w-full` throughout `GenevaDashboard.tsx`; **also** the Demand-by-Region card spill (caught by eye, invisible to page-level probes) and stacked full-width region bars at large fonts |
 
-**No horizontal scrolling remains on any measured page at either font size.** Next up in the attack order: **C4** (fixed-px text that never scales).
+All five pages verified at 375/375 with a **logged, proven** 24px root font, and the fixes reviewed by eye from Downloads screenshots. **C4 is also DONE** (`cf66bd2` — all 68 fixed-px text sizes → scalable rem). Remaining: C3 re-verify + the H-series (H1 touch targets, H2 control heights, H3 aria-labels, H4 rose small-text, H5 truncation) and the Mediums/Lows.
 
 ---
 
@@ -36,8 +36,8 @@
 - **Problem:** the page is wider than an iPhone screen even before any accessibility settings are applied — the whole page pans sideways.
 - **Suggested fix:** find the fixed-width child (likely a grid/flex row or input group without `min-w-0`) and constrain it (`max-w-full`, `min-w-0`, `flex-wrap`). Re-verify with the 375px + 24px-root probe.
 
-### C2. Horizontal page scroll appears at large font sizes on four more pages — ✅ DONE (see the July 8 update table)
-- **Resolution:** only the **dashboard** was real (fixed & shipped `843a1ac` — `min-w-0` on the `Index.tsx` grid columns, `min-w-0`/`flex-wrap`/`break-words` on `PowerTiles.tsx`). Forums, marketplace, and the Geneva dashboard were artifacts of the mid-session font-flip measurement — all re-measure 375/375 from first paint. The Geneva dashboard's region bars and truncating rows stay open under **H1**/**H5**.
+### C2. Horizontal page scroll appears at large font sizes on four more pages — ✅ DONE (see the TRUE scoreboard in the July 9 update)
+- **Resolution (corrected July 9):** ALL four pages were REAL — the earlier "artifact" claims came from a probe that silently failed to apply the large font. Dashboard fixed `843a1ac`, forums fixed `60cc889`, marketplace fixed `ff7448d`, Geneva dashboard fixed `43be108` (including the region-card spill + stacked region bars). The Geneva region bars' touch-target height and the attention rows' truncation stay open under **H1**/**H5**.
 - **Where (original):** dashboard (452px), forums (472px), marketplace (427px), geneva dashboard (439px) — all vs a 375px viewport at 24px root font.
 - **Problem:** for a large-font user every one of these pages pans sideways; content and actions fall off-screen. This is the single most disruptive behaviour for low-vision use.
 - **Suggested fix:** per page, locate the row that refuses to shrink (stat tile rows, filter/tab rows, funnel bars are the likely suspects) and allow wrapping or `min-w-0` shrinking; the Brand Kit's chip rows already wrap correctly on the waitlist form — same treatment.
@@ -137,8 +137,8 @@ The logged-out landing page (`/landing` turned out to be the 404 route — the r
 
 ## Suggested attack order
 
-1. ~~**C1 + C2** (horizontal scroll)~~ ✅ **DONE July 8, 2026** — C1 fixed (`fc94457`), C2 dashboard fixed (`843a1ac`), other C2 pages were measurement artifacts (see update at top)
-2. **C4** (fixed-px → rem text; mechanical find-and-replace with visual check) ← **NEXT**
+1. ~~**C1 + C2** (horizontal scroll)~~ ✅ **FULLY DONE July 9, 2026** — C1 `fc94457`, dashboard `843a1ac`, forums `60cc889`, marketplace `ff7448d`, Geneva dashboard `43be108`; ALL pages were real (the "artifact" claims were a broken-probe error — see the July 9 update at top)
+2. ~~**C4** (fixed-px → rem text)~~ ✅ **DONE** `cf66bd2` — all 68 occurrences converted, zero non-scaling text verified at proven 24px root
 3. **C3 + H5** (let labels wrap / stack Geneva rows) — note C3's dashboard stat-tile clipping was addressed as part of the C2 dashboard fix; re-verify labels wrap before closing C3
 4. **H2** (button.tsx one-file height bump) then **H1** (per-target hit-area fixes — includes the Geneva region bars)
 5. **H4** (rose small-text swaps) + **H3** (aria-labels)
