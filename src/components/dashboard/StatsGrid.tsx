@@ -26,7 +26,7 @@ function StatCard({ icon: Icon, label, value }: StatCardProps) {
       </div>
       <div>
         <p className="font-sans text-4xl font-semibold tabular-nums text-[#2D6350]">{value}</p>
-        <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#1C1917]">{label}</p>
+        <p className="mt-2 break-words text-xs uppercase tracking-[0.12em] text-[#1C1917]">{label}</p>
       </div>
     </div>
   );
@@ -127,7 +127,7 @@ export function StatsGrid() {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
         <StatCard key={stat.label} {...stat} />
       ))}
