@@ -361,7 +361,7 @@ export default function GenevaDashboard() {
               <div className="mt-5 space-y-1">
                 {funnel.rows.map((r, i) => (
                   <div key={r.stage} data-funnel-stage={r.stage}>
-                    <div className="flex items-center gap-3 lg:gap-4">
+                    <div className="flex flex-wrap items-center gap-3 lg:gap-4">
                       <p className="w-28 shrink-0 font-sans text-xs font-medium text-[#1C1917] lg:w-36 lg:text-sm">
                         {GENEVA_STAGE_LABELS[r.stage]}
                       </p>
@@ -380,11 +380,11 @@ export default function GenevaDashboard() {
                       </p>
                     </div>
                     {r.advancePct !== null && (
-                      <div className="flex items-center gap-2 py-1 pl-28 lg:pl-36">
+                      <div className="flex min-w-0 items-center gap-2 py-1 pl-28 lg:pl-36">
                         {funnel.dropIdx === i ? (
                           <span
                             data-dropoff
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2.5 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]"
+                            className="inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-full border border-[#D8C3B8]/70 bg-[#D8C3B8]/[0.25] px-2.5 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]"
                           >
                             <Hourglass size={9} strokeWidth={2.25} />
                             Biggest drop-off · <span className="tabular-nums">{r.advancePct}%</span> advance
@@ -533,7 +533,7 @@ export default function GenevaDashboard() {
                 </div>
                 <div className="mt-5 space-y-3">
                   {channels.rows.map((ch) => (
-                    <div key={ch.source} data-channel={ch.source} className="flex items-center gap-3">
+                    <div key={ch.source} data-channel={ch.source} className="flex flex-wrap items-center gap-3">
                       <p className="w-24 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] lg:w-28">
                         {SOURCE_LABELS[ch.source] || ch.source}
                       </p>
@@ -582,28 +582,33 @@ export default function GenevaDashboard() {
                           key={r.token}
                           data-region-demand={r.token}
                           onClick={() => navigate(`/geneva/contacts?region=${r.token}`)}
-                          className="group flex w-full items-center gap-3 text-left"
+                          className="group flex w-full flex-wrap items-center gap-3 text-left"
                           aria-label={`View contacts in ${LAUNCH_REGION_SHORT_LABELS[r.token]}`}
                         >
                           <p className="w-36 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] group-hover:text-[#2D6350] lg:w-44">
                             {LAUNCH_REGION_SHORT_LABELS[r.token]}
                           </p>
-                          <div className="h-6 flex-1 overflow-hidden rounded-lg bg-[#2D6350]/[0.04]">
-                            <div
-                              className="h-full rounded-lg transition-all group-hover:opacity-90"
-                              style={{
-                                width: `${(r.n / regionDemand.max) * 100}%`,
-                                background: "linear-gradient(90deg, #2D6350 0%, #35705B 100%)",
-                              }}
-                            />
+                          {/* bar + count travel as one unit: beside the label at
+                              normal fonts, a full-width line below it when large
+                              fonts make the row too tight */}
+                          <div className="flex min-w-0 flex-[1_1_8rem] items-center gap-3">
+                            <div className="h-6 flex-1 overflow-hidden rounded-lg bg-[#2D6350]/[0.04]">
+                              <div
+                                className="h-full rounded-lg transition-all group-hover:opacity-90"
+                                style={{
+                                  width: `${(r.n / regionDemand.max) * 100}%`,
+                                  background: "linear-gradient(90deg, #2D6350 0%, #35705B 100%)",
+                                }}
+                              />
+                            </div>
+                            <p className="w-8 shrink-0 text-right font-sans text-sm font-semibold tabular-nums text-[#1C1917]">
+                              {r.n}
+                            </p>
                           </div>
-                          <p className="w-8 shrink-0 text-right font-sans text-sm font-semibold tabular-nums text-[#1C1917]">
-                            {r.n}
-                          </p>
                         </button>
                       ))}
                     </div>
-                    <p className="mt-4 flex items-center gap-1.5 border-t border-[#1C1917]/[0.06] pt-3 font-sans text-xs text-[#57534E]">
+                    <p className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[#1C1917]/[0.06] pt-3 font-sans text-xs text-[#57534E]">
                       <MapPin size={11} strokeWidth={2} className="text-[#8F4E58]" />
                       No region set: <span className="font-semibold tabular-nums text-[#1C1917]">{regionDemand.noRegion}</span>
                       <span className="ml-1">· click a bar to see who's there</span>
