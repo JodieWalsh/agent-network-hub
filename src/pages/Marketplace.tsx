@@ -128,7 +128,7 @@ export default function Marketplace() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-y-3">
           <div>
             <h1 className="text-2xl lg:text-3xl font-serif font-semibold text-foreground">Property Marketplace</h1>
             <p className="text-sm text-muted-foreground mt-2">
