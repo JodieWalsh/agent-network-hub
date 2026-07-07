@@ -10,6 +10,20 @@ This document explains how to start a new Claude session and get up to speed fas
 
 ## 📍 WHERE WE ARE (July 8, 2026)
 
+**Update (July 7, 2026 — later session): ♿ ACCESSIBILITY H-SERIES DONE + 🗺️ SERVICE AREAS 3 OF 4 STEPS SHIPPED.**
+
+**Accessibility:** all Critical findings done, plus **H1** touch targets (`46f2fc8`), **H2** button heights (`4d70196`), **H3** aria-labels (`cab2f23`), **H4** dark-rose small text (`917d6ac`) shipped — and the **Geneva waitlist-funnel redesign** (`2ed5a26`: stacked layout, full-width bars). The **verify-accessibility skill works** — but ONLY when Claude Code is started from INSIDE the project folder (`cd` in first, then launch).
+
+**Service Areas feature — 3 of 4 build steps SHIPPED** (see `docs/SERVICE_AREAS_PLAN.md`): step 1 matcher `location_matches_agent_areas` (`763f782`), step 2 feed RPC `get_open_jobs_in_my_areas` (`3922fd1`), step 3 required state+country with profile-default in the job form (`8a4ecd1`). All applied to the live DB and tested on real data.
+
+**NEXT (tomorrow): step 4 — the Spotlights UI** (RPC-backed feed, "My areas" default, "All of [Country]" pill, zero-match fallback). Then later slices reuse the matcher (marketplace, directory, forums, job alerts).
+
+**REMINDER:** delete test job `08f47a93-8df0-40d5-a791-5e83a26c4738` after step 4 is verified — it's deliberately left in as a handy matching open job for testing the filter.
+
+**Standing reminders:** wipe the 24 Geneva demo contacts once Dani has reviewed the dashboard (`node geneva-demo-data.mjs wipe`); the NotebookLM document library is ready; remaining small accessibility items: H5 (Geneva truncation), Directory ~5px overflow at large fonts, "Save 17%" pricing badge spill, bottom-nav label crowding, Metric/Imperial sidebar rose text (needs Warm Ivory, not dark rose).
+
+---
+
 **Update (July 7, 2026, end of session): ♿ ALL CRITICAL ACCESSIBILITY FINDINGS COMPLETE — plus three H-series fixes shipped.**
 
 **Shipped today (all pushed & live):** **C3** dashboard stat-tile label clipping (`ab30fbd`) — that closes out every Critical (C1–C4); **H2** button heights raised to 44px comfortable tap targets in `button.tsx` (`4d70196`); **H4** small rose text swapped to accessible dark rose `#8F4E58` across 9 files, WCAG-verified 4.9–6.2:1 (`917d6ac`); **H3** aria-labels added to 24 icon-only buttons across 13 files (`cab2f23`).

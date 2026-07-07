@@ -90,13 +90,15 @@ The jobs-page filter is the same predicate **inverted** (one agent → many jobs
 
 ## 5. Proposed build order (jobs-page-first slice)
 
-1. **Migration — extract the shared matcher (geography-first).**
+**Progress (July 7, 2026):** steps 1–3 are ✅ DONE, applied to the live DB, and tested on real data — step 1 `763f782`, step 2 `3922fd1`, step 3 `8a4ecd1`. **Step 4 is NEXT.** Reminder: delete test job `08f47a93-8df0-40d5-a791-5e83a26c4738` after step 4 verification.
+
+1. ✅ **DONE (`763f782`)** — **Migration — extract the shared matcher (geography-first).**
    `location_matches_agent_areas(p_agent_id uuid, p_location geography, p_address text) RETURNS boolean` — evaluates **distance first** (`ST_DWithin` on radius areas against `property_location`), then the tidied-text strategies for state/country/region per §4.1, plus global. Refactor `notify_nearby_inspectors` to call it (behaviour-preserving apart from the region fix), so there is exactly one source of truth.
-2. **Migration — feed RPC.**
+2. ✅ **DONE (`3922fd1`)** — **Migration — feed RPC.**
    `get_open_jobs_in_my_areas()` (SECURITY DEFINER, `auth.uid()`) returning open jobs annotated with `matches_my_areas boolean` — one round-trip gives the frontend both the filtered view and the fallback set.
-3. **`CreateInspectionJob.tsx` — structured location becomes required (decision §4.6).**
+3. ✅ **DONE (`8a4ecd1`)** — **`CreateInspectionJob.tsx` — structured location becomes required (decision §4.6).**
    State + country are required on every new job; country pre-fills from the poster's `profiles.country_code` (editable). Save `property_state`, `property_country`, and `property_lat`/`property_lng` (plus `property_city`/`property_postcode` when Mapbox provides them) alongside the existing `property_location` point. Works for both exact-address and "Area:" general-area jobs (Mapbox returns state/country context for both).
-4. **Frontend — `InspectionSpotlights.tsx`.**
+4. ⏭️ **NEXT** — **Frontend — `InspectionSpotlights.tsx`.**
    Replace the raw `select=*` fetch with the RPC; default to matched jobs; zero-match fallback note; filter pills: "My areas" (default) / "All of {Country}" (from `profiles.country_code`: AU→Australia, US→the US, GB→the UK, else country name) / "Everywhere".
 5. **Verify** with the verify-accessibility routine (375px, proven 24px root, screenshot) plus a data check that the seeded agent's areas produce the expected matched/unmatched split, and that a newly created job lands with state/country/lat/lng populated.
 6. **Later slices** (separate efforts): marketplace properties, directory "serves your area" badges, forum board suggestions, job alert emails — all calling the §5.1 function.
