@@ -358,29 +358,29 @@ export default function GenevaDashboard() {
                   People who came to us · outreach lives in its own funnel below
                 </p>
               </div>
-              <div className="mt-5 space-y-1">
+              <div className="mt-5 space-y-3">
                 {funnel.rows.map((r, i) => (
                   <div key={r.stage} data-funnel-stage={r.stage}>
-                    <div className="flex flex-wrap items-center gap-3 lg:gap-4">
-                      <p className="w-28 shrink-0 font-sans text-xs font-medium text-[#1C1917] lg:w-36 lg:text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                      <p className="font-sans text-xs font-medium text-[#1C1917] lg:text-sm">
                         {GENEVA_STAGE_LABELS[r.stage]}
                       </p>
-                      <div className="relative h-9 flex-1 overflow-hidden rounded-r-xl bg-[#2D6350]/[0.05]">
-                        <div
-                          className="h-full rounded-r-xl"
-                          style={{
-                            width: `${Math.max(r.reachPct, r.reached > 0 ? 4 : 0)}%`,
-                            background: `linear-gradient(90deg, #2D6350 0%, ${i >= 4 ? "#3E8066" : "#35705B"} 100%)`,
-                          }}
-                        />
-                      </div>
-                      <p className="w-28 shrink-0 text-right font-sans text-xs text-[#57534E] lg:w-36">
+                      <p className="font-sans text-xs text-[#57534E]">
                         <span className="text-base font-semibold tabular-nums text-[#1C1917]">{r.here}</span> here
                         <span className="ml-1.5 tabular-nums">· {r.reachPct}% reach</span>
                       </p>
                     </div>
+                    <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-[#2D6350]/[0.06]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(r.reachPct, r.reached > 0 ? 4 : 0)}%`,
+                          background: `linear-gradient(90deg, #2D6350 0%, ${i >= 4 ? "#3E8066" : "#35705B"} 100%)`,
+                        }}
+                      />
+                    </div>
                     {r.advancePct !== null && (
-                      <div className="flex min-w-0 items-center gap-2 py-1 pl-28 lg:pl-36">
+                      <div className="flex items-center py-1">
                         {funnel.dropIdx === i ? (
                           <span
                             data-dropoff
