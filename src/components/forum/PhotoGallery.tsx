@@ -84,6 +84,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
           <button
             className="absolute top-4 right-4 text-white/80 hover:text-white z-10"
             onClick={closeLightbox}
+            aria-label="Close image"
           >
             <X size={28} />
           </button>
@@ -97,6 +98,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                   e.stopPropagation();
                   goPrev();
                 }}
+                aria-label="Previous photo"
               >
                 <ChevronLeft size={28} />
               </button>
@@ -106,6 +108,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                   e.stopPropagation();
                   goNext();
                 }}
+                aria-label="Next photo"
               >
                 <ChevronRight size={28} />
               </button>

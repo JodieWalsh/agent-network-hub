@@ -76,7 +76,7 @@ export default function ForumFeatured() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/forums')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/forums')} aria-label="Back to forums">
             <ArrowLeft size={20} />
           </Button>
           <div>

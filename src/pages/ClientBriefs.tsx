@@ -259,6 +259,7 @@ export default function ClientBriefs() {
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={(e) => handleDelete(brief.id, e)}
+                        aria-label="Delete brief"
                       >
                         <Trash2 size={16} />
                       </Button>

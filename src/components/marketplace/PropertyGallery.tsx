@@ -58,6 +58,7 @@ export function PropertyGallery({ photos, propertyTitle }: PropertyGalleryProps)
                 size="icon"
                 className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={goToPrevious}
+                aria-label="Previous photo"
               >
                 <ChevronLeft size={24} />
               </Button>
@@ -66,6 +67,7 @@ export function PropertyGallery({ photos, propertyTitle }: PropertyGalleryProps)
                 size="icon"
                 className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={goToNext}
+                aria-label="Next photo"
               >
                 <ChevronRight size={24} />
               </Button>
@@ -107,6 +109,7 @@ export function PropertyGallery({ photos, propertyTitle }: PropertyGalleryProps)
             size="icon"
             className="absolute top-4 right-4 text-white hover:bg-white/10"
             onClick={() => setIsFullscreen(false)}
+            aria-label="Close fullscreen view"
           >
             <X size={24} />
           </Button>
@@ -131,6 +134,7 @@ export function PropertyGallery({ photos, propertyTitle }: PropertyGalleryProps)
                 size="icon"
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10"
                 onClick={goToPrevious}
+                aria-label="Previous photo"
               >
                 <ChevronLeft size={32} />
               </Button>
@@ -139,6 +143,7 @@ export function PropertyGallery({ photos, propertyTitle }: PropertyGalleryProps)
                 size="icon"
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10"
                 onClick={goToNext}
+                aria-label="Next photo"
               >
                 <ChevronRight size={32} />
               </Button>

@@ -1012,6 +1012,7 @@ export default function Messaging() {
                       size="icon"
                       className="md:hidden"
                       onClick={handleBack}
+                      aria-label="Back to conversations"
                     >
                       <ArrowLeft className="w-5 h-5" />
                     </Button>
@@ -1184,6 +1185,7 @@ export default function Messaging() {
                           <button
                             onClick={handleRemoveAttachment}
                             className="flex-shrink-0 p-1 rounded-full hover:bg-muted transition-colors"
+                            aria-label="Remove attachment"
                           >
                             <X className="w-4 h-4 text-muted-foreground" />
                           </button>
@@ -1212,6 +1214,7 @@ export default function Messaging() {
                             sendingMessage && "opacity-50 cursor-not-allowed"
                           )}
                           title="Attach file"
+                          aria-label="Attach file"
                         >
                           <Paperclip className="w-5 h-5" />
                         </button>
@@ -1248,6 +1251,7 @@ export default function Messaging() {
                           onClick={handleSendMessage}
                           disabled={(!newMessage.trim() && !pendingFile) || sendingMessage}
                           className="bg-forest hover:bg-forest/90 text-white h-10"
+                          aria-label="Send message"
                         >
                           <Send className="w-4 h-4" />
                         </Button>
@@ -1273,6 +1277,7 @@ export default function Messaging() {
           <button
             onClick={() => setLightboxImage(null)}
             className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+            aria-label="Close image"
           >
             <X className="w-6 h-6" />
           </button>

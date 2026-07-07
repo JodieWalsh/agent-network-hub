@@ -257,6 +257,7 @@ export default function ForumNewPost() {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/forums')}
+            aria-label="Back to forums"
           >
             <ArrowLeft size={20} />
           </Button>
@@ -465,6 +466,7 @@ export default function ForumNewPost() {
                         size="icon"
                         onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== index))}
                         className="text-red-500 hover:text-red-700 flex-shrink-0"
+                        aria-label={`Remove poll option ${index + 1}`}
                       >
                         <Trash2 size={16} />
                       </Button>

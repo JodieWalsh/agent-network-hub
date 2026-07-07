@@ -241,6 +241,7 @@ export function BriefLocationManager({ locations, onChange, className }: BriefLo
                         size="icon"
                         onClick={() => handleRemoveLocation(globalIndex)}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        aria-label={`Remove ${location.suburb || location.city}`}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -282,6 +283,7 @@ export function BriefLocationManager({ locations, onChange, className }: BriefLo
                         size="icon"
                         onClick={() => handleRemoveLocation(globalIndex)}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        aria-label={`Remove ${location.suburb || location.city}`}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -320,6 +322,7 @@ export function BriefLocationManager({ locations, onChange, className }: BriefLo
                         size="icon"
                         onClick={() => handleRemoveLocation(globalIndex)}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        aria-label={`Remove ${location.suburb || location.city}`}
                       >
                         <X className="h-4 w-4" />
                       </Button>

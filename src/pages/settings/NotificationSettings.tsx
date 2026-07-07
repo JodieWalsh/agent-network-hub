@@ -66,7 +66,7 @@ export default function NotificationSettings() {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
             <ArrowLeft size={20} />
           </Button>
           <div>

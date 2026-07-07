@@ -380,6 +380,7 @@ export default function Pricing() {
             checked={isAnnual}
             onCheckedChange={setIsAnnual}
             className="data-[state=checked]:bg-forest"
+            aria-label="Toggle annual billing"
           />
           <span
             className={`text-sm font-medium ${
