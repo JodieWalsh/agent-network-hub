@@ -408,7 +408,7 @@ export default function GenevaDashboard() {
                 {inactive.length > 0 && (
                   <Link
                     to="/geneva/contacts?view=inactive"
-                    className="font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
+                    className="inline-flex items-center py-3.5 -my-3.5 px-2 -mx-2 font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
                   >
                     View inactive →
                   </Link>
@@ -582,7 +582,7 @@ export default function GenevaDashboard() {
                           key={r.token}
                           data-region-demand={r.token}
                           onClick={() => navigate(`/geneva/contacts?region=${r.token}`)}
-                          className="group flex w-full flex-wrap items-center gap-3 text-left"
+                          className="group flex w-full flex-wrap items-center gap-3 py-2.5 -my-2.5 text-left"
                           aria-label={`View contacts in ${LAUNCH_REGION_SHORT_LABELS[r.token]}`}
                         >
                           <p className="w-36 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] group-hover:text-[#2D6350] lg:w-44">
@@ -652,7 +652,7 @@ export default function GenevaDashboard() {
                   {attention.length > 0 && (
                     <Link
                       to="/geneva/contacts?view=needs_followup"
-                      className="font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
+                      className="inline-flex items-center py-3.5 -my-3.5 px-2 -mx-2 font-sans text-xs font-semibold text-[#2D6350] hover:text-[#173A31]"
                     >
                       View all →
                     </Link>

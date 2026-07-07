@@ -270,7 +270,7 @@ export default function GenevaContacts() {
       <div className="mx-auto max-w-6xl">
         <Link
           to="/geneva"
-          className="mb-4 inline-flex items-center gap-2 font-sans text-sm font-medium text-[#2D6350] transition-colors hover:text-[#173A31]"
+          className="mb-4 inline-flex items-center gap-2 py-3 -my-3 px-2 -mx-2 font-sans text-sm font-medium text-[#2D6350] transition-colors hover:text-[#173A31]"
         >
           <ArrowLeft size={15} /> Command Centre
         </Link>

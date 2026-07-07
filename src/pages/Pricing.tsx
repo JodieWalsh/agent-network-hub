@@ -491,7 +491,7 @@ export default function Pricing() {
             Have questions? Need a custom plan?{" "}
             <a
               href="mailto:support@buyersagenthub.com"
-              className="text-forest hover:underline font-medium"
+              className="inline-block py-3 -my-3 px-2 -mx-2 text-forest hover:underline font-medium"
             >
               Contact us
             </a>

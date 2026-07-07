@@ -69,7 +69,7 @@ function ActivityHeader({ onViewAll }: { onViewAll?: () => void }) {
       {onViewAll && (
         <button
           onClick={onViewAll}
-          className="flex items-center gap-1 text-xs font-medium text-[#2D6350] transition-colors hover:text-[#B76E79]"
+          className="flex min-h-[44px] items-center gap-1 px-2 -mx-2 text-xs font-medium text-[#2D6350] transition-colors hover:text-[#B76E79]"
         >
           View All
           <ArrowRight size={12} />

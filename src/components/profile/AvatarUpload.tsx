@@ -116,7 +116,7 @@ export function AvatarUpload({ currentAvatarUrl, userId, onUploadSuccess }: Avat
         {previewUrl && !uploading && (
           <button
             onClick={handleRemovePreview}
-            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors after:absolute after:-inset-2.5 after:content-['']"
             aria-label="Remove preview"
           >
             <X size={16} />
