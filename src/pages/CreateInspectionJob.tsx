@@ -54,6 +54,10 @@ interface JobFormData {
   property_address: string;
   property_lat: number | null;
   property_lng: number | null;
+  property_state: string;
+  property_country: string;
+  property_city: string;
+  property_postcode: string;
   property_type: PropertyType;
   property_access_notes: string;
 
@@ -123,6 +127,18 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 
 const SESSION_STORAGE_KEY = 'inspection_job_draft_form';
 
+// Platform-supported countries (mirrors ProfileEdit's list) for the job country
+// select. Job country defaults from the poster's profile and stays editable.
+const COUNTRY_NAMES: Record<string, string> = {
+  AU: 'Australia', US: 'United States', GB: 'United Kingdom', CA: 'Canada',
+  NZ: 'New Zealand', IE: 'Ireland', DE: 'Germany', FR: 'France', ES: 'Spain',
+  IT: 'Italy', NL: 'Netherlands', BE: 'Belgium', AT: 'Austria', CH: 'Switzerland',
+  SE: 'Sweden', NO: 'Norway', DK: 'Denmark', FI: 'Finland', PT: 'Portugal',
+  PL: 'Poland', CZ: 'Czech Republic', HU: 'Hungary', RO: 'Romania', BG: 'Bulgaria',
+  HR: 'Croatia', GR: 'Greece', SG: 'Singapore', HK: 'Hong Kong', JP: 'Japan',
+  MY: 'Malaysia', TH: 'Thailand', MX: 'Mexico', BR: 'Brazil',
+};
+
 export default function CreateInspectionJob() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -146,6 +162,10 @@ export default function CreateInspectionJob() {
     property_address: '',
     property_lat: null,
     property_lng: null,
+    property_state: '',
+    property_country: '',
+    property_city: '',
+    property_postcode: '',
     property_type: 'house',
     property_access_notes: '',
     urgency_level: 'standard',
@@ -163,7 +183,7 @@ export default function CreateInspectionJob() {
     if (returnedFromBrief && saved) {
       try {
         const state = JSON.parse(saved);
-        if (state.formData) setFormData(state.formData);
+        if (state.formData) setFormData(prev => ({ ...prev, ...state.formData }));
         if (state.currentStep) setCurrentStep(state.currentStep);
         if (state.addressUnknown != null) setAddressUnknown(state.addressUnknown);
         if (state.generalAreaLocation) setGeneralAreaLocation(state.generalAreaLocation);
@@ -229,6 +249,15 @@ export default function CreateInspectionJob() {
 
   const progressPercentage = (currentStep / STEPS.length) * 100;
 
+  // Country defaults from the poster's own profile (editable). Guarded so it
+  // never overwrites a restored draft or a manual choice.
+  useEffect(() => {
+    const defaultCountry = COUNTRY_NAMES[profile?.country_code || ''] || '';
+    if (defaultCountry) {
+      setFormData(prev => (prev.property_country ? prev : { ...prev, property_country: defaultCountry }));
+    }
+  }, [profile?.country_code]);
+
   const handleLocationSelected = (location: LocationSuggestion | null) => {
     setSelectedLocation(location);
     if (location) {
@@ -237,6 +266,10 @@ export default function CreateInspectionJob() {
         property_address: location.fullName,
         property_lat: location.coordinates.lat,
         property_lng: location.coordinates.lng,
+        property_state: location.state || prev.property_state,
+        property_country: location.country || prev.property_country,
+        property_city: location.city || '',
+        property_postcode: location.postcode || '',
       }));
     } else {
       setFormData(prev => ({
@@ -244,6 +277,21 @@ export default function CreateInspectionJob() {
         property_address: '',
         property_lat: null,
         property_lng: null,
+        property_city: '',
+        property_postcode: '',
+      }));
+    }
+  };
+
+  const handleGeneralAreaSelected = (location: LocationSuggestion | null) => {
+    setGeneralAreaLocation(location);
+    if (location) {
+      setFormData(prev => ({
+        ...prev,
+        property_state: location.state || prev.property_state,
+        property_country: location.country || prev.property_country,
+        property_city: location.city || '',
+        property_postcode: location.postcode || '',
       }));
     }
   };
@@ -255,7 +303,11 @@ export default function CreateInspectionJob() {
         const hasLocation = addressUnknown
           ? !!generalAreaLocation
           : formData.property_address.length > 0;
-        return !!(hasLocation && formData.property_type);
+        // State + country are required (Service Areas plan §4.6) so jobs carry
+        // structured location for area matching
+        const hasStructuredLocation =
+          formData.property_state.trim().length > 0 && formData.property_country.trim().length > 0;
+        return !!(hasLocation && hasStructuredLocation && formData.property_type);
       case 2:
         // Can proceed if urgency is set AND either (scope requirements OR client brief is selected)
         const hasRequirements = useBrief
@@ -319,6 +371,18 @@ export default function CreateInspectionJob() {
           : formData.property_lat && formData.property_lng
             ? `POINT(${formData.property_lng} ${formData.property_lat})`
             : null,
+        // Structured location (Service Areas plan §4.6) — same coordinates as the
+        // POINT above, plus tidied text columns for state/country matching
+        property_lat: addressUnknown
+          ? generalAreaLocation?.coordinates.lat ?? null
+          : formData.property_lat,
+        property_lng: addressUnknown
+          ? generalAreaLocation?.coordinates.lng ?? null
+          : formData.property_lng,
+        property_state: formData.property_state.trim() || null,
+        property_country: formData.property_country.trim() || null,
+        property_city: formData.property_city.trim() || null,
+        property_postcode: formData.property_postcode.trim() || null,
         property_type: formData.property_type,
         property_access_notes: formData.property_access_notes || null,
         urgency_level: formData.urgency_level,
@@ -410,6 +474,18 @@ export default function CreateInspectionJob() {
           : formData.property_lat && formData.property_lng
             ? `POINT(${formData.property_lng} ${formData.property_lat})`
             : null,
+        // Structured location (Service Areas plan §4.6) — same coordinates as the
+        // POINT above, plus tidied text columns for state/country matching
+        property_lat: addressUnknown
+          ? generalAreaLocation?.coordinates.lat ?? null
+          : formData.property_lat,
+        property_lng: addressUnknown
+          ? generalAreaLocation?.coordinates.lng ?? null
+          : formData.property_lng,
+        property_state: formData.property_state.trim() || null,
+        property_country: formData.property_country.trim() || null,
+        property_city: formData.property_city.trim() || null,
+        property_postcode: formData.property_postcode.trim() || null,
         property_type: formData.property_type,
         property_access_notes: formData.property_access_notes || null,
         urgency_level: formData.urgency_level,
@@ -552,6 +628,8 @@ export default function CreateInspectionJob() {
                           property_address: '',
                           property_lat: null,
                           property_lng: null,
+                          property_city: '',
+                          property_postcode: '',
                         }));
                       } else {
                         // Clear general area when switching to exact address
@@ -595,7 +673,7 @@ export default function CreateInspectionJob() {
                     <Label>General Area *</Label>
                     <LocationSearch
                       value={generalAreaLocation}
-                      onChange={setGeneralAreaLocation}
+                      onChange={handleGeneralAreaSelected}
                       placeholder="Search for a suburb or area..."
                       types={['place', 'locality', 'neighborhood']}
                     />
@@ -613,6 +691,53 @@ export default function CreateInspectionJob() {
                     </p>
                   </div>
                 )}
+
+                {/* State + Country — required so area-matched inspectors can find the job (§4.6) */}
+                <div className="space-y-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2 min-w-0">
+                      <Label htmlFor="job-state">State / Region *</Label>
+                      <Input
+                        id="job-state"
+                        placeholder="e.g. New South Wales"
+                        value={formData.property_state}
+                        onChange={(e) => setFormData(prev => ({ ...prev, property_state: e.target.value }))}
+                      />
+                      {(addressUnknown ? !!generalAreaLocation : formData.property_address.length > 0) &&
+                        !formData.property_state.trim() && (
+                        <p className="text-xs text-rose-gold-dark">
+                          Please add the state or region — inspectors find jobs by area
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2 min-w-0">
+                      <Label htmlFor="job-country">Country *</Label>
+                      <Select
+                        value={formData.property_country || undefined}
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, property_country: val }))}
+                      >
+                        <SelectTrigger id="job-country">
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.property_country && !Object.values(COUNTRY_NAMES).includes(formData.property_country) && (
+                            <SelectItem value={formData.property_country}>{formData.property_country}</SelectItem>
+                          )}
+                          {Object.values(COUNTRY_NAMES).sort().map(name => (
+                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {(addressUnknown ? !!generalAreaLocation : formData.property_address.length > 0) &&
+                        !formData.property_country.trim() && (
+                        <p className="text-xs text-rose-gold-dark">Please choose the property's country</p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Auto-filled when you pick an address or area — adjust if needed.
+                  </p>
+                </div>
 
                 {/* Property Type */}
                 <div className="space-y-2">
