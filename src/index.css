@@ -205,7 +205,7 @@
   }
 
   .badge-rose {
-    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-gold/8 text-rose-gold border border-rose-gold/20;
+    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-gold/8 text-rose-gold-dark border border-rose-gold/20;
   }
 
   .stat-display {

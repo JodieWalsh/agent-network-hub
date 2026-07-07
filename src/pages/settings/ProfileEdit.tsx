@@ -54,7 +54,7 @@ const membershipLabels: Record<string, string> = {
 const membershipColors: Record<string, string> = {
   free: "bg-muted text-muted-foreground",
   basic: "bg-forest/10 text-forest border-forest/20",
-  premium: "bg-rose-gold/20 text-rose-gold border-rose-gold/30",
+  premium: "bg-rose-gold/20 text-rose-gold-dark border-rose-gold/30",
 };
 
 const PROFILE_COUNTRIES = [

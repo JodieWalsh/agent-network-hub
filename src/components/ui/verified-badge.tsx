@@ -39,7 +39,7 @@ export function VerifiedBadge({
             >
               <Shield className={cn(sizeClasses[size], "fill-rose-gold/20")} />
               {showLabel && (
-                <span className="text-xs font-medium">Verified</span>
+                <span className="text-xs font-medium text-rose-gold-dark">Verified</span>
               )}
             </div>
           </TooltipTrigger>

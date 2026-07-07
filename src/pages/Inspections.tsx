@@ -325,7 +325,7 @@ export default function Inspections() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 text-rose-gold">
                         {serviceInfo.icon}
-                        <span className="text-sm font-medium">{serviceInfo.label}</span>
+                        <span className="text-sm font-medium text-rose-gold-dark">{serviceInfo.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <VerifiedBadge isVerified={posterIsVerified} size="sm" />

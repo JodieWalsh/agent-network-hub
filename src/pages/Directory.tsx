@@ -310,7 +310,7 @@ export default function Directory() {
                 <CardContent className="p-12 text-center">
                   <p className="text-muted-foreground">No agents found matching your criteria.</p>
                   {hasActiveFilters && (
-                    <Button variant="link" onClick={clearFilters} className="mt-2 text-rose-gold">
+                    <Button variant="link" onClick={clearFilters} className="mt-2 text-rose-gold-dark">
                       Clear filters
                     </Button>
                   )}
@@ -355,7 +355,7 @@ export default function Directory() {
 
                           {/* Type */}
                           <div className="mt-1">
-                            <Badge variant="outline" className="text-xs border-rose-gold text-rose-gold/90 bg-rose-gold/5">
+                            <Badge variant="outline" className="text-xs border-rose-gold text-rose-gold-dark bg-rose-gold/5">
                               {userTypeLabels[profile.user_type] || profile.user_type}
                             </Badge>
                           </div>

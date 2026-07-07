@@ -49,7 +49,7 @@ export function TrustTipBanner({ className }: TrustTipBannerProps) {
           </p>
           <Button
             variant="link"
-            className="h-auto p-0 text-rose-gold hover:text-rose-gold/80 text-sm font-medium"
+            className="h-auto p-0 text-rose-gold-dark hover:text-rose-gold-dark/80 text-sm font-medium"
           >
             Learn how to get verified →
           </Button>

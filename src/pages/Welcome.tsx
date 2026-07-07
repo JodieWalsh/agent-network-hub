@@ -201,7 +201,7 @@ export default function Welcome() {
 
               {/* Coming Soon Badge */}
               <div className="absolute top-4 right-4">
-                <span className="bg-rose-gold/20 text-rose-gold px-3 py-1 rounded-full text-xs font-medium">
+                <span className="bg-rose-gold/20 text-rose-gold-dark px-3 py-1 rounded-full text-xs font-medium">
                   Video Coming Soon
                 </span>
               </div>
