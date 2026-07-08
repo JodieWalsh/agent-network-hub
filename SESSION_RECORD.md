@@ -1067,6 +1067,12 @@ If issues persist:
 
 ---
 
+## 🐛 Later Bug Fixes
+
+- **July 8, 2026 — forum badges never awarded:** `check_and_award_badges()` read four column names that don't exist on `forum_user_stats` (`total_replies`/`solutions_given`/`total_posts`/`reputation_score` instead of `reply_count`/`solutions_count`/`post_count`/`reputation_points`), hard-erroring for any user with a stats row (error swallowed by `forum.ts`). Fixed in migration `20260708020000_fix_check_and_award_badges_columns.sql`; verified live incl. no-duplicate-award behaviour.
+
+---
+
 **End of Session Record**
 **Last Updated:** January 9, 2026
 **Status:** ✅ All systems operational
