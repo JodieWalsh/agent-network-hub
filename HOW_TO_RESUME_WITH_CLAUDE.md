@@ -10,6 +10,12 @@ This document explains how to start a new Claude session and get up to speed fas
 
 ## 📍 WHERE WE ARE (July 8, 2026)
 
+**Update (July 8, 2026 — later): 🗺️ SERVICE AREAS JOBS-FIRST SLICE FULLY SHIPPED (all 4 steps).**
+
+Step 4 — the Spotlights UI (`88cce3d`: RPC-backed feed, "My Areas" default, adaptive "All of {Country}" pill, "Everywhere", zero-match gentle fallback, no-areas Everywhere default, "In your area" card badges) — completes the slice on top of steps 1–3 from yesterday. Also fixed en route: the "View Details & Bid" card button clipping at large fonts (same commit). The test job `08f47a93…` and its notifications are **deleted**; the live DB holds 1 real open job. **Future work:** the "later slices" reuse `location_matches_agent_areas()` — marketplace properties, directory "serves your area" badges, forum board suggestions, job alert emails (see `docs/SERVICE_AREAS_PLAN.md` §5.6).
+
+---
+
 **Update (July 8, 2026): 🔒 Supabase security advisory investigated — KNOWN PostGIS EXCEPTION, accepted, no action needed in code.**
 
 The Security Advisor flagged `rls_disabled_in_public` on `public.spatial_ref_sys`. Investigation outcome: it's the **PostGIS extension's built-in coordinate-reference catalogue** (~8,500 rows of public geodetic constants) — **NOT app data, no user/business data**; all **47 of our own public tables have RLS correctly enabled**. The real (low-likelihood) risk is integrity-only: `anon`/`authenticated` hold write grants, so the SRID catalogue could in theory be vandalised via the anon key. We attempted the proportionate fix (`REVOKE` write grants) but it was a **silent no-op** — the table is owned by `supabase_admin`, so our `postgres` role can't change its grants — and we deliberately did NOT force it. **Resolution:** this is the documented known-exception lint every PostGIS project trips; accept/dismiss it in the Supabase Dashboard (Advisors → Security), optionally ask Supabase support to revoke the write grants at their level. **Future sessions: known/accepted advisory — don't re-investigate.** (Full detail: `docs/TECHNICAL_DOCUMENTATION.md` → "Database Security (RLS)".)
