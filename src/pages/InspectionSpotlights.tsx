@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ interface InspectionJob {
   id: string;
   creator_id: string;
   property_address: string;
+  property_country?: string | null;
   property_type: PropertyType;
   urgency_level: UrgencyLevel;
   budget_amount: number;
@@ -51,8 +53,29 @@ interface InspectionJob {
   created_at: string;
   preferred_inspection_dates: string[] | null;
   scope_requirements: string | null;
+  matches_my_areas: boolean;
   bid_count?: number;
 }
+
+type AreaScope = 'mine' | 'country' | 'everywhere';
+
+// Country code -> name, for the "All of {Country}" pill (Service Areas plan §4.2).
+// Labels use the definite article for US/UK; matching uses the full name.
+const COUNTRY_NAMES: Record<string, string> = {
+  AU: 'Australia', US: 'United States', GB: 'United Kingdom', CA: 'Canada',
+  NZ: 'New Zealand', IE: 'Ireland', DE: 'Germany', FR: 'France', ES: 'Spain',
+  IT: 'Italy', NL: 'Netherlands', BE: 'Belgium', AT: 'Austria', CH: 'Switzerland',
+  SE: 'Sweden', NO: 'Norway', DK: 'Denmark', FI: 'Finland', PT: 'Portugal',
+  PL: 'Poland', CZ: 'Czech Republic', HU: 'Hungary', RO: 'Romania', BG: 'Bulgaria',
+  HR: 'Croatia', GR: 'Greece', SG: 'Singapore', HK: 'Hong Kong', JP: 'Japan',
+  MY: 'Malaysia', TH: 'Thailand', MX: 'Mexico', BR: 'Brazil',
+};
+const countryLabel = (code: string | null | undefined): string | null => {
+  if (!code) return null;
+  if (code === 'US') return 'the US';
+  if (code === 'GB') return 'the UK';
+  return COUNTRY_NAMES[code] || null;
+};
 
 const URGENCY_CONFIG = {
   standard: {
@@ -91,8 +114,11 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 
 export default function InspectionSpotlights() {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [jobs, setJobs] = useState<InspectionJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [areaScope, setAreaScope] = useState<AreaScope>('mine');
+  const [hasServiceAreas, setHasServiceAreas] = useState<boolean | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [urgencyFilter, setUrgencyFilter] = useState<UrgencyLevel | 'all'>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<PropertyType | 'all'>('all');
@@ -101,6 +127,33 @@ export default function InspectionSpotlights() {
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  // Does this agent have any service areas? If not, default to Everywhere so
+  // they never land on an empty board (step 4 edge case).
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        let accessToken = supabaseKey;
+        try {
+          const storedSession = localStorage.getItem(`sb-${import.meta.env.VITE_SUPABASE_PROJECT_ID}-auth-token`);
+          if (storedSession) accessToken = JSON.parse(storedSession)?.access_token || supabaseKey;
+        } catch (e) {}
+        const r = await fetch(
+          `${supabaseUrl}/rest/v1/agent_service_areas?select=id&agent_id=eq.${user.id}&limit=1`,
+          { headers: { apikey: supabaseKey, Authorization: `Bearer ${accessToken}` } }
+        );
+        const rows = r.ok ? await r.json() : [];
+        const found = rows.length > 0;
+        setHasServiceAreas(found);
+        if (!found) setAreaScope('everywhere');
+      } catch (e) {
+        setHasServiceAreas(null); // unknown — leave the default view alone
+      }
+    })();
+  }, [user]);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -121,12 +174,16 @@ export default function InspectionSpotlights() {
         }
       } catch (e) {}
 
-      const url = `${supabaseUrl}/rest/v1/inspection_jobs?select=*&status=eq.open&order=created_at.desc`;
+      // Feed RPC (Service Areas plan step 2): all open jobs + matches_my_areas
+      const url = `${supabaseUrl}/rest/v1/rpc/get_open_jobs_in_my_areas`;
       const response = await fetch(url, {
+        method: 'POST',
         headers: {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
+        body: '{}',
       });
 
       if (!response.ok) {
@@ -152,8 +209,25 @@ export default function InspectionSpotlights() {
     }
   };
 
+  // Area scope (Service Areas plan step 4) — applied BEFORE the other filters
+  const myCountryName = COUNTRY_NAMES[profile?.country_code || ''] || null;
+  const myCountryLabel = countryLabel(profile?.country_code);
+  const myAreaJobs = jobs.filter((j) => j.matches_my_areas);
+  // Gentle fallback (§4.4): "My Areas" with zero matches shows everything + a note
+  const fallbackActive = areaScope === 'mine' && myAreaJobs.length === 0 && jobs.length > 0;
+  const scopedJobs =
+    areaScope === 'mine'
+      ? (fallbackActive ? jobs : myAreaJobs)
+      : areaScope === 'country' && myCountryName
+        ? jobs.filter(
+            (j) =>
+              j.property_country === myCountryName ||
+              (!j.property_country && j.property_address.toLowerCase().includes(myCountryName.toLowerCase()))
+          )
+        : jobs;
+
   // Apply filters and sorting
-  const filteredAndSortedJobs = jobs
+  const filteredAndSortedJobs = scopedJobs
     .filter((job) => {
       // Search filter
       if (searchQuery && !job.property_address.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -246,6 +320,56 @@ export default function InspectionSpotlights() {
 
       {/* Filters & Search */}
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Area scope pills (Service Areas plan step 4) */}
+        <div role="group" aria-label="Job area filter" className="flex flex-wrap items-center gap-2 mb-4">
+          {([
+            { value: 'mine' as AreaScope, label: 'My Areas' },
+            ...(myCountryLabel ? [{ value: 'country' as AreaScope, label: `All of ${myCountryLabel}` }] : []),
+            { value: 'everywhere' as AreaScope, label: 'Everywhere' },
+          ]).map((pill) => (
+            <button
+              key={pill.value}
+              type="button"
+              onClick={() => setAreaScope(pill.value)}
+              aria-pressed={areaScope === pill.value}
+              className={cn(
+                'min-h-[44px] rounded-full border px-4 text-sm font-medium transition-colors duration-200',
+                areaScope === pill.value
+                  ? 'bg-forest text-white border-forest'
+                  : 'bg-white/70 text-forest border-forest/30 hover:bg-forest/5'
+              )}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Gentle zero-match fallback note (§4.4) */}
+        {fallbackActive && (
+          <div className="mb-4 rounded-lg border border-forest/15 bg-forest/5 px-4 py-3">
+            <p className="text-sm text-foreground">
+              No open jobs in your service areas yet — showing all open jobs.
+            </p>
+          </div>
+        )}
+
+        {/* No service areas set at all — quiet hint (edge case) */}
+        {hasServiceAreas === false && (
+          <div className="mb-4 rounded-lg border border-forest/15 bg-forest/5 px-4 py-3">
+            <p className="text-sm text-foreground">
+              Tip: set your service areas in{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/settings/profile')}
+                className="font-medium text-forest underline underline-offset-4 hover:text-forest/80"
+              >
+                Profile Settings
+              </button>{' '}
+              and we'll spotlight the jobs near you.
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
@@ -331,10 +455,17 @@ export default function InspectionSpotlights() {
                 >
                   <CardHeader className={cn('pb-3', urgencyConfig.bgColor)}>
                     <div className="flex items-start justify-between">
-                      <Badge variant={urgencyConfig.badgeVariant} className="flex items-center gap-1">
-                        <UrgencyIcon className="h-3 w-3" />
-                        {urgencyConfig.label}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant={urgencyConfig.badgeVariant} className="flex items-center gap-1">
+                          <UrgencyIcon className="h-3 w-3" />
+                          {urgencyConfig.label}
+                        </Badge>
+                        {areaScope !== 'mine' && job.matches_my_areas && (
+                          <Badge variant="outline" className="bg-forest/10 text-forest border-forest/30 text-xs">
+                            In your area
+                          </Badge>
+                        )}
+                      </div>
                       {job.bid_count !== undefined && job.bid_count > 0 && (
                         <Badge variant="outline" className="flex items-center gap-1 bg-white">
                           <Users className="h-3 w-3" />
@@ -407,7 +538,10 @@ export default function InspectionSpotlights() {
                       </div>
                     )}
 
-                    <Button className="w-full mt-3 bg-forest hover:bg-forest/90" size="sm">
+                    <Button
+                      className="w-full mt-3 h-auto min-h-10 py-2 whitespace-normal bg-forest hover:bg-forest/90"
+                      size="sm"
+                    >
                       View Details & Bid
                     </Button>
                   </CardContent>
