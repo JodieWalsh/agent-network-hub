@@ -10,6 +10,12 @@ This document explains how to start a new Claude session and get up to speed fas
 
 ## 📍 WHERE WE ARE (July 8, 2026)
 
+**Update (July 8, 2026): 🔒 Supabase security advisory investigated — KNOWN PostGIS EXCEPTION, accepted, no action needed in code.**
+
+The Security Advisor flagged `rls_disabled_in_public` on `public.spatial_ref_sys`. Investigation outcome: it's the **PostGIS extension's built-in coordinate-reference catalogue** (~8,500 rows of public geodetic constants) — **NOT app data, no user/business data**; all **47 of our own public tables have RLS correctly enabled**. The real (low-likelihood) risk is integrity-only: `anon`/`authenticated` hold write grants, so the SRID catalogue could in theory be vandalised via the anon key. We attempted the proportionate fix (`REVOKE` write grants) but it was a **silent no-op** — the table is owned by `supabase_admin`, so our `postgres` role can't change its grants — and we deliberately did NOT force it. **Resolution:** this is the documented known-exception lint every PostGIS project trips; accept/dismiss it in the Supabase Dashboard (Advisors → Security), optionally ask Supabase support to revoke the write grants at their level. **Future sessions: known/accepted advisory — don't re-investigate.** (Full detail: `docs/TECHNICAL_DOCUMENTATION.md` → "Database Security (RLS)".)
+
+---
+
 **Update (July 7, 2026 — later session): ♿ ACCESSIBILITY H-SERIES DONE + 🗺️ SERVICE AREAS 3 OF 4 STEPS SHIPPED.**
 
 **Accessibility:** all Critical findings done, plus **H1** touch targets (`46f2fc8`), **H2** button heights (`4d70196`), **H3** aria-labels (`cab2f23`), **H4** dark-rose small text (`917d6ac`) shipped — and the **Geneva waitlist-funnel redesign** (`2ed5a26`: stacked layout, full-width bars). The **verify-accessibility skill works** — but ONLY when Claude Code is started from INSIDE the project folder (`cd` in first, then launch).

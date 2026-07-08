@@ -271,6 +271,19 @@ The cleanup migration:
 
 ---
 
+## Database Security (RLS) — Known Advisory Exception
+
+**`spatial_ref_sys` / "rls_disabled_in_public" (investigated July 8, 2026 — ACCEPTED, not an open hole):**
+
+- The Supabase Security Advisor flags `rls_disabled_in_public` on `public.spatial_ref_sys`.
+- **What it is:** the PostGIS extension's built-in coordinate-reference catalogue (~8,500 rows of public geodetic constants: SRIDs, proj4 strings). **NOT app data — no user or business data.** All **47 of our own public tables have RLS correctly enabled.**
+- **The real (low-likelihood) risk:** `anon`/`authenticated` hold write grants on it, so in theory the SRID catalogue could be vandalised via the anon key. That is an **integrity** risk to PostGIS transforms (service-area matching), not a privacy risk.
+- **What was attempted:** the proportionate fix — `REVOKE INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER … FROM anon, authenticated` — ran without error but was a **silent no-op**: the table is owned by `supabase_admin`, so our `postgres` role cannot change its grants (Postgres only revokes privileges granted by the current role). We deliberately did **not** attempt privilege escalation.
+- **Resolution:** this is a documented known-exception lint that every PostGIS project trips. Accept/dismiss the advisory in the Supabase Dashboard (**Advisors → Security**); optionally raise with Supabase support to revoke the write grants at their level.
+- **For future sessions:** treat this as a known/accepted advisory — do not re-investigate.
+
+---
+
 ## Key Files Reference
 
 ### Core Components
