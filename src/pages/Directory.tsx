@@ -409,7 +409,7 @@ export default function Directory() {
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex gap-2 mt-3">
+                          <div className="flex flex-wrap gap-2 mt-3">
                             <Button
                               variant="ghost"
                               size="sm"
