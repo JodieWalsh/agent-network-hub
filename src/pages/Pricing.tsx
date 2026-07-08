@@ -368,7 +368,7 @@ export default function Pricing() {
         </div>
 
         {/* Billing Toggle */}
-        <div className="flex items-center justify-center gap-4 mb-10">
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
           <span
             className={`text-sm font-medium ${
               !isAnnual ? "text-foreground" : "text-muted-foreground"
