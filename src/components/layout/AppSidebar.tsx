@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UnitToggle } from "@/components/ui/unit-toggle";
 import { Badge } from "@/components/ui/badge";
 import { useMessageNotifications } from "@/contexts/MessageNotificationContext";
 
@@ -440,6 +441,9 @@ export function AppSidebar() {
                   <span>Notifications</span>
                 </div>
               </div>
+
+              {/* Quick units toggle — canonical setting lives in Settings > Profile */}
+              <UnitToggle className="w-full" />
 
               <button
                 onClick={handleSignOut}

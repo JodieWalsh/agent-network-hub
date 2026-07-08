@@ -14,8 +14,8 @@ export function UnitToggle({ className, compact = false }: UnitToggleProps) {
     <button
       onClick={toggleUnitSystem}
       className={cn(
-        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
-        "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+        "flex min-h-[44px] items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+        "text-white/70 hover:bg-white/10 hover:text-white",
         className
       )}
       aria-label={`Switch to ${unitSystem === 'metric' ? 'imperial' : 'metric'} units`}
@@ -26,12 +26,13 @@ export function UnitToggle({ className, compact = false }: UnitToggleProps) {
           {unitSystem === 'metric' ? 'km / m²' : 'mi / ft²'}
         </span>
       )}
-      <div className="ml-auto flex items-center gap-1 text-xs bg-sidebar-accent/50 px-2 py-0.5 rounded">
-        <span className={cn(unitSystem === 'metric' && 'font-semibold text-rose-gold')}>
+      {/* Active unit reads in Warm Ivory — the Brand Kit small-text colour on dark green */}
+      <div className="ml-auto flex items-center gap-1 text-xs bg-white/[0.06] px-2 py-0.5 rounded">
+        <span className={cn(unitSystem === 'metric' && 'font-semibold text-[#F6F1EA]')}>
           Metric
         </span>
         <span>/</span>
-        <span className={cn(unitSystem === 'imperial' && 'font-semibold text-rose-gold')}>
+        <span className={cn(unitSystem === 'imperial' && 'font-semibold text-[#F6F1EA]')}>
           Imperial
         </span>
       </div>
