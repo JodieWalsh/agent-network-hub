@@ -10,6 +10,25 @@ This document explains how to start a new Claude session and get up to speed fas
 
 ## 📍 WHERE WE ARE (July 8, 2026)
 
+**Update (July 8, 2026 — end of session): 🚢 HUGE SESSION — Service Areas COMPLETE, entire accessibility backlog CLEARED, units persistence SHIPPED.**
+
+**SHIPPED this session:**
+- 🗺️ **Service Areas feature COMPLETE (all 4 steps):** matcher (`763f782`), feed RPC (`3922fd1`), required state+country on jobs (`8a4ecd1`), Spotlights UI (`88cce3d`), wrap-up/test-job cleanup (`4721c92`).
+- ♿ **ENTIRE accessibility backlog cleared:** all Criticals + H1–H5, plus the four small flagged items — "Save 17%" badge (`3834546`), Directory overflow (`a73854d`), bottom-nav crowding (`5cda81d`), Geneva H5 truncation (`1011816`), and the dead unit-toggle brought to life as a live sidebar feature (`15480af`).
+- 📏 **Units persistence COMPLETE:** `unit_system` column migration (`25ac701`) + context wiring/save/country-default (`b1a7272`). Preference persists to the profile across devices; existing localStorage choices migrate up; US defaults to imperial; fixed a bug where "Australia" was wrongly classed imperial. All paths verified on the live DB.
+- 🔒 **Security:** investigated the `spatial_ref_sys` RLS advisory — harmless PostGIS catalogue (not our data), all 47 of our tables have RLS on; documented as a known exception (`08e19c2`).
+- 📘 Built a **13-page branded Geneva & Client Concierge user guide** (docx, in outputs) — screenshot placeholders still to fill.
+
+**STILL OPEN / NEXT TIME (fresh-eyes jobs):**
+- ⚠️ **Forum badge function fix — do this FIRST next session.** Side-quest investigation already proved the break: `check_and_award_badges()` reads four columns that don't exist on `forum_user_stats` (`total_replies`→`reply_count`, `solutions_given`→`solutions_count`, `total_posts`→`post_count`, `reputation_score`→`reputation_points`); it hard-errors for any user with a stats row (error swallowed by `forum.ts`), and 0 badges have ever been awarded. Fix = one migration re-creating the function with correct names (+ re-check its `IF FOUND` after `ON CONFLICT DO NOTHING`), then apply-and-test.
+- `spatial_ref_sys` advisory: optional dashboard dismissal (Jodie's click; no dismiss button appeared, so likely just leave it).
+- **NEW TODO: "Feature reconciliation check"** — go through the app and confirm every built feature actually works AND is logged in the Feature Catalogue/docs (the dead unit-toggle is why); catch any other built-but-unmounted features.
+- **NEW TODO: Trinity — the Education Platform feature** (kick-off prompt drafted; to be designed in a fresh chat).
+- Add real screenshots to the Geneva & Client Concierge guide.
+- Standing: wipe the 24 Geneva demo contacts once Dani has reviewed the dashboard (`node geneva-demo-data.mjs wipe`); NotebookLM document library ready.
+
+---
+
 **Update (July 8, 2026 — later): 🗺️ SERVICE AREAS JOBS-FIRST SLICE FULLY SHIPPED (all 4 steps).**
 
 Step 4 — the Spotlights UI (`88cce3d`: RPC-backed feed, "My Areas" default, adaptive "All of {Country}" pill, "Everywhere", zero-match gentle fallback, no-areas Everywhere default, "In your area" card badges) — completes the slice on top of steps 1–3 from yesterday. Also fixed en route: the "View Details & Bid" card button clipping at large fonts (same commit). The test job `08f47a93…` and its notifications are **deleted**; the live DB holds 1 real open job. **Future work:** the "later slices" reuse `location_matches_agent_areas()` — marketplace properties, directory "serves your area" badges, forum board suggestions, job alert emails (see `docs/SERVICE_AREAS_PLAN.md` §5.6).
