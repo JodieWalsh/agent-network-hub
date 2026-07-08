@@ -28,7 +28,7 @@ export function BottomNav() {
             key={item.label}
             to={item.path}
             className={cn(
-              "flex min-h-[44px] min-w-[60px] flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all duration-200",
+              "flex min-h-[44px] flex-1 min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-all duration-200",
               isActive(item.path)
                 ? "text-[#2D6350]"
                 : "text-[#57534E] hover:text-[#1C1917]"
@@ -45,7 +45,7 @@ export function BottomNav() {
                 className={cn(isActive(item.path) && "text-[#B76E79]")}
               />
             </div>
-            <span className="text-xs font-medium">{item.label}</span>
+            <span className="max-w-full truncate text-xs font-medium">{item.label}</span>
           </Link>
         ))}
       </div>
