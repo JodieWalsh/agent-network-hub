@@ -624,7 +624,7 @@ export default function GenevaDashboard() {
                 <div className="mt-5 space-y-3">
                   {types.rows.map((r) => (
                     <div key={r.t} className="flex items-center gap-3">
-                      <p className="w-32 shrink-0 truncate font-sans text-xs font-medium text-[#1C1917] lg:w-40">
+                      <p className="w-32 shrink-0 break-words font-sans text-xs font-medium text-[#1C1917] lg:w-40">
                         {PROFESSIONAL_TYPE_LABELS[r.t] || r.t}
                       </p>
                       <div className="h-5 flex-1 overflow-hidden rounded-lg bg-[#2D6350]/[0.04]">
@@ -675,13 +675,13 @@ export default function GenevaDashboard() {
                           className="group flex w-full items-center justify-between gap-3 py-3 text-left"
                         >
                           <div className="min-w-0">
-                            <p className="truncate font-sans text-sm font-semibold text-[#1C1917] group-hover:text-[#2D6350]">
+                            <p className="break-words font-sans text-sm font-semibold text-[#1C1917] group-hover:text-[#2D6350]">
                               {contact.first_name}{contact.last_name ? ` ${contact.last_name}` : ""}
                               <span className="ml-2 font-normal text-[#57534E]">
                                 {PROFESSIONAL_TYPE_LABELS[contact.professional_type]}
                               </span>
                             </p>
-                            <p className="truncate font-sans text-xs text-[#57534E]">"{task.title}"</p>
+                            <p className="break-words font-sans text-xs text-[#57534E]">"{task.title}"</p>
                           </div>
                           <span
                             className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider ${

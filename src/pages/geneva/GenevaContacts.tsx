@@ -476,7 +476,7 @@ export default function GenevaContacts() {
                       {/* Contact */}
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 font-serif text-lg font-semibold leading-snug text-[#1C1917]">
-                          <span className="truncate">{name}</span>
+                          <span className="min-w-0 break-words">{name}</span>
                           {c.contact_type === "interview_outreach" && (
                             <span className="shrink-0 rounded-full border border-[#D8C3B8]/80 bg-[#D8C3B8]/[0.28] px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-[#8F4E58]">
                               Outreach
@@ -484,7 +484,7 @@ export default function GenevaContacts() {
                           )}
                           <ChevronRight size={13} className="shrink-0 text-[#8F4E58] opacity-0 transition-opacity group-hover:opacity-70" />
                         </p>
-                        <p className="truncate font-sans text-xs text-[#57534E]">{meta}</p>
+                        <p className="break-words font-sans text-xs text-[#57534E]">{meta}</p>
                       </div>
                       {/* Type */}
                       <div>
@@ -511,7 +511,7 @@ export default function GenevaContacts() {
                           {c.original_source ? SOURCE_LABELS[c.original_source] || c.original_source : "—"}
                         </p>
                         {c.source_detail && (
-                          <p className="truncate font-sans text-xs text-[#57534E]">{c.source_detail}</p>
+                          <p className="break-words font-sans text-xs text-[#57534E]">{c.source_detail}</p>
                         )}
                       </div>
                       {/* Owner + added */}
