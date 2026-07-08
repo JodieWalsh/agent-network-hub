@@ -333,15 +333,18 @@ export function formatArea(
   return `${areaSqm.toLocaleString()} m²`;
 }
 
-// Countries that use imperial system
-const IMPERIAL_COUNTRIES = ['US', 'USA', 'United States', 'Myanmar', 'Liberia'];
+// ISO 3166-1 alpha-2 codes of countries that use the imperial system.
+// Exact-match only: the old substring test classified 'Australia' as
+// imperial because it contains 'us'.
+const IMPERIAL_COUNTRY_CODES = ['US', 'MM', 'LR'];
 
 /**
- * Determine default unit system based on location
+ * Determine default unit system from an ISO country code (e.g. profiles.country_code).
+ * Unknown or missing country -> metric.
  */
-export function getDefaultUnitSystem(country?: string): UnitSystem {
-  if (!country) return 'metric';
-  return IMPERIAL_COUNTRIES.some(c =>
-    country.toLowerCase().includes(c.toLowerCase())
-  ) ? 'imperial' : 'metric';
+export function getDefaultUnitSystem(countryCode?: string | null): UnitSystem {
+  if (!countryCode) return 'metric';
+  return IMPERIAL_COUNTRY_CODES.includes(countryCode.trim().toUpperCase())
+    ? 'imperial'
+    : 'metric';
 }

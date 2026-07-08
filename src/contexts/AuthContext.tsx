@@ -45,6 +45,8 @@ interface Profile {
   // Country & currency preferences
   country_code: string | null;
   default_currency: string | null;
+  // Measurement preference — NULL means "never chosen" (app applies country default)
+  unit_system: 'metric' | 'imperial' | null;
 }
 
 interface AuthContextType {
